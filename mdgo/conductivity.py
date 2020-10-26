@@ -30,7 +30,7 @@ def msd_fft(r):
     return S1 - 2 * S2
 
 
-def calc_cond(u, anions, cations, run_start):
+def calc_cond(u, anions, cations, run_start, c_to_a_ratio=1):
     """ Calculates the conductivity "mean square displacement" given an MDAnalysis universe (u)
     and a selection of atoms or molecules (sel)
 
@@ -49,7 +49,7 @@ def calc_cond(u, anions, cations, run_start):
     for ts in tqdm_notebook(u.trajectory[run_start:]):
         qr_temp = np.zeros(3)
         for anion in anions.atoms:
-            qr_temp += -(anion.position / 4)
+            qr_temp += -(anion.position * c_to_a_ratio)
         for cation in cations.atoms:
             qr_temp += cation.position
         qr.append(qr_temp)
