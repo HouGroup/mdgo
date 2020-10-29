@@ -11,7 +11,7 @@ from scipy.optimize import curve_fit
 from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import coord_shell_array, num_of_neighbor_one_li
-from mdgo.msd import total_msd, partial_msd
+from mdgo.msd import total_msd, partial_msd, partial_msd_new
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
 
@@ -68,6 +68,8 @@ class MdRun:
         return cond_array
 
     def plot_cond_array(self, start, end, *runs):
+        if self.cond_array is None:
+            self.cond_array = self.get_cond_array()
         colors = ["g", "r", "c", "m", "y", "k"]
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
@@ -119,9 +121,9 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def get_msd_all(self, start=None, stop=None):
+    def get_msd_all(self, start=None, stop=None, fft=True):
         msd_array = total_msd(self.unwrapped_run, start=start, stop=stop,
-                              select=self.select_dict["cation"])
+                              select=self.select_dict["cation"], fft=fft)
         return msd_array
 
     def get_msd_partial(self, distance, run_start, run_end, largest=1000):
@@ -134,6 +136,14 @@ class MdRun:
         attach_array.columns = ['msd']
         return free_array, attach_array
 
+    def get_msd_partial_new(self, distance, run_start, run_end, largest=1000):
+        nvt_run = self.unwrapped_run
+        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        free_array, attach_array = partial_msd_new(nvt_run, li_atoms, largest,
+                                                   self.select_dict, distance,
+                                                   run_start, run_end)
+        return free_array, attach_array
+
     def get_d(self, msd_array, start, stop, percentage=1):
         if isinstance(msd_array, pd.DataFrame):
             msd_array = msd_array["msd"].to_numpy()
@@ -144,8 +154,8 @@ class MdRun:
             d = (msd_array[start] - msd_array[stop]) \
                 / (start-stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
-            print("Diffusivity of partial Li: ", d, "m^2/s")
-            print("Conductivity of partial Li: ", sigma, "mS/cm")
+            print("Diffusivity of ", percentage*100, "% Li: ", d, "m^2/s")
+            print("Conductivity of ", percentage*100, "% Li: ", sigma, "mS/cm")
         else:
             d = (msd_array[start] - msd_array[stop]) \
                 / (start - stop) / self.time_step / 6 * a2 / ps

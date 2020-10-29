@@ -1,10 +1,31 @@
 import re
 import numpy as np
 import matplotlib.pyplot as plt
-from mdgo.coordination import num_of_neighbor_one_li
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
 from tqdm import tqdm_notebook
+
+
+# Create adjacency matrix for one li
+def neighbors_one_li(nvt_run, li_atom, species, selection_dict, distance,
+                     run_start, run_end):
+    bool_values = dict()
+    time_count = 0
+    for ts in nvt_run.trajectory[run_start:run_end:]:
+        if species in selection_dict.keys():
+            selection = "(" + selection_dict[species] + ") and (around " \
+                        + str(distance) + " index " \
+                        + str(li_atom.id - 1) + ")"
+            shell = nvt_run.select_atoms(selection)
+        else:
+            print('Invalid species selection')
+            return None
+        for atom in shell.atoms:
+            if str(atom.id) not in bool_values:
+                bool_values[str(atom.id)] = np.zeros(int((run_end-run_start)/1))
+            bool_values[str(atom.id)][time_count] = 1
+        time_count += 1
+    return bool_values
 
 
 # Calculate ACF
@@ -13,31 +34,30 @@ def calc_acf(a_values):
     for atom_id, neighbors in a_values.items():
         atom_id = int(re.search(r'\d+', atom_id).group())
         acfs.append(acovf(neighbors, demean=False, unbiased=True, fft=True))
-    return (acfs)
+    return acfs
 
 
 def exponential_func(x, a, b, c):
     return a * np.exp(-b * x) + c
 
 
-def calc_neigh_corr(nvt_run, species_list, select_dict, distance, timestep,
+def calc_neigh_corr(nvt_run, species_list, selection_dict, distance, time_step,
                     run_start, run_end):
     # Set up times array
     times = []
     step = 0
-    li_atoms = nvt_run.select_atoms(species_list["cation"])
+    li_atoms = nvt_run.select_atoms(selection_dict["cation"])
     for ts in nvt_run.trajectory[run_start:run_end]:
-        times.append(step * timestep)
+        times.append(step * time_step)
         step += 1
     times = np.array(times)
 
     acf_avg = dict()
     for kw in species_list:
-        acf_all = []
+        acf_all = list()
         for li in tqdm_notebook(li_atoms[::]):
-            adjacency_matrix = num_of_neighbor_one_li(nvt_run, li, kw,
-                                                      select_dict, distance,
-                                                      run_start, run_end)
+            adjacency_matrix = neighbors_one_li(nvt_run, li, kw, selection_dict,
+                                                distance, run_start, run_end)
             acfs = calc_acf(adjacency_matrix)
             [acf_all.append(acf) for acf in acfs]
         acf_avg[kw] = np.mean(acf_all, axis=0)
