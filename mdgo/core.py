@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from MDAnalysis.analysis.distances import distance_array
+from MDAnalysis.lib.distances import capped_distance
 import re
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
@@ -201,4 +202,20 @@ class MdRun:
                 hopping_distance.append(li_mean_dists)
             freqs.append(freq)
         return np.mean(freqs), np.mean(hopping_distance)
+
+    def get_cluster_distance(self, run_start, run_end, neighbor_cutoff,
+                             cluster_center="center"):
+        center_atoms = \
+            self.wrapped_run.select_atoms(self.select_dict[cluster_center])
+        trj = self.wrapped_run.trajectory[run_start:run_end:]
+        means = []
+        for ts in trj:
+            distance_matrix = capped_distance(center_atoms.positions,
+                                              center_atoms.positions,
+                                              max_cutoff=neighbor_cutoff,
+                                              box=ts.dimensions,
+                                              return_distances=True)[1]
+            distance_matrix[distance_matrix == 0] = np.nan
+            means.append(np.nanmean(distance_matrix))
+        return np.mean(means)
 
