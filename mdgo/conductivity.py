@@ -4,7 +4,9 @@ from scipy import stats
 
 
 def autocorrFFT(x):
-    """ Calculates the position autocorrelation function using the fast Fourier transform.
+    """
+    Calculates the position autocorrelation function using
+    the fast Fourier transform.
     """
     N = len(x)
     F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
@@ -16,7 +18,9 @@ def autocorrFFT(x):
 
 
 def msd_fft(r):
-    """ Calculates mean square displacement of the array r using the fast Fourier transform.
+    """
+    Calculates mean square displacement of the array r using
+    the fast Fourier transform.
     """
     N = len(r)
     D = np.square(r).sum(axis=1)
@@ -31,8 +35,8 @@ def msd_fft(r):
 
 
 def calc_cond(u, anions, cations, run_start, c_to_a_ratio=1):
-    """ Calculates the conductivity "mean square displacement" given an MDAnalysis universe (u)
-    and a selection of atoms or molecules (sel)
+    """ Calculates the conductivity "mean square displacement" given
+    an MDAnalysis universe (u) and a selection of atoms or molecules (sel)
 
     Args:
     u: MDAnalysis Universe
@@ -41,7 +45,8 @@ def calc_cond(u, anions, cations, run_start, c_to_a_ratio=1):
 
     Returns an array of MSD values for each time in the trajectory.
 
-    NOTE: coordinates must be unwrapped (in dcd file when creating MDAnalysis Universe)
+    NOTE: coordinates must be unwrapped (in dcd file when creating MDAnalysis
+    Universe)
     """
     # Current code assumes anion and cation selections are single atoms
     # Also assumes monovalent ions
@@ -57,7 +62,7 @@ def calc_cond(u, anions, cations, run_start, c_to_a_ratio=1):
     return msd
 
 
-def conductivity_calculator(time_array, cond_array, v, name, start, end, ):
+def conductivity_calculator(time_array, cond_array, v, name, start, end):
     # Unit conversions
     A2cm = 1e-8
     ps2s = 1e-12

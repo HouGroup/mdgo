@@ -1,6 +1,5 @@
 import MDAnalysis.analysis.msd as msd
 import numpy as np
-import pandas as pd
 from tqdm import tqdm_notebook
 
 
@@ -13,26 +12,11 @@ def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):
 
 
 def msd_states(coord_list, largest):
-    lis = []
-    for state in coord_list:
-        n_frame = state.shape[0]
-        for i, start in enumerate(state[:-1, :]):
-            for j, end in enumerate(state[i+1:min((i+largest), n_frame), :]):
-                square_distance = np.square(end-start).sum()
-                time = (j + 1) * 10
-                lis.append(np.array([time, square_distance]))
-    lis = np.array(lis)
-    data = pd.DataFrame(data=lis)
-    data.columns = ["time", "msd"]
-    return data
-
-
-def msd_states_new(coord_list, largest):
     msd_dict = dict()
     for state in coord_list:
         n_frames = state.shape[0]
-        lagtimes = np.arange(1, min(n_frames, largest))
-        for lag in lagtimes:
+        lag_times = np.arange(1, min(n_frames, largest))
+        for lag in lag_times:
             disp = state[:-lag, :] - state[lag:, :]
             sqdist = np.square(disp).sum(axis=-1)
             if lag in msd_dict.keys():
@@ -98,27 +82,6 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance,
 
 def partial_msd(nvt_run, li_atoms, largest, select_dict, distance,
                 run_start, run_end):
-    free_datas = list()
-    attach_datas = list()
-    for i in tqdm_notebook(list(range(len(li_atoms)))):
-        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
-                                                      select_dict, distance,
-                                                      run_start, run_end)
-        if len(attach_coord) > 0:
-            attach_data = msd_states(attach_coord, largest)
-            attach_datas.append(attach_data)
-        if len(free_coord) > 0:
-            free_data = msd_states(free_coord, largest)
-            free_datas.append(free_data)
-    free_datas = pd.concat(free_datas, sort=False)
-    free_datas = free_datas.groupby("time").mean()
-    attach_datas = pd.concat(attach_datas, sort=False)
-    attach_datas = attach_datas.groupby("time").mean()
-    return free_datas, attach_datas
-
-
-def partial_msd_new(nvt_run, li_atoms, largest, select_dict, distance,
-                    run_start, run_end):
     free_coords = list()
     attach_coords = list()
     for i in tqdm_notebook(list(range(len(li_atoms)))):
@@ -127,12 +90,48 @@ def partial_msd_new(nvt_run, li_atoms, largest, select_dict, distance,
                                                       run_start, run_end)
         attach_coords.extend(attach_coord)
         free_coords.extend(free_coord)
+    attach_data = None
+    free_data = None
     if len(attach_coords) > 0:
-        attach_data = msd_states_new(attach_coords, largest)
-    else:
-        attach_data = None
+        attach_data = msd_states(attach_coords, largest)
     if len(free_coords) > 0:
-        free_data = msd_states_new(free_coords, largest)
-    else:
-        free_data = None
+        free_data = msd_states(free_coords, largest)
+    return free_data, attach_data
+
+
+def msd_by_length(coord_list):
+    msd_dict = dict()
+    for state in coord_list:
+        n_frames = state.shape[0]
+        disp = state[0, :] - state[-1, :]
+        sqdist = np.square(disp).sum()
+        if n_frames in list(msd_dict):
+            msd = msd_dict.get(n_frames)
+            msd_dict[n_frames].append(sqdist)
+        else:
+            msd_dict[n_frames] = [sqdist]
+    timespan = list(msd_dict)
+    timespan.sort()
+    timeseries = list()
+    for time in timespan:
+        timeseries.append(np.array([time, np.mean(msd_dict.get(time))]))
+    timeseries = np.array(timeseries)
+    return timeseries
+
+
+def special_msd(nvt_run, li_atoms, select_dict, distance, run_start, run_end):
+    free_coords = list()
+    attach_coords = list()
+    for i in tqdm_notebook(list(range(len(li_atoms)))):
+        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
+                                                      select_dict, distance,
+                                                      run_start, run_end)
+        attach_coords.extend(attach_coord)
+        free_coords.extend(free_coord)
+    attach_data = None
+    free_data = None
+    if len(attach_coords) > 0:
+        attach_data = msd_by_length(attach_coords)
+    if len(free_coords) > 0:
+        free_data = msd_by_length(free_coords)
     return free_data, attach_data
