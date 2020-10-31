@@ -65,7 +65,7 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
         site = step[0]
         distance = step[1]
         if site == 0:
-            previous_site = None
+            pass
         else:
             if site == previous_site:
                 if distance < sites_and_distance_array[closest_step][1]:
@@ -78,10 +78,8 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
                 previous_site = site
     if previous_site is not None:
         steps.append(closest_step)
-
-    grouped_sites = [list(v) for k, v in groupby(sites, key=lambda x: x != 0)
-                     if k != 0]
-    change = (np.diff(sites) != 0).sum() - len(grouped_sites) + 1
+    # change = len(steps) - 1
+    change = (np.diff([i for i in sites if i != 0]) != 0).sum()
     frequency = change/(time_span * time_step)
     return sites, frequency, steps
 

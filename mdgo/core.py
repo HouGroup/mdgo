@@ -197,7 +197,6 @@ class MdRun:
                     dist = distance_array(coords[i + 1], coords[i],
                                           box=self.get_nvt_dimension())[0][0]
                     dists.append(dist)
-                    print(dist)
                 li_mean_dists = np.mean(dists)
                 hopping_distance.append(li_mean_dists)
             freqs.append(freq)
