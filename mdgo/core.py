@@ -21,7 +21,8 @@ from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 class MdRun:
 
     def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
-                 time_step, name, select_dict, c_to_a_ratio=1, cond=True):
+                 time_step, name, select_dict, cation_charge=1, anion_charge=-1,
+                 cond=True):
         self.wrapped_run = MDAnalysis.Universe(data_dir,
                                                wrapped_dir,
                                                format="LAMMPS")
@@ -34,7 +35,8 @@ class MdRun:
         self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
-        self.c_to_a_ratio = c_to_a_ratio
+        self.cation_charge = cation_charge
+        self.anion_charge = anion_charge
         self.num_li = \
             len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
         if cond:
@@ -49,7 +51,6 @@ class MdRun:
         self.nvt_y = self.get_nvt_dimension()[1]
         self.nvt_z = self.get_nvt_dimension()[2]
         self.nvt_v = self.nvt_x * self.nvt_y * self.nvt_z
-        self.c_to_a_ratio = c_to_a_ratio
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
@@ -67,7 +68,7 @@ class MdRun:
         cations = nvt_run.select_atoms(self.select_dict["cation"])
         anions = nvt_run.select_atoms(self.select_dict["anion"])
         cond_array = calc_cond(nvt_run, anions, cations, self.nvt_start,
-                               self.c_to_a_ratio)
+                               self.cation_charge, self.anion_charge)
         return cond_array
 
     def plot_cond_array(self, start, end, *runs):
