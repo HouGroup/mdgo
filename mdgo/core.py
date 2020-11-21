@@ -13,7 +13,8 @@ from scipy.optimize import curve_fit
 from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import\
-    coord_shell_array, num_of_neighbor_one_li, trajectory, find_nearest
+    coord_shell_array, num_of_neighbor_one_li, num_of_neighbor_one_li_multi, \
+    num_of_neighbor_one_li_simple, trajectory, find_nearest
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
@@ -105,6 +106,23 @@ class MdRun:
                                       distance, run_start, run_end)
         return num_array
 
+    def coord_num_array_multi_species(self, species, distance,
+                                      run_start, run_end):
+        nvt_run = self.wrapped_run
+        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_multi,
+                                      li_atoms, species, self.select_dict,
+                                      distance, run_start, run_end)
+        return num_array
+
+    def coord_num_array_simple(self, species, distance, run_start, run_end):
+        nvt_run = self.wrapped_run
+        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_simple,
+                                      li_atoms, species, self.select_dict,
+                                      distance, run_start, run_end)
+        return num_array
+
     def coordination_one_species(self, species, distance, run_start, run_end):
         num_array = self.coord_num_array_one_species(species, distance,
                                                      run_start, run_end)
@@ -118,6 +136,45 @@ class MdRun:
         percent_list = []
         for i in range(len(combined)):
             item_list.append(str(int(combined[i, 0])))
+            percent_list.append(str("%.4f" % (combined[i, 1] /
+                                              combined[:, 1].sum() * 100))
+                                + '%')
+        df_dict = {item_name: item_list, 'Percentage': percent_list}
+        df = pd.DataFrame(df_dict)
+        return df
+
+    def rdf_integral(self, species, distances, run_start, run_end):
+        cn_values = self.coord_num_array_multi_species(species, distances,
+                                                       run_start, run_end)
+        item_name = "species in first solvation shell"
+        item_list = []
+        cn_list = []
+        for kw in cn_values.keys():
+            if kw != "total":
+                shell_component, shell_count \
+                    = np.unique(cn_values[kw].flatten(), return_counts=True)
+                cn = (shell_component * shell_count / shell_count.sum()).sum()
+                item_list.append(kw)
+                cn_list.append(cn)
+        df_dict = {item_name: item_list, self.name: cn_list}
+        df = pd.DataFrame(df_dict)
+        return df
+
+    def shell_simple(self, species, distance, run_start, run_end):
+        num_array = self.coord_num_array_simple(species, distance,
+                                                run_start, run_end)
+
+        shell_component, shell_count = np.unique(num_array.flatten(),
+                                                 return_counts=True)
+        combined = np.vstack((shell_component, shell_count)).T
+
+        item_name = "solvation structure"
+        item_dict = {"1": "ssip", "2": "cip", "3": "agg"}
+        item_list = []
+        percent_list = []
+        for i in range(len(combined)):
+            item = str(int(combined[i, 0]))
+            item_list.append(item_dict[item])
             percent_list.append(str("%.4f" % (combined[i, 1] /
                                               combined[:, 1].sum() * 100))
                                 + '%')
