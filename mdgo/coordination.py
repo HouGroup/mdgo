@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm_notebook
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
+from mdgo.util import atom_vec
 from itertools import groupby
 
 
@@ -118,6 +119,42 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     return sites, frequency, steps
 
 
+def heat_map(nvt_run, li_atom, sites, ref_to_center, run_start, run_end):
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    coordinates = []
+    for i, ts in enumerate(trj_analysis):
+        if sites[i] == 0:
+            pass
+        else:
+            center_atom = nvt_run.select_atoms("index " + str(sites[i] - 1))[0]
+            o_atoms = nvt_run.select_atoms("(same charge as index 110) and (around "
+                                           + str(ref_to_center) + " index "
+                                           + str(center_atom.id - 1) + ")")
+            distances = distance_array(ts[li_atom.id - 1], o_atoms.positions, ts.dimensions)
+            idx = np.argpartition(distances[0], 3)
+            vertex_atoms = o_atoms[idx[:3]]
+            vector_li = atom_vec(li_atom, center_atom, ts.dimensions)
+            dist = np.linalg.norm(vector_li)
+            #if dist > 8:
+            #    print(dist)
+            vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
+            vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
+            vector_c = atom_vec(vertex_atoms[2], center_atom, ts.dimensions)
+            basis_abc = np.transpose([vector_a, vector_b, vector_c])
+            abc_li = np.linalg.solve(basis_abc, vector_li)
+            unit_x = np.linalg.norm(2 * vector_a + vector_b + vector_c)
+            unit_y = np.linalg.norm(vector_b - vector_c)
+            unit_z = np.linalg.norm(vector_a - vector_b - vector_c)
+            vector_x = np.array([2, 1, 1]) / unit_x
+            vector_y = np.array([0, 1, -1]) / unit_y
+            vector_z = np.array([1, -1, -1]) / unit_z
+            basis_xyz = np.transpose([vector_x, vector_y, vector_z])
+            xyz_li = np.linalg.solve(basis_xyz, abc_li)
+            #print(xyz_li)
+            coordinates.append(xyz_li)
+    return np.array(coordinates)
+
+
 def num_of_neighbor_one_li(nvt_run, li_atom, species, select_dict,
                            distance, run_start, run_end):
 
@@ -221,7 +258,9 @@ def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict,
             if atom.resid not in p_list:
                 p_list.append(atom.resid)
                 A_values[time_count][0] += 1
-                shell_pf6 = nvt_run.select_atoms("(type 17 and around 3 resid " + str(atom.resid) + ")", periodic=True)
+                shell_pf6 = nvt_run.select_atoms("(type 17 and around 3 resid "
+                                                 + str(atom.resid) + ")",
+                                                 periodic=True)
                 for li in shell_pf6:
                     if li.id not in li_list:
                         li_list.append(li.id)

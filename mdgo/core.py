@@ -14,7 +14,7 @@ from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import\
     coord_shell_array, num_of_neighbor_one_li, num_of_neighbor_one_li_multi, \
-    num_of_neighbor_one_li_simple, trajectory, find_nearest
+    num_of_neighbor_one_li_simple, trajectory, find_nearest, heat_map
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
@@ -260,6 +260,21 @@ class MdRun:
                 hopping_distance.append(li_mean_dists)
             freqs.append(freq)
         return np.mean(freqs), np.mean(hopping_distance)
+
+    def get_heat_map(self, run_start, run_end, species, distance,
+                              hopping_cutoff, smooth=51):
+        nvt_run = self.wrapped_run
+        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        coord_list = np.array([[0, 0, 0]])
+        for li in tqdm_notebook(li_atoms[:]):
+            neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species,
+                                      self.select_dict, distance)
+            sites, freq, steps = find_nearest(neighbor_trj, self.time_step,
+                                              distance, hopping_cutoff,
+                                              smooth=smooth)
+            coords = heat_map(nvt_run, li, sites, 4, run_start, run_end)
+            coord_list = np.concatenate((coord_list, coords), axis=0)
+        return coord_list
 
     def get_cluster_distance(self, run_start, run_end, neighbor_cutoff,
                              cluster_center="center"):
