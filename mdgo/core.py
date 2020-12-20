@@ -14,7 +14,7 @@ from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import\
     coord_shell_array, num_of_neighbor_one_li, num_of_neighbor_one_li_multi, \
-    num_of_neighbor_one_li_simple, trajectory, find_nearest, heat_map
+    num_of_neighbor_one_li_simple, trajectory, find_nearest, heat_map, get_full_coords
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
@@ -262,7 +262,8 @@ class MdRun:
         return np.mean(freqs), np.mean(hopping_distance)
 
     def get_heat_map(self, run_start, run_end, species, distance,
-                              hopping_cutoff, smooth=51):
+                     hopping_cutoff, cartesian_by_ref=None, bind_atom_type=None,
+                     sym_dict=None, sample=None, smooth=51):
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         coord_list = np.array([[0, 0, 0]])
@@ -272,9 +273,19 @@ class MdRun:
             sites, freq, steps = find_nearest(neighbor_trj, self.time_step,
                                               distance, hopping_cutoff,
                                               smooth=smooth)
-            coords = heat_map(nvt_run, li, sites, 4, run_start, run_end)
+            if bind_atom_type is None:
+                bind_atom_type = self.select_dict["anion"]
+            if cartesian_by_ref is None:
+                cartesian_by_ref = np.array([[1, 0, 0],
+                                             [0, 1, 0],
+                                             [0, 0, 1]])
+            coords = heat_map(nvt_run, li, sites, 4, bind_atom_type,
+                              cartesian_by_ref, run_start, run_end)
             coord_list = np.concatenate((coord_list, coords), axis=0)
-        return coord_list
+        if sym_dict:
+            return get_full_coords(coord_list, **sym_dict, sample=sample)
+        else:
+            return get_full_coords(coord_list, sample=sample)
 
     def get_cluster_distance(self, run_start, run_end, neighbor_cutoff,
                              cluster_center="center"):

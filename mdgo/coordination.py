@@ -119,7 +119,8 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     return sites, frequency, steps
 
 
-def heat_map(nvt_run, li_atom, sites, ref_to_center, run_start, run_end):
+def heat_map(nvt_run, li_atom, sites, dist_to_center, bind_atom_type,
+             cartesian_by_ref, run_start, run_end):
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
@@ -127,32 +128,98 @@ def heat_map(nvt_run, li_atom, sites, ref_to_center, run_start, run_end):
             pass
         else:
             center_atom = nvt_run.select_atoms("index " + str(sites[i] - 1))[0]
-            o_atoms = nvt_run.select_atoms("(same charge as index 110) and (around "
-                                           + str(ref_to_center) + " index "
-                                           + str(center_atom.id - 1) + ")")
-            distances = distance_array(ts[li_atom.id - 1], o_atoms.positions, ts.dimensions)
+            selection = "(" + bind_atom_type + ") and " + "(around " \
+                        + str(dist_to_center) + " index " \
+                        + str(center_atom.id - 1) + ")"
+            bind_atoms = nvt_run.select_atoms(selection, periodic=True)
+            distances = distance_array(ts[li_atom.id - 1], bind_atoms.positions,
+                                       ts.dimensions)
             idx = np.argpartition(distances[0], 3)
-            vertex_atoms = o_atoms[idx[:3]]
+            vertex_atoms = bind_atoms[idx[:3]]
             vector_li = atom_vec(li_atom, center_atom, ts.dimensions)
-            dist = np.linalg.norm(vector_li)
-            #if dist > 8:
-            #    print(dist)
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
             vector_c = atom_vec(vertex_atoms[2], center_atom, ts.dimensions)
             basis_abc = np.transpose([vector_a, vector_b, vector_c])
             abc_li = np.linalg.solve(basis_abc, vector_li)
-            unit_x = np.linalg.norm(2 * vector_a + vector_b + vector_c)
-            unit_y = np.linalg.norm(vector_b - vector_c)
-            unit_z = np.linalg.norm(vector_a - vector_b - vector_c)
-            vector_x = np.array([2, 1, 1]) / unit_x
-            vector_y = np.array([0, 1, -1]) / unit_y
-            vector_z = np.array([1, -1, -1]) / unit_z
+            unit_x = np.linalg.norm(cartesian_by_ref[0, 0] * vector_a
+                                    + cartesian_by_ref[0, 1] * vector_b
+                                    + cartesian_by_ref[0, 2] * vector_c)
+            unit_y = np.linalg.norm(cartesian_by_ref[1, 0] * vector_a
+                                    + cartesian_by_ref[1, 1] * vector_b
+                                    + cartesian_by_ref[1, 2] * vector_c)
+            unit_z = np.linalg.norm(cartesian_by_ref[2, 0] * vector_a
+                                    + cartesian_by_ref[2, 1] * vector_b
+                                    + cartesian_by_ref[2, 2] * vector_c)
+            vector_x = cartesian_by_ref[0] / unit_x
+            vector_y = cartesian_by_ref[1] / unit_y
+            vector_z = cartesian_by_ref[2] / unit_z
             basis_xyz = np.transpose([vector_x, vector_y, vector_z])
             xyz_li = np.linalg.solve(basis_xyz, abc_li)
-            #print(xyz_li)
             coordinates.append(xyz_li)
     return np.array(coordinates)
+
+
+def get_full_coords(coords, reflection=None, rotation=None, inversion=None,
+                    sample=None):
+    coords_full = coords
+    if reflection:
+        for vec in reflection:
+            coords_full = np.concatenate((coords, coords * vec), axis=0)
+    if rotation:
+        coords_copy = coords_full
+        for mat in rotation:
+            coords_rot = np.dot(coords_copy, mat)
+            coords_full = np.concatenate((coords_full, coords_rot), axis=0)
+    if inversion:
+        coords_copy = coords_full
+        for mat in inversion:
+            coords_inv = np.dot(coords_copy, mat)
+            coords_full = np.concatenate((coords_full, coords_inv), axis=0)
+    if sample:
+        index = np.random.choice(coords_full.shape[0], sample, replace=False)
+        coords_full = coords_full[index]
+    return coords_full
+
+
+def cluster_coordinates(nvt_run, select_dict, run_start, run_end, species,
+                        distance, basis_vectors=None, cluster_center="center"):
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    cluster_center = nvt_run.select_atoms(select_dict[cluster_center],
+                                          periodic=True)[0]
+    selection = "(" + " or ".join([s for s in species]) \
+                + ") and (around " + str(distance) + " index "\
+                    + str(cluster_center.id - 1) + ")"
+    print(selection)
+    shell = nvt_run.select_atoms(selection, periodic=True)
+    cluster = []
+    for atom in shell:
+        coord_list = []
+        for ts in trj_analysis:
+            coord_list.append(atom.position)
+        cluster.append(np.mean(np.array(coord_list), axis=0))
+    cluster = np.array(cluster)
+    if basis_vectors:
+        if len(basis_vectors) == 2:
+            vec1 = basis_vectors[0]
+            vec2 = basis_vectors[1]
+            vec3 = np.cross(vec1, vec2)
+            vec2 = np.cross(vec1, vec3)
+        elif len(basis_vectors) == 3:
+            vec1 = basis_vectors[0]
+            vec2 = basis_vectors[1]
+            vec3 = basis_vectors[2]
+        else:
+            raise ValueError("incorrect vector format")
+        vec1 = vec1 / np.linalg.norm(vec1)
+        vec2 = vec2 / np.linalg.norm(vec2)
+        vec3 = vec3 / np.linalg.norm(vec3)
+        basis_xyz = np.transpose([vec1, vec2, vec3])
+        cluster_norm = np.linalg.solve(basis_xyz, cluster.T).T
+        cluster_norm = cluster_norm - np.mean(cluster_norm, axis=0)
+        return cluster_norm
+    else:
+        return cluster
 
 
 def num_of_neighbor_one_li(nvt_run, li_atom, species, select_dict,
