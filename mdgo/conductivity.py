@@ -76,5 +76,5 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
     cond_einstein_mof = slope_cond_avg/6/kb/T/v*convert
     error_mof = std_err/6/kb/T/v*convert
 
-    print("Conductivity of " + name + ": " + str(cond_einstein_mof)
+    print("GK Conductivity of " + name + ": " + str(cond_einstein_mof)
           + " ± " + str(error_mof) + " mS/cm")

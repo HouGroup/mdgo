@@ -1,15 +1,9 @@
 import MDAnalysis
-from MDAnalysis.analysis import contacts
-from MDAnalysis.analysis.rdf import InterRDF
-#from scipy import stats
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
-import re
-from statsmodels.tsa.stattools import acovf
-from scipy.optimize import curve_fit
 from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import\
@@ -24,6 +18,22 @@ class MdRun:
     def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
                  cond=True):
+        """
+        Base constructor.
+
+        Args:
+            data_dir (str): path to the data file.
+            wrapped_dir (str): path to the wrapped dcd file.
+            unwrapped_dir (str): dpath to the unwrapped dcd file.
+            nvt_start (int): nvt start time step
+            time_step (int or float): LAMMPS timestep
+            name (str): name of the MD run
+            select_dict: a dictionary of species selection
+            cation_charge: charge of cation. Default to 1.
+            anion_charge: charge of anion. Default to 1.
+            cond (bool): Whether to calculate conductivity MSD. Default to True.
+
+        """
         self.wrapped_run = MDAnalysis.Universe(data_dir,
                                                wrapped_dir,
                                                format="LAMMPS")
@@ -59,12 +69,22 @@ class MdRun:
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     def get_init_dimension(self):
+        """
+        Returns the initial box dimension.
+        """
         return self.wrapped_run.dimensions
 
     def get_nvt_dimension(self):
+        """
+        Returns the equilibrium box dimension.
+        """
         return self.wrapped_run.trajectory[-1].dimensions
 
     def get_cond_array(self):
+        """ Calculates the conductivity "mean square displacement".
+
+        Returns an array of MSD values for each time in the trajectory.
+        """
         nvt_run = self.unwrapped_run
         cations = nvt_run.select_atoms(self.select_dict["cation"])
         anions = nvt_run.select_atoms(self.select_dict["anion"])
@@ -73,6 +93,13 @@ class MdRun:
         return cond_array
 
     def plot_cond_array(self, start, end, *runs):
+        """ Plots the conductivity MSD as a function of time
+
+            Args:
+                start (int): start time step
+                end (int): end time step
+                runs (MdRun): other runs to be compared in the same plot
+        """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
         colors = ["g", "r", "c", "m", "y", "k"]
@@ -93,12 +120,32 @@ class MdRun:
         fig.show()
 
     def get_conductivity(self, start, end):
+        """ Calculates the Green-Kubo (GK) conductivity
+
+        Args:
+            start (int): start time step
+            end (int): end time step
+
+        Print conductivity in mS/cm.
+        """
         conductivity_calculator(self.time_array, self.cond_array,
                                 self.nvt_v, self.name, start, end)
         return None
 
     def coord_num_array_one_species(self, species, distance,
                                     run_start, run_end):
+        """ Calculates the coordination number array of one species around
+        the cation.
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+            run_end (int): end time step
+
+        Returns an array of the species coordination number for each time
+        in the trajectory.
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li,
@@ -108,6 +155,18 @@ class MdRun:
 
     def coord_num_array_multi_species(self, species, distance,
                                       run_start, run_end):
+        """ Calculates the coordination number array of multiple species around
+        the cation
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+            run_end (int): end time step
+
+        Returns a python dict of arrays of coordination numbers of each species
+         for each time in the trajectory.
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_multi,
@@ -116,6 +175,18 @@ class MdRun:
         return num_array
 
     def coord_num_array_simple(self, species, distance, run_start, run_end):
+        """ Calculates the solvation structure type (1 for ssIP, 2 for CIP,
+        3 for AGG) array of the cation
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+            run_end (int): end time step
+
+        Returns an array of the solvation structure type
+        for each time in the trajectory.
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_simple,
@@ -124,6 +195,18 @@ class MdRun:
         return num_array
 
     def coordination_one_species(self, species, distance, run_start, run_end):
+        """ Tabulates the percentage of each coordination number of one species
+        around the cation
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+            run_end (int): end time step
+
+        Returns pandas.dataframe of the species coordination number
+        and corresponding percentage.
+        """
         num_array = self.coord_num_array_one_species(species, distance,
                                                      run_start, run_end)
         shell_component, shell_count = np.unique(num_array.flatten(),
@@ -144,6 +227,18 @@ class MdRun:
         return df
 
     def rdf_integral(self, species, distances, run_start, run_end):
+        """ Calculate the integral of the radial distribution function of
+        selected species
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+            run_end (int): end time step
+
+        Returns pandas.dataframe of the species and the coordination number.
+        """
+
         cn_values = self.coord_num_array_multi_species(species, distances,
                                                        run_start, run_end)
         item_name = "species in first solvation shell"
@@ -161,6 +256,16 @@ class MdRun:
         return df
 
     def shell_simple(self, species, distance, run_start, run_end):
+        """ Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
+
+        Args:
+            species (str): the interested species
+            distance (int or float): the coordination cutoff distance
+            run_start (int): start time step
+        run_end (int): end time step
+
+        Returns pandas.dataframe of the solvation structure and percentage.
+        """
         num_array = self.coord_num_array_simple(species, distance,
                                                 run_start, run_end)
 
@@ -183,6 +288,15 @@ class MdRun:
         return df
 
     def get_msd_all(self, start=None, stop=None, fft=True):
+        """ Calculates the mean square displacement (MSD) of the cation
+
+        Args:
+            start (int): start time step
+            stop (int): end time step
+            fft (bool): Whether to use fft to calculate msd. Default to True.
+
+        Returns an array of MSD values for each time in the trajectory
+        """
         msd_array = total_msd(self.unwrapped_run, start=start, stop=stop,
                               select=self.select_dict["cation"], fft=fft)
         return msd_array
@@ -204,6 +318,18 @@ class MdRun:
         return free_array, attach_array
 
     def get_d(self, msd_array, start, stop, percentage=1):
+        """ Calculates the self-diffusion coefficient of the cation and
+        the Nernst-Einstein conductivity
+
+        Args:
+            msd_array (numpy.array): msd array
+            start (int): start time step
+            end (int): end time step
+            percentage (int or float): The percentage of the cation.
+                Default to 1.
+
+        Print self-diffusion coefficient in m^2/s and NE conductivity in mS/cm.
+        """
         a2 = 1e-20
         ps = 1e-12
         s_m_to_ms_cm = 10
@@ -212,24 +338,54 @@ class MdRun:
                 / (start-stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
             print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ", d, "m^2/s")
-            print("Conductivity of", "%.2f" % (percentage * 100) + "% Li: ", sigma, "mS/cm")
+            print("NE Conductivity of", "%.2f" % (percentage * 100) + "% Li: ", sigma, "mS/cm")
         else:
             d = (msd_array[start] - msd_array[stop]) \
                 / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = d * self.d_to_sigma * s_m_to_ms_cm
             print("Diffusivity of all Li:", d, "m^2/s")
-            print("Conductivity of all Li:", sigma, "mS/cm")
+            print("NE Conductivity of all Li:", sigma, "mS/cm")
 
     def get_neighbor_corr(self, species_list, distance, run_start, run_end):
+        """ Calculates the neighbor auto-corelation function (ACF)
+        of selected species around cation
+
+        Args:
+            species_list (list): list of species name
+            distance (int or float): cutoff distance of neighbor
+            run_start: start time step
+            run_end (int): end time step
+
+        Returns an array of the time series and a dict of ACFs of each species.
+        """
         return calc_neigh_corr(self.wrapped_run, species_list, self.select_dict,
                                distance, self.time_step, run_start, run_end)
 
     @staticmethod
     def get_residence_time(species_list, times, acf_avg_dict, cutoff_time):
+        """ Calculates the residence time of selected species around cation
+
+        Args:
+            species_list (list): list of species name
+            times (np.ndarray): the time series
+            acf_avg_dict: a dict of ACFs of each species
+            cutoff_time (int): cutoff time for fitting the exponential decay
+
+        Returns the residence time of each species.
+        """
         return fit_residence_time(times, species_list,
                                   acf_avg_dict, cutoff_time)
 
     def get_neighbor_trj(self, run_start, run_end, li_atom, species, distance):
+        """ Calculates the distance of cation-neighbor as a function of time
+
+        Args:
+            run_start (int): start time step
+            run_end (int): end time step
+            li_atom ()
+
+        Returns an array of the time series and a dict of ACFs of each species.
+        """
         return trajectory(self.wrapped_run, li_atom, run_start, run_end, species,
                           self.select_dict, distance)
 

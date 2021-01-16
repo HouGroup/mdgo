@@ -308,7 +308,7 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
     return cn_values
 
 
-#Depth-first traversal
+# Depth-first traversal
 def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict,
                                    distance, run_start, run_end):
     time_count = 0
