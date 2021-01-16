@@ -8,7 +8,8 @@ from tqdm import tqdm_notebook
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import\
     coord_shell_array, num_of_neighbor_one_li, num_of_neighbor_one_li_multi, \
-    num_of_neighbor_one_li_simple, trajectory, find_nearest, heat_map, get_full_coords
+    num_of_neighbor_one_li_simple, trajectory, find_nearest, \
+    heat_map, get_full_coords
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
@@ -153,14 +154,14 @@ class MdRun:
                                       distance, run_start, run_end)
         return num_array
 
-    def coord_num_array_multi_species(self, species, distance,
+    def coord_num_array_multi_species(self, species, distances,
                                       run_start, run_end):
         """ Calculates the coordination number array of multiple species around
         the cation
 
         Args:
             species (str): the interested species
-            distance (int or float): the coordination cutoff distance
+            distances (dict): a dict of coordination cutoff distance of species
             run_start (int): start time step
             run_end (int): end time step
 
@@ -171,7 +172,7 @@ class MdRun:
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_multi,
                                       li_atoms, species, self.select_dict,
-                                      distance, run_start, run_end)
+                                      distances, run_start, run_end)
         return num_array
 
     def coord_num_array_simple(self, species, distance, run_start, run_end):
@@ -232,7 +233,7 @@ class MdRun:
 
         Args:
             species (str): the interested species
-            distance (int or float): the coordination cutoff distance
+            distances (dict): a dict of coordination cutoff distance of species
             run_start (int): start time step
             run_end (int): end time step
 
@@ -259,10 +260,10 @@ class MdRun:
         """ Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            species (str): the interested species
-            distance (int or float): the coordination cutoff distance
-            run_start (int): start time step
-        run_end (int): end time step
+            species (str): The interested species.
+            distance (int or float): The coordination cutoff distance.
+            run_start (int): Start time step.
+            run_end (int): End time step.
 
         Returns pandas.dataframe of the solvation structure and percentage.
         """
@@ -324,7 +325,7 @@ class MdRun:
         Args:
             msd_array (numpy.array): msd array
             start (int): start time step
-            end (int): end time step
+            stop (int): end time step
             percentage (int or float): The percentage of the cation.
                 Default to 1.
 
@@ -337,8 +338,10 @@ class MdRun:
             d = (msd_array[start] - msd_array[stop]) \
                 / (start-stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
-            print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ", d, "m^2/s")
-            print("NE Conductivity of", "%.2f" % (percentage * 100) + "% Li: ", sigma, "mS/cm")
+            print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ",
+                  d, "m^2/s")
+            print("NE Conductivity of", "%.2f" % (percentage * 100) + "% Li: ",
+                  sigma, "mS/cm")
         else:
             d = (msd_array[start] - msd_array[stop]) \
                 / (start - stop) / self.time_step / 6 * a2 / ps
@@ -380,17 +383,33 @@ class MdRun:
         """ Calculates the distance of cation-neighbor as a function of time
 
         Args:
-            run_start (int): start time step
-            run_end (int): end time step
-            li_atom ()
+            run_start (int): start time step.
+            run_end (int): end time step.
+            li_atom (MDAnalysis.core.groups.Atom): the interested cation
+                atom object.
+            species (str): The interested neighbor species.
+            distance (int or float): The coordination cutoff distance.
 
-        Returns an array of the time series and a dict of ACFs of each species.
+        Returns a dict of distance arrays of cation-neighbor
+        as a function of time with neighbor id as keys.
         """
-        return trajectory(self.wrapped_run, li_atom, run_start, run_end, species,
-                          self.select_dict, distance)
+        return trajectory(self.wrapped_run, li_atom, run_start, run_end,
+                          species, self.select_dict, distance)
 
     def get_hopping_freq_dist(self, run_start, run_end, species, distance,
                               hopping_cutoff, smooth=51):
+        """ Calculates the cation hopping rate and hopping distance
+
+        Args:
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            species (str): cation Binding site species.
+            distance (int or float): Binding cutoff distance.
+            hopping_cutoff: (int or float): Detaching cutoff distance.
+            smooth (int): The length of the smooth filter window. Default to 51.
+
+        Returns the cation average hopping rate and average hopping distance.
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         freqs = []
@@ -420,6 +439,24 @@ class MdRun:
     def get_heat_map(self, run_start, run_end, species, distance,
                      hopping_cutoff, cartesian_by_ref=None, bind_atom_type=None,
                      sym_dict=None, sample=None, smooth=51):
+        """ Calculates the heatmap matrix of cation around a cluster/molecule
+
+        Args:
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            species (str): cation Binding site species.
+            distance (int or float): Binding cutoff distance.
+            hopping_cutoff: (int or float): Detaching cutoff distance.
+            cartesian_by_ref (np.array): Transformation matrix between cartesian
+                and reference coordinate systems. Default to None.
+            bind_atom_type (str): Selection for binding site atom.
+                Default to None.
+            sym_dict (dict): Dictionary of symmetry operation dictionary.
+                Default to None.
+            sample (int): Number of samples desired. Default to None,
+                which is no sampling.
+            smooth (int): The length of the smooth filter window. Default to 51.
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         coord_list = np.array([[0, 0, 0]])
@@ -445,6 +482,16 @@ class MdRun:
 
     def get_cluster_distance(self, run_start, run_end, neighbor_cutoff,
                              cluster_center="center"):
+        """ Calculates the average distance of the center of clusters/molecules
+
+        Args:
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            neighbor_cutoff (int of float): Upper limit of
+                first nearest neighbor.
+            cluster_center (str): species name of cluster center.
+                Default to "center".
+        """
         center_atoms = \
             self.wrapped_run.select_atoms(self.select_dict[cluster_center])
         trj = self.wrapped_run.trajectory[run_start:run_end:]
@@ -458,4 +505,3 @@ class MdRun:
             distance_matrix[distance_matrix == 0] = np.nan
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
-
