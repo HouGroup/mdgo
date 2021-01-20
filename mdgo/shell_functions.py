@@ -137,3 +137,23 @@ def get_radial_shell(u, central_species, radius):
     partial_shell = u.select_atoms(f'point {str_coords} {radius}')
     full_shell = partial_shell.residues.atoms
     return full_shell
+
+# atom group counters
+
+def get_counts(atom_group):
+    unique_ids = np.unique(atom_group.resids, return_index=True)
+    names, counts = np.unique(atom_group.resnames[unique_ids[1]], return_counts=True)
+    return {i: j for i, j in zip(names, counts)}
+
+def get_pair_type(u, central_species, cation_group, anion_group, radius=4):
+    cation_name = cation_group.names[0]
+    anion_name = anion_group.names[0]
+    first, second, third, fourth = (get_counts(shell) for shell in
+                                    get_cation_anion_shells(u, central_species, cation_group,
+                                                           anion_group, radius))
+    if len(first) == 0:
+        return "SSIP"
+    if (len(first) == 1) & (len(second) == 0):
+        return "CIP"
+    else:
+        return "AGG"
