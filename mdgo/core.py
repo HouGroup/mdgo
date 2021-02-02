@@ -228,7 +228,7 @@ class MdRun:
         return num_array
 
     def coordination_one_species(self, species, distance, run_start, run_end):
-        """ Tabulates the percentage of each coordination number of one species
+        """ Tabulates the coordination number distribution of one species
         around the cation
 
         Args:

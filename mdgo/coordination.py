@@ -3,8 +3,7 @@ from tqdm import tqdm_notebook
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec
-from MDAnalysis.lib.mdamath import make_whole
-from itertools import groupby
+# from itertools import groupby
 
 
 def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict,
@@ -244,7 +243,7 @@ def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
             if a > 1 - write_freq:
                 print("writing")
                 species = ' or '.join("(same resid as (" + select_dict[kw]
-                                      + " and around "+ str(distances[kw])
+                                      + " and around " + str(distances[kw])
                                       + " index " + str(li_atom.id - 1)
                                       + "))" for kw in species_list)
                 species = "((" + species + ")and not " \
@@ -253,7 +252,7 @@ def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
                                                  periodic=True)
                 li_pos = ts[(int(li_atom.id)-1)]
                 path = write_path + str(li_atom.id) + "_" + str(int(ts.time)) \
-                       + "_" + str(structure_code) + ".xyz"
+                    + "_" + str(structure_code) + ".xyz"
                 write_out(li_pos, structure, element_id_dict, path)
         time_count += 1
     return cn_values
@@ -292,6 +291,128 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
             cn_values[time_count] = 3
         time_count += 1
     return cn_values
+
+
+def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict,
+                                        distance, run_start, run_end):
+
+    time_count = 0
+    emc_angle = list()
+    ec_angle = list()
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    if species in select_dict.keys():
+        cn_values = np.zeros(int(len(trj_analysis)))
+    else:
+        print('Invalid species selection')
+        return None
+    for ts in trj_analysis:
+        selection = "(" + select_dict[species] + ") and (around "\
+                    + str(distance) + " index "\
+                    + str(li_atom.id - 1) + ")"
+        shell = nvt_run.select_atoms(selection, periodic=True)
+        shell_len = len(shell)
+        if shell_len == 0:
+            cn_values[time_count] = 1
+        elif shell_len == 1:
+            selection_species = "(" + select_dict["cation"] + " and around " + \
+                                str(distance) + " index " + \
+                                str(shell.atoms[0].id - 1) + ")"
+            shell_species = nvt_run.select_atoms(selection_species,
+                                                 periodic=True)
+            shell_species_len = len(shell_species) - 1
+            if shell_species_len == 0:
+                cn_values[time_count] = 2
+                li_pos = li_atom.position
+                p_pos = shell.atoms[0].position
+                ec_select = "(" + select_dict["EC"] + ") and (around "\
+                    + str(3) + " index "\
+                    + str(li_atom.id - 1) + ")"
+                emc_select = "(" + select_dict["EMC"] + ") and (around "\
+                    + str(3) + " index "\
+                    + str(li_atom.id - 1) + ")"
+                ec_group = nvt_run.select_atoms(ec_select, periodic=True)
+                emc_group = nvt_run.select_atoms(emc_select, periodic=True)
+                for atom in ec_group.atoms:
+                    theta = angle(p_pos, li_pos, atom.position)
+                    ec_angle.append(theta)
+                for atom in emc_group.atoms:
+                    theta = angle(p_pos, li_pos, atom.position)
+                    emc_angle.append(theta)
+            else:
+                cn_values[time_count] = 3
+        else:
+            cn_values[time_count] = 3
+        time_count += 1
+    return cn_values, np.array(ec_angle), np.array(emc_angle)
+
+
+def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list,
+                                            select_dict, distances, run_start,
+                                            run_end):
+    time_count = 0
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    cip_step = list()
+    ssip_step = list()
+    agg_step = list()
+    cn_values = dict()
+    for kw in species_list:
+        if kw in select_dict.keys():
+            cn_values[kw] = np.zeros(int(len(trj_analysis)))
+        else:
+            print('Invalid species selection')
+            return None
+    cn_values["total"] = np.zeros(int(len(trj_analysis)))
+    for ts in trj_analysis:
+        digit_of_species = len(species_list) - 1
+        for kw in species_list:
+            selection = "(" + select_dict[kw] + ") and (around "\
+                        + str(distances[kw]) + " index "\
+                        + str(li_atom.id - 1) + ")"
+            shell = nvt_run.select_atoms(selection, periodic=True)
+            # for each atom in shell, create/add to dictionary
+            # (key = atom id, value = list of values for step function)
+            for _ in shell.atoms:
+                cn_values[kw][time_count] += 1
+                cn_values["total"][time_count] += 10**digit_of_species
+            digit_of_species = digit_of_species - 1
+
+        selection = "(" + select_dict["anion"] + ") and (around "\
+                    + str(distances["anion"]) + " index "\
+                    + str(li_atom.id - 1) + ")"
+        shell = nvt_run.select_atoms(selection, periodic=True)
+        shell_len = len(shell)
+        if shell_len == 0:
+            ssip_step.append(time_count)
+        elif shell_len == 1:
+            selection_species = "(" + select_dict["cation"] + " and around " + \
+                                str(distances["anion"]) + " index " + \
+                                str(shell.atoms[0].id - 1) + ")"
+            shell_species = nvt_run.select_atoms(selection_species,
+                                                 periodic=True)
+            shell_species_len = len(shell_species) - 1
+            if shell_species_len == 0:
+                cip_step.append(time_count)
+            else:
+                agg_step.append(time_count)
+        else:
+            agg_step.append(time_count)
+        time_count += 1
+    cn_ssip = dict()
+    cn_cip = dict()
+    cn_agg = dict()
+    for kw in species_list:
+        cn_ssip[kw] = np.mean(cn_values[kw][ssip_step])
+        cn_cip[kw] = np.mean(cn_values[kw][cip_step])
+        cn_agg[kw] = np.mean(cn_values[kw][agg_step])
+    return cn_ssip, cn_cip, cn_agg
+
+
+def angle(a, b, c):
+    ba = a - b
+    bc = c - b
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    angle = np.arccos(cosine_angle)
+    return np.degrees(angle)
 
 
 # Depth-first traversal
@@ -380,5 +501,3 @@ def write_out(li_pos, selection, element_id_dict, path):
         lines.append(line)
     with open(path, "w") as xyz_file:
         xyz_file.write("\n".join(lines))
-
-
