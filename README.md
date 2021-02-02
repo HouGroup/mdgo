@@ -1,8 +1,33 @@
-# mdgo
-
+#mdgo
 A code base for classical molecualr dynamics (MD) simulation results analysis. 
 
-Current functions:
+Requirements
+------------
+mdgo requires ase, tqdm, statsmodels, re, pymatgen, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.
+                          
+Source Code
+------------
+If not available already, use the following steps.
+
+1. Install [git](http://git-scm.com), if not already packaged with your system.
+
+2. Download the mdgo source code using the command::
+
+    `git clone https://github.com/htz1992213/mdgo.git`
+    
+Installation
+------------
+1. Navigate to mdgo root directory:
+
+    `cd mdgo`
+
+2. Install the code, using the command:
+
+    `pip install .`
+
+
+Current functions
+------------
 
 1. Basic simulation properties
    - Initial box dimension
