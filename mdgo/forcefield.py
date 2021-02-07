@@ -8,9 +8,6 @@ import time
 import os
 import shutil
 
-
-WRITE = "/Users/th/Downloads/test_selenium"
-PDB = "/Users/th/Downloads/test_selenium/EMC.pdb"
 CHROME = "/Users/th/Downloads/package/chromedriver/chromedriver"
 
 
@@ -91,5 +88,10 @@ class FFcrawler:
         print("Force field file saved.")
 
 
-instance = FFcrawler(WRITE, CHROME)
-instance.data_from_pdb(PDB)
+def main():
+    instance = FFcrawler("/Users/th/Downloads/test_selenium", CHROME, xyz=True)
+    instance.data_from_pdb("/Users/th/Downloads/test_selenium/EMC.pdb")
+
+
+if __name__ == "__main__":
+    main()
