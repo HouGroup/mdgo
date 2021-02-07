@@ -17,7 +17,8 @@ class FFcrawler:
         self.xyz = xyz
         self.preferences = {"download.default_directory": write_path,
                             "safebrowsing.enabled": "false",
-                            "profile.managed_default_content_settings.images": 2}
+                            "profile.managed_default_content_settings.images":
+                                2}
         self.options = webdriver.ChromeOptions()
         self.options.add_argument('user-agent="Mozilla/5.0 '
                                   '(Macintosh; Intel Mac OS X 10_14_6) '
