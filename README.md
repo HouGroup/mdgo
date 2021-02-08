@@ -1,6 +1,6 @@
 # mdgo
 
-A code base for classical molecualr dynamics (MD) simulation results analysis. 
+A code base for classical molecualr dynamics (MD) simulation setup and results analysis. 
 
 Requirements
 ------------
@@ -30,14 +30,19 @@ Installation
 Current functions
 ------------
 
-1. Basic simulation properties
+1. OPLS-AA forcefield from LigParGen
+   - By SMILES code
+   - By mol/pdb
+2. Packmol wrapper
+   - From xyz
+3. Basic simulation properties
    - Initial box dimension
    - Equilibrium box dimension
    - Salt concentration
-2. Conductivity analysis
+4. Conductivity analysis
    - Green–Kubo conductivity
    - Nernst–Einstein conductivity
-3. Coordination analysis
+5. Coordination analysis
    - The distribution of the coordination number of single species
    - The integral of radial distribution function (The average coordination numbers of multiple species)
    - Solvation structure write out
@@ -46,9 +51,9 @@ Current functions
    - The hopping frequency of cation between binding sites
    - The distribution heat map of cation around binding sites
    - The averaged nearest neighbor distance of a species
-4. Diffusion analysis
+6. Diffusion analysis
    - The mean square displacement of all species
    - The mean square displacement of coordinated species and uncoordinated species, separately
    - Self-diffusion coefficients
-5. Residence time analysis
+7. Residence time analysis
    - The residence time of all species
