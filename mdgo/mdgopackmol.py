@@ -1,8 +1,27 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
+"""
+This module implements a core class PackmolWrapper for packing molecules
+into a single box.
+"""
+
 import subprocess
 import os
 
+__author__ = "Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
+
 
 class PackmolWrapper:
+    """
+    Wrapper for the Packmol software that can be used to pack various types of
+    molecules into a one single unit.
+    """
     def __init__(self, path, structures, numbers, box, tolerance=None,
                  seed=None, inputfile='packmol.inp', outputfile='output.xyz'):
         self.path = path

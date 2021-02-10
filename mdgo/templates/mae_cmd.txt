@@ -1,0 +1,8 @@
+entryimport format=${format} $file
+beginundoblock Assign Bond Orders
+pythonrunbuiltin fix_bond_orders.fix_bond_orders
+endundoblock 
+assigncharges 
+assignforcefieldtypes 
+entryexport format=maestro $mae
+prefer savescratchproject=false
