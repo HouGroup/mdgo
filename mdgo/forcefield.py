@@ -4,7 +4,7 @@
 
 """
 This module implements two core class FFcrawler and MaestroRunner
-for generating lammps data files from molecule structure using
+for generating LAMMPS/GROMACS data files from molecule structure using
 the LigParGen web server and Maestro, respectively.
 
 
@@ -26,7 +26,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from string import Template
+from io import StringIO
+import pandas as pd
 import time
 import os
 import shutil
@@ -40,21 +43,28 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 MAESTRO = "$SCHRODINGER/maestro -console -nosplash"
-FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
+FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} " \
+       "-version 14 -print_parameters -out_file {}"
 
 
 class FFcrawler:
     """
     Web scrapper that can automatically upload structure to the LigParGen
     server and download LAMMPS/GROMACS data file.
-    """
-    """
+
     Examples:
-        >>> LPG = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
-        >>> LPG.data_from_pdb("/path/to/pdb")  
+    >>> LPG = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
+    >>> LPG.data_from_pdb("/path/to/pdb")
     """
 
-    def __init__(self, write_dir, chromedriver_dir, headless=True, xyz=False):
+    def __init__(
+            self,
+            write_dir,
+            chromedriver_dir,
+            headless=True,
+            xyz=False,
+            gromacs=False
+    ):
         """
         Base constructor.
         Args:
@@ -66,9 +76,12 @@ class FFcrawler:
                 generated data file as .xyz. Default to False. This is useful
                 because the order and the name of the atoms could be
                 different from the initial input.)
+            gromacs (bool): Whether to save GROMACS format data files.
+                Default to False.
         """
         self.write_dir = write_dir
         self.xyz = xyz
+        self.gromacs = gromacs
         self.preferences = {"download.default_directory": write_dir,
                             "safebrowsing.enabled": "false",
                             "profile.managed_default_content_settings.images":
@@ -88,7 +101,7 @@ class FFcrawler:
         self.wait = WebDriverWait(self.web, 10)
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
-        print("LigParGen server opened.")
+        print("LigParGen server connected.")
 
     def data_from_pdb(self, pdb_dir):
         upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
@@ -97,8 +110,14 @@ class FFcrawler:
             '/html/body/div[2]/div/div[2]/form/button[1]')
         submit.click()
         pdb_filename = os.path.basename(pdb_dir)
-        self.download_lmp(os.path.splitext(pdb_filename)[0] + ".lmp")
-        self.web.quit()
+        try:
+            self.download_data(os.path.splitext(pdb_filename)[0] + ".lmp")
+        except TimeoutException:
+            print(
+                "Timeout! Web server no response for 30s, file download failed!"
+            )
+        finally:
+            self.web.quit()
 
     def data_from_smiles(self, smiles_code):
         smile = self.web.find_element_by_xpath('//*[@id="smiles"]')
@@ -106,25 +125,33 @@ class FFcrawler:
         submit = self.web.find_element_by_xpath(
             '/html/body/div[2]/div/div[2]/form/button[1]')
         submit.click()
-        self.download_lmp(smiles_code + '.lmp')
-        self.web.quit()
+        try:
+            self.download_data(smiles_code + '.lmp')
+        except TimeoutException:
+            print(
+                "Timeout! Web server no response for 30s, file download failed!"
+            )
+        finally:
+            self.web.quit()
 
-    def download_lmp(self, lmp_name):
+    def download_data(self, lmp_name):
         print("Structure info uploaded. Rendering force field...")
         self.wait.until(
-            EC.presence_of_element_located((By.NAME, 'go')))
-        data = self.web.find_element_by_xpath('/html/body/div[2]/div[2]/div[1]/'
-                                              'div/div[14]/form/input[1]')
-        data.click()
+            EC.presence_of_element_located((By.NAME, 'go'))
+        )
+        data_lmp = self.web.find_element_by_xpath(
+            "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
+        )
+        data_lmp.click()
         print("Force field file downloaded.")
         time.sleep(1)
-        data_file = max(
+        lmp_file = max(
             [self.write_dir + "/" + f for f
              in os.listdir(self.write_dir)
              if os.path.splitext(f)[1] == ".lmp"],
             key=os.path.getctime)
         if self.xyz:
-            data = LammpsData.from_file(data_file)
+            data = LammpsData.from_file(lmp_file)
             element_id_dict = mass_to_name(data.masses)
             coords = data.atoms[['type', 'x', 'y', 'z']]
             lines = list()
@@ -139,7 +166,35 @@ class FFcrawler:
                       "w") as xyz_file:
                 xyz_file.write("\n".join(lines))
             print(".xyz file saved.")
-        shutil.move(data_file, os.path.join(self.write_dir, lmp_name))
+        if self.gromacs:
+            data_gro = self.web.find_element_by_xpath(
+                "/html/body/div[2]/div[2]/div[1]/div/div[8]/form/input[1]"
+            )
+            data_itp = self.web.find_element_by_xpath(
+                "/html/body/div[2]/div[2]/div[1]/div/div[9]/form/input[1]"
+            )
+            data_gro.click()
+            data_itp.click()
+            time.sleep(1)
+            gro_file = max(
+                [self.write_dir + "/" + f for f
+                 in os.listdir(self.write_dir)
+                 if os.path.splitext(f)[1] == ".gro"],
+                key=os.path.getctime)
+            itp_file = max(
+                [self.write_dir + "/" + f for f
+                 in os.listdir(self.write_dir)
+                 if os.path.splitext(f)[1] == ".itp"],
+                key=os.path.getctime)
+            shutil.move(
+                gro_file,
+                os.path.join(self.write_dir, lmp_name[:-4] + ".gro")
+            )
+            shutil.move(
+                itp_file,
+                os.path.join(self.write_dir, lmp_name[:-4] + ".itp")
+            )
+        shutil.move(lmp_file, os.path.join(self.write_dir, lmp_name))
         print("Force field file saved.")
 
 
@@ -160,8 +215,7 @@ class MaestroRunner:
     The OPLS_2005 parameters are located in
 
     $SCHRODINGER/mmshare-vversion/data/f14/
-    """
-    """
+
     Examples:
     >>> MR = MaestroRunner('/path/to/structure', '/path/to/working/dir')
     >>> MR.get_mae()
@@ -256,8 +310,51 @@ class MaestroRunner:
             )
         print("Force field file generated.")
 
-    def ff_parser(self):
-        pass
+    @staticmethod
+    def ff_parser(ff_dir):
+        with open(ff_dir, 'r') as f:
+            lines = f.read()
+            lines = lines.split("\n\n")
+            atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
+            atoms_df = pd.read_csv(
+                StringIO(atoms),
+                header=None,
+                delim_whitespace=True,
+                usecols=[0, 1, 2, 3, 4, 5, 6]
+            )
+            bonds = lines[5].split("\n", 2)[2]
+            bonds_df = pd.read_csv(
+                StringIO(bonds),
+                header=None,
+                delim_whitespace=True,
+                usecols=[0, 1, 2, 3]
+            )
+
+            angles = lines[6].split("\n", 1)[1]
+            angles_df = pd.read_csv(
+                StringIO(angles),
+                header=None,
+                delim_whitespace=True,
+                usecols=[0, 1, 2, 3, 4]
+            )
+
+            dihedrals = lines[7].split("\n", 1)[1]
+            dihedrals_df = pd.read_csv(
+                StringIO(dihedrals),
+                header=None,
+                delim_whitespace=True,
+                usecols=[0, 1, 2, 3, 4, 5, 6, 7]
+            )
+
+            impropers = lines[8].split("\n", 1)[1]
+            impropers_df = pd.read_csv(
+                StringIO(impropers),
+                header=None,
+                delim_whitespace=True,
+                usecols=[0, 1, 2, 3, 4]
+            )
+            print(atoms_df)
+            print("end")
 
 
 def main():
@@ -265,15 +362,18 @@ def main():
     LPG = FFcrawler(
         "/Users/th/Downloads/test_selenium",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
-        xyz=True
+        xyz=True,
+        gromacs=True
     )
     LPG.data_from_pdb("/Users/th/Downloads/test_selenium/EMC.pdb")
-    """
-
-    MR = MaestroRunner("/Users/th/Downloads/test_selenium/EMC.pdb",
+    MR = MaestroRunner("/Users/th/Downloads/test_mr/ATP.pdb",
                        "/Users/th/Downloads/test_mr")
     MR.get_mae()
     MR.get_ff()
+
+
+    """
+    MaestroRunner.ff_parser("/Users/th/Downloads/test_mr/ff.out")
 
 
 if __name__ == "__main__":
