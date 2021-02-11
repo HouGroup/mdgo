@@ -1,3 +1,7 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import MDAnalysis
 import numpy as np
 import pandas as pd
@@ -15,6 +19,11 @@ from mdgo.coordination import\
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
+__author__ = "Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 class MdRun:
 

@@ -1,6 +1,16 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import MDAnalysis.analysis.msd as msd
 import numpy as np
 from tqdm import tqdm_notebook
+
+__author__ = "Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 
 def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):

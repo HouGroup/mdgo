@@ -1,9 +1,19 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import re
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
 from tqdm import tqdm_notebook
+
+__author__ = "Kara Fong, Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 
 # Create adjacency matrix for one li

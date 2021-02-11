@@ -1,9 +1,19 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import numpy as np
 from tqdm import tqdm_notebook
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec
 # from itertools import groupby
+
+__author__ = "Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 
 def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict,

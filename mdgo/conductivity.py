@@ -1,6 +1,16 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import numpy as np
 from tqdm import tqdm_notebook
 from scipy import stats
+
+__author__ = "Kara Fong, Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 
 def autocorrFFT(x):

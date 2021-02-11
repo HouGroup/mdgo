@@ -4,5 +4,7 @@ pythonrunbuiltin fix_bond_orders.fix_bond_orders
 endundoblock 
 assigncharges 
 assignforcefieldtypes 
-entryexport format=maestro $mae
 prefer savescratchproject=false
+entryexport format=xyz $xyz
+entryexport format=maestro $mae
+

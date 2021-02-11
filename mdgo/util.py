@@ -1,5 +1,18 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 import numpy as np
+from io import StringIO
+import re
+import pandas as pd
 import math
+
+__author__ = "Tingzheng Hou"
+__version__ = "1.0"
+__maintainer__ = "Tingzheng Hou"
+__email__ = "tingzheng_hou@berkeley.edu"
+__date__ = "Feb 9, 2021"
 
 MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182,
                   'B': 10.811, 'C': 12.0107, 'N': 14.0067, 'O': 15.9994,
@@ -32,6 +45,65 @@ MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182,
                   'Db': 268, 'Sg': 271, 'Bh': 270, 'Hs': 269, 'Mt': 278,
                   'Ds': 281, 'Rg': 281, 'Cn': 285, 'Nh': 284, 'Fl': 289,
                   'Mc': 289, 'Lv': 292, 'Ts': 294, 'Og': 294, 'ZERO': 0}
+
+SECTION_SORTER = {
+    "atoms": {
+        "in_kw": None,
+        "in_header": ["atom", "charge", "sigma", "epsilon"],
+        "sec_number": None,
+        "desired_split": None,
+        "desired_cols": None,
+        "out_kw": None,
+        "ff_header": ["epsilon", "sigma"],
+        "topo_header": ["mol-id", "type", "charge", "x", "y", "z"]
+    },
+    "bonds": {
+        "in_kw": "Stretch",
+        "in_header": ["atom1", "atom2", "k", "r0"],
+        "sec_number": 5,
+        "desired_split": 2,
+        "desired_cols": 4,
+        "out_kw": ["Bond Coeffs", "Bonds"],
+        "ff_header": ["k", "r0"],
+        "topo_header": ["type", "atom1", "atom2"]
+    },
+    "angles": {
+        "in_kw": "Bending",
+        "in_header": ["atom1", "atom2", "atom3", "k", "theta0"],
+        "sec_number": 6,
+        "desired_split": 1,
+        "desired_cols": 5,
+        "out_kw": ["Angle Coeffs", "Angles"],
+        "ff_header": ["k", "theta0"],
+        "topo_header": ["type", "atom1", "atom2", "atom3"]
+    },
+    "dihedrals": {
+        "in_kw": "proper Torsion",
+        "in_header": [
+            "atom1", "atom2", "atom3", "atom4", "v1", "v2", "v3", "v4"
+        ],
+        "sec_number": 7,
+        "desired_split": 1,
+        "desired_cols": 8,
+        "out_kw": ["Dihedral Coeffs", "Dihedrals"],
+        "ff_header": ["v1", "v2", "v3", "v4"],
+        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"]
+    },
+    "impropers": {
+        "in_kw": "improper Torsion",
+        "in_header": ["atom1", "atom2", "atom3", "atom4", "v2"],
+        "sec_number": 8,
+        "desired_split": 1,
+        "desired_cols": 5,
+        "out_kw": ["Improper Coeffs", "Impropers"],
+        "ff_header": ["v1", "v2", "v3", "v4"],
+        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"]
+    },
+}
+
+BOX = """{0:6f} {1:6f} xlo xhi
+{0:6f} {1:6f} ylo yhi
+{0:6f} {1:6f} zlo zhi"""
 
 
 def atom_vec(atom1, atom2, dimension):
@@ -68,3 +140,129 @@ def mass_to_name(df):
                 atoms[row] = item[0]
     return atoms
 
+
+def ff_parser(ff_dir, xyz_dir):
+    with open(xyz_dir, 'r') as f_xyz:
+        molecule = pd.read_table(
+            f_xyz,
+            skiprows=2,
+            delim_whitespace=True,
+            names=['atom', 'x', 'y', 'z']
+        )
+        coordinates = molecule[["x", "y", "z"]]
+        lo = coordinates.min().min() - 0.5
+        hi = coordinates.max().max() + 0.5
+    with open(ff_dir, 'r') as f:
+        lines_org = f.read()
+        lines = lines_org.split("\n\n")
+        atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
+        dfs = dict()
+        dfs["atoms"] = pd.read_csv(
+            StringIO(atoms),
+            names=SECTION_SORTER.get("atoms").get("in_header"),
+            delim_whitespace=True,
+            usecols=[0, 4, 5, 6]
+        )
+        dfs["atoms"] = pd.concat(
+            [dfs["atoms"], coordinates],
+            axis=1
+        )
+        dfs["atoms"].index += 1
+        dfs["atoms"].index.name = "type"
+        dfs["atoms"] = dfs["atoms"].reset_index()
+        dfs["atoms"].index += 1
+        types = dfs["atoms"].copy().reset_index().set_index('atom')['type']
+        replace_dict = {
+            "atom1": dict(types),
+            "atom2": dict(types),
+            "atom3": dict(types),
+            "atom4": dict(types)
+        }
+        counts = dict()
+        counts["atoms"] = len(dfs["atoms"].index)
+        mass_list = list()
+        for index, row in dfs["atoms"].iterrows():
+            mass_list.append(
+                MM_of_Elements.get(re.split(r'(\d+)', row['atom'])[0])
+            )
+        mass_df = pd.DataFrame(mass_list)
+        mass_df.index += 1
+        mass_string = mass_df.to_string(
+            header=False,
+            index_names=False,
+            float_format="{:.3f}".format
+        )
+        masses = ["Masses", mass_string]
+        ff = ["Pair Coeffs"]
+        dfs["atoms"]["mol-id"] = 1
+        atom_ff_string = dfs["atoms"][
+            SECTION_SORTER["atoms"]["ff_header"]
+        ].to_string(
+            header=False,
+            index_names=False
+        )
+        ff.append(atom_ff_string)
+        topo = ["Atoms"]
+        atom_topo_string = dfs["atoms"][
+            SECTION_SORTER["atoms"]["topo_header"]
+        ].to_string(
+            header=False,
+            index_names=False
+        )
+        topo.append(atom_topo_string)
+        for section in list(SECTION_SORTER.keys())[1:]:
+            if SECTION_SORTER[section]["in_kw"] in lines_org:
+                a, b, c, d = SECTION_SORTER[section]["sec_number"],\
+                             SECTION_SORTER[section]["desired_split"],\
+                             SECTION_SORTER[section]["desired_cols"],\
+                             SECTION_SORTER[section]["in_header"]
+                section_str = lines[a].split("\n", b)[b]
+                dfs[section] = pd.read_csv(
+                    StringIO(section_str),
+                    names=d,
+                    delim_whitespace=True,
+                    usecols=list(range(c)),
+                )
+
+                dfs[section].index += 1
+                dfs[section].index.name = "type"
+                dfs[section] = dfs[section].replace(replace_dict)
+                dfs[section] = dfs[section].reset_index()
+                dfs[section].index += 1
+                if section == "impropers":
+                    dfs[section]["v1"] = 0.0
+                    dfs[section]["v3"] = 0.0
+                    dfs[section]["v4"] = 0.0
+                ff_string = dfs[section][
+                    SECTION_SORTER[section]["ff_header"]
+                ].to_string(
+                    header=False,
+                    index_names=False
+                )
+                ff.append(SECTION_SORTER[section]["out_kw"][0])
+                ff.append(ff_string)
+                topo_string = dfs[section][
+                    SECTION_SORTER[section]["topo_header"]
+                ].to_string(
+                    header=False,
+                    index_names=False
+                )
+                topo.append(SECTION_SORTER[section]["out_kw"][1])
+                topo.append(topo_string)
+                counts[section] = len(dfs[section].index)
+        max_stats = len(str(max(list(counts.values()))))
+        stats_template = "{:>%d}  {}" % max_stats
+        count_lines = [stats_template.format(v, k) for k, v in counts.items()]
+        type_lines = [
+            stats_template.format(v, k[:-1] + " types")
+            for k, v in counts.items()
+        ]
+        stats = "\n".join(count_lines + [""] + type_lines)
+        header = [
+            f"LAMMPS data file created by mdgo (by {__author__})\n"
+            "# OPLS force field: harmonic, harmonic, opls, opls",
+            stats,
+            BOX.format(lo, hi)
+        ]
+        data_string = "\n\n".join(header + masses + ff + topo) + "\n"
+        return data_string

@@ -21,7 +21,7 @@ for details.
 """
 
 from pymatgen.io.lammps.data import LammpsData
-from mdgo.util import mass_to_name
+from mdgo.util import mass_to_name, ff_parser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -32,6 +32,7 @@ from io import StringIO
 import pandas as pd
 import time
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -228,7 +229,12 @@ class MaestroRunner:
         "mae_cmd.txt"
     )
 
-    def __init__(self, structure_dir, working_dir, cmd_template=None):
+    def __init__(
+            self,
+            structure_dir,
+            working_dir,
+            out="lmp",
+            cmd_template=None):
         """
         Base constructor.
         Args:
@@ -240,12 +246,15 @@ class MaestroRunner:
                 the default template.
         """
         self.structure = structure_dir
+        self.out = out
         self.structure_format = os.path.splitext(self.structure)[1][1:]
+        self.name = os.path.splitext(os.path.split(self.structure)[-1])[0]
         print("Input format:", self.structure_format)
         self.work = working_dir
-        self.cmd = os.path.join(self.work, "input.cmd")
-        self.mae = os.path.join(self.work, "result")
-        self.ff = os.path.join(self.work, "ff.out")
+        self.cmd = os.path.join(self.work, "maetro_script.cmd")
+        self.mae = os.path.join(self.work, self.name)
+        self.ff = os.path.join(self.work, self.name + ".out")
+        self.xyz = os.path.join(self.work, self.name + ".xyz")
         if cmd_template:
             self.cmd_template = cmd_template
         else:
@@ -261,7 +270,8 @@ class MaestroRunner:
             cmd_script = cmd_template.substitute(
                 format=self.structure_format,
                 file=self.structure,
-                mae=self.mae
+                mae=self.mae,
+                xyz=self.xyz
             )
             f.write(cmd_script)
         try:
@@ -309,52 +319,11 @@ class MaestroRunner:
                 )
             )
         print("Force field file generated.")
-
-    @staticmethod
-    def ff_parser(ff_dir):
-        with open(ff_dir, 'r') as f:
-            lines = f.read()
-            lines = lines.split("\n\n")
-            atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
-            atoms_df = pd.read_csv(
-                StringIO(atoms),
-                header=None,
-                delim_whitespace=True,
-                usecols=[0, 1, 2, 3, 4, 5, 6]
-            )
-            bonds = lines[5].split("\n", 2)[2]
-            bonds_df = pd.read_csv(
-                StringIO(bonds),
-                header=None,
-                delim_whitespace=True,
-                usecols=[0, 1, 2, 3]
-            )
-
-            angles = lines[6].split("\n", 1)[1]
-            angles_df = pd.read_csv(
-                StringIO(angles),
-                header=None,
-                delim_whitespace=True,
-                usecols=[0, 1, 2, 3, 4]
-            )
-
-            dihedrals = lines[7].split("\n", 1)[1]
-            dihedrals_df = pd.read_csv(
-                StringIO(dihedrals),
-                header=None,
-                delim_whitespace=True,
-                usecols=[0, 1, 2, 3, 4, 5, 6, 7]
-            )
-
-            impropers = lines[8].split("\n", 1)[1]
-            impropers_df = pd.read_csv(
-                StringIO(impropers),
-                header=None,
-                delim_whitespace=True,
-                usecols=[0, 1, 2, 3, 4]
-            )
-            print(atoms_df)
-            print("end")
+        if self.out:
+            with open(
+                    os.path.join(self.work, self.name + "." + self.out), 'w'
+            ) as f:
+                f.write(ff_parser(self.ff, self.xyz))
 
 
 def main():
@@ -366,14 +335,12 @@ def main():
         gromacs=True
     )
     LPG.data_from_pdb("/Users/th/Downloads/test_selenium/EMC.pdb")
-    MR = MaestroRunner("/Users/th/Downloads/test_mr/ATP.pdb",
+    """
+    MR = MaestroRunner("/Users/th/Downloads/test_mr/EMC.pdb",
                        "/Users/th/Downloads/test_mr")
     MR.get_mae()
     MR.get_ff()
 
-
-    """
-    MaestroRunner.ff_parser("/Users/th/Downloads/test_mr/ff.out")
 
 
 if __name__ == "__main__":
