@@ -30,19 +30,32 @@ Installation
 Current functions
 ------------
 
-1. OPLS-AA forcefield from LigParGen
-   - By SMILES code
-   - By mol/pdb
-2. Packmol wrapper
-   - From xyz
-3. Basic simulation properties
+1. Write OPLS-AA forcefield file from LigParGen
+   - Supported input format: 
+      - mol/pdb
+      - SMILES code
+   - Supported output format:
+      - LAMMPS(.lmp)
+      - GROMACS(.gro, .itp)
+2. Write OPLS-AA forcefield file from Maestro
+   - Supported input format: 
+      - pdb
+      - Others pending...
+   - Supported output format:
+      - LAMMPS(.lmp)
+      - Others pending... 
+3. Packmol wrapper
+   - Supported input format: 
+      - xyz
+      - Others pending...   
+4. Basic simulation properties
    - Initial box dimension
    - Equilibrium box dimension
    - Salt concentration
-4. Conductivity analysis
+5. Conductivity analysis
    - Green–Kubo conductivity
    - Nernst–Einstein conductivity
-5. Coordination analysis
+6. Coordination analysis
    - The distribution of the coordination number of single species
    - The integral of radial distribution function (The average coordination numbers of multiple species)
    - Solvation structure write out
@@ -51,9 +64,9 @@ Current functions
    - The hopping frequency of cation between binding sites
    - The distribution heat map of cation around binding sites
    - The averaged nearest neighbor distance of a species
-6. Diffusion analysis
+7. Diffusion analysis
    - The mean square displacement of all species
    - The mean square displacement of coordinated species and uncoordinated species, separately
    - Self-diffusion coefficients
-7. Residence time analysis
+8. Residence time analysis
    - The residence time of all species
