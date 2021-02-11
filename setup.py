@@ -26,6 +26,10 @@ if __name__ == "__main__":
         url="https://github.com/htz1992213/mdgo",
         packages=find_packages(),
         install_requires=[
+            "numpy",
+            "pandas",
+            "matplotlib",
+            "scipy",
             "tqdm",
             "pymatgen",
             "statsmodels",

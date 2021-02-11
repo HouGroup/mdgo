@@ -28,11 +28,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from string import Template
-from io import StringIO
-import pandas as pd
 import time
 import os
-import re
 import shutil
 import signal
 import subprocess
