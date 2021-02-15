@@ -26,6 +26,16 @@ Installation
 
     `pip install .`
 
+Installation in development mode
+------------
+1. Navigate to mdgo root directory:
+
+    `cd mdgo`
+
+2. Install the code, using the command:
+
+    `pip install -e .`
+
 
 Current functions
 ------------
