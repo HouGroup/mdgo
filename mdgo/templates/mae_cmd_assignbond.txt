@@ -1,4 +1,4 @@
-entryimport format=${format} $file
+entryimport $file
 beginundoblock Assign Bond Orders
 pythonrunbuiltin fix_bond_orders.fix_bond_orders
 endundoblock 

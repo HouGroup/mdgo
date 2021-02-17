@@ -1,0 +1,7 @@
+entryimport $file
+assigncharges
+assignforcefieldtypes
+prefer savescratchproject=false
+entryexport format=xyz $xyz
+entryexport format=maestro $mae
+

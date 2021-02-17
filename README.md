@@ -49,8 +49,8 @@ Current functions
       - GROMACS(.gro, .itp)
 2. Write OPLS-AA forcefield file from Maestro
    - Supported input format: 
-      - pdb
-      - Others pending...
+      - Any format that Maestro support 
+      - See https://www.schrodinger.com/kb/1278
    - Supported output format:
       - LAMMPS(.lmp)
       - Others pending... 

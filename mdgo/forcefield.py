@@ -202,6 +202,8 @@ class MaestroRunner:
     Wrapper for the Maestro software that can be used to generate the OPLS_2005
     force field parameter for a molecule.
 
+    Supported input format please check https://www.schrodinger.com/kb/1278
+
     The OPLS_2005 parameters are described in
 
     Banks, J.L.; Beard, H.S.; Cao, Y.; Cho, A.E.; Damm, W.; Farid, R.;
@@ -220,10 +222,16 @@ class MaestroRunner:
     >>> MR.get_ff()
     """
 
-    template_path = os.path.join(
+    template_assignbond = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "templates",
-        "mae_cmd.txt"
+        "mae_cmd_assignbond.txt"
+    )
+
+    template_noassignbond = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "templates",
+        "mae_cmd_noassignbond.txt"
     )
 
     def __init__(
@@ -231,16 +239,25 @@ class MaestroRunner:
             structure_dir,
             working_dir,
             out="lmp",
-            cmd_template=None):
+            cmd_template=None,
+            assign_bond=False
+    ):
         """
         Base constructor.
         Args:
-            structure_dir (str): Directory of the structure file.
+            structure_dir (str): Path to the structure file.
+                Supported input format please check
+                https://www.schrodinger.com/kb/1278
             working_dir (str): Directory for writing intermediate
                 and final output.
+            out (str): Force field output form. Default to "lmp",
+                the data file for LAMMPS. Other supported formats
+                are under development.
             cmd_template (str): String template for input script
                 with placeholders. Default to None, i.e., using
                 the default template.
+            assign_bond (bool): Whether to assign bond to the input
+                structure. Default to None.
         """
         self.structure = structure_dir
         self.out = out
@@ -255,9 +272,14 @@ class MaestroRunner:
         if cmd_template:
             self.cmd_template = cmd_template
         else:
-            with open(self.template_path, "r") as f:
-                cmd_template = f.read()
-            self.cmd_template = cmd_template
+            if assign_bond:
+                with open(self.template_assignbond, "r") as f:
+                    cmd_template = f.read()
+                self.cmd_template = cmd_template
+            else:
+                with open(self.template_noassignbond, "r") as f:
+                    cmd_template = f.read()
+                self.cmd_template = cmd_template
 
     def get_mae(self):
         """Write a Maestro command script and execute it to generate a
@@ -265,7 +287,6 @@ class MaestroRunner:
         with open(self.cmd, 'w') as f:
             cmd_template = Template(self.cmd_template)
             cmd_script = cmd_template.substitute(
-                format=self.structure_format,
                 file=self.structure,
                 mae=self.mae,
                 xyz=self.xyz
@@ -315,12 +336,16 @@ class MaestroRunner:
                     e.returncode, e.stderr
                 )
             )
-        print("Force field file generated.")
+        print("Force field file generated. (Maestro format)")
         if self.out:
-            with open(
-                    os.path.join(self.work, self.name + "." + self.out), 'w'
-            ) as f:
-                f.write(ff_parser(self.ff, self.xyz))
+            if self.out == "lmp":
+                with open(
+                        os.path.join(self.work, self.name + "." + self.out), 'w'
+                ) as f:
+                    f.write(ff_parser(self.ff, self.xyz))
+                print("LAMMPS data file generated.")
+            else:
+                print("Output format not supported, ff format not converted.")
 
 
 def main():
@@ -333,7 +358,7 @@ def main():
     )
     LPG.data_from_pdb("/Users/th/Downloads/test_selenium/EMC.pdb")
     """
-    MR = MaestroRunner("/Users/th/Downloads/test_mr/EMC.pdb",
+    MR = MaestroRunner("/Users/th/Downloads/test_mr/EC.sdf",
                        "/Users/th/Downloads/test_mr")
     MR.get_mae()
     MR.get_ff()
