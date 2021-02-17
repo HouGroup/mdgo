@@ -26,8 +26,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from string import Template
+from urllib.parse import quote
 import time
 import os
 import shutil
@@ -112,7 +113,7 @@ class FFcrawler:
             self.download_data(os.path.splitext(pdb_filename)[0] + ".lmp")
         except TimeoutException:
             print(
-                "Timeout! Web server no response for 30s, file download failed!"
+                "Timeout! Web server no response for 10s, file download failed!"
             )
         finally:
             self.web.quit()
@@ -127,7 +128,7 @@ class FFcrawler:
             self.download_data(smiles_code + '.lmp')
         except TimeoutException:
             print(
-                "Timeout! Web server no response for 30s, file download failed!"
+                "Timeout! Web server no response for 10s, file download failed!"
             )
         finally:
             self.web.quit()
@@ -336,7 +337,7 @@ class MaestroRunner:
                     e.returncode, e.stderr
                 )
             )
-        print("Force field file generated. (Maestro format)")
+        print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
                 with open(
@@ -348,6 +349,121 @@ class MaestroRunner:
                 print("Output format not supported, ff format not converted.")
 
 
+class PubChemCrawler:
+
+    """
+
+    Examples:
+    >>> web = PubChemCrawler('/path/to/work/dir', '/path/to/chromedriver')
+    >>> long_name = "ethylene carbonate"
+    >>> short_name = "PC"
+    >>> pubchem_id = web.obtain_entry(long_name, short_name)
+    """
+
+    def __init__(
+            self,
+            write_dir,
+            chromedriver_dir,
+            headless=False,
+            format="sdf"
+    ):
+        """
+        Base constructor.
+        Args:
+            write_dir (str): Directory for writing output.
+            chromedriver_dir (str): Directory to the ChromeDriver executable.
+            headless (bool): Whether to run Chrome in headless (silent) mode.
+                Default to False.
+            format (str): The output format of the structure. Default to sdf.
+        """
+        self.write_dir = write_dir
+        self.format = format
+        self.preferences = {"download.default_directory": write_dir,
+                            "safebrowsing.enabled": "false",
+                            "profile.managed_default_content_settings.images":
+                                2}
+        self.options = webdriver.ChromeOptions()
+        self.options.add_argument('user-agent="Mozilla/5.0 '
+                                  '(Macintosh; Intel Mac OS X 10_14_6) '
+                                  'AppleWebKit/537.36 (KHTML, like Gecko) '
+                                  'Chrome/88.0.4324.146 Safari/537.36"')
+        self.options.add_argument("--window-size=1920,1080")
+        if headless:
+            self.options.add_argument('--headless')
+        self.options.add_experimental_option("prefs", self.preferences)
+        self.options.add_experimental_option('excludeSwitches',
+                                             ['enable-automation'])
+        self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
+        self.wait = WebDriverWait(self.web, 10)
+        self.web.get("https://pubchem.ncbi.nlm.nih.gov/")
+        time.sleep(1)
+        print("PubChem server connected.")
+
+    def obtain_entry(self, search_text, name):
+        pubchem_id = None
+        try:
+            query = quote(search_text)
+            url = "https://pubchem.ncbi.nlm.nih.gov/#query=" + query
+            self.web.get(url)
+            time.sleep(1)
+            best_xpath = (
+                '//*[@id="featured-results"]/div/div[2]'
+                '/div/div[1]/div[2]/div[1]/a/span/span'
+            )
+            relevant_xpath = (
+                '//*[@id="collection-results-container"]'
+                '/div/div/div[2]/ul/li[1]/div/div/div[1]/div[2]/div[1]/a/span/span'
+            )
+            if EC.presence_of_element_located((By.XPATH, best_xpath)):
+                match = self.web.find_element_by_xpath(best_xpath)
+            else:
+                match = self.web.find_element_by_xpath(relevant_xpath)
+            match.click()
+            self.wait.until(
+                EC.presence_of_element_located(
+                    (
+                        By.XPATH,
+                        (
+                            '//*[@id="main-content"]/div/div/div[1]'
+                            '/div[3]/div/table/tbody'
+                        )
+                    )
+                )
+            )
+            id = self.web.find_element_by_xpath(
+                '//*[@id="main-content"]/div/div/div[1]/'
+                'div[3]/div/table/tbody/tr[1]/td'
+            ).text
+            pubchem_id = id
+            print("Best match found, PubChem ID:", id)
+            self.web.get(
+                f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{id}/'
+                f'record/{self.format.upper()}/?record_type=3d&'
+                f'response_type=save&response_basename={name + "_" + id}'
+             )
+            print("Waiting for downloads.", end="")
+            time.sleep(1)
+            while any([filename.endswith(".crdownload") for filename in
+                       os.listdir(self.write_dir)]):
+                time.sleep(1)
+                print(".", end="")
+            print("\nStructure file saved.")
+        except TimeoutException:
+            print(
+                "Timeout! Web server no response for 10s, "
+                "file download failed!"
+            )
+        except NoSuchElementException:
+            print(
+                "The download link was not correctly loacted on the website, "
+                "file download failed!\n"
+                "Please try another search text."
+            )
+        finally:
+            self.web.quit()
+        return pubchem_id
+
+
 def main():
     """
     LPG = FFcrawler(
@@ -357,9 +473,23 @@ def main():
         gromacs=True
     )
     LPG.data_from_pdb("/Users/th/Downloads/test_selenium/EMC.pdb")
-    """
+
     MR = MaestroRunner("/Users/th/Downloads/test_mr/EC.sdf",
                        "/Users/th/Downloads/test_mr")
+    MR.get_mae()
+    MR.get_ff()
+    """
+    web = PubChemCrawler(
+        "/Users/th/Downloads/test_pc/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        headless=True
+    )
+    long_name = "propylene carbonate"
+    short_name = "PC"
+    pubchem_id = web.obtain_entry(long_name, short_name)
+    MR = MaestroRunner(
+        f"/Users/th/Downloads/test_pc/{short_name}_{pubchem_id}.sdf",
+        "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
 
