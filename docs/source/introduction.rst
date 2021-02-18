@@ -3,10 +3,8 @@ Introduction
 
 Welcome to the documentation site for mdgo! Mdgo is an python toolkit for classical molecualr dynamics (MD) simulation setup and results analysis, especially for electrolyte systems. The purpose of making this package is for supporting a high-throughput workflow for screening novel electrolytes for battery use. Currently, the package is under active development.
 
-Function
+Features
 ------------
-
-Using mdgo, you may:
 
 #. Retriving compound structure and information from PubChem
 
