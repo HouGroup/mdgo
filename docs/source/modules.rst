@@ -1,4 +1,4 @@
-modules
+mdgo
 ====
 
 .. toctree::
