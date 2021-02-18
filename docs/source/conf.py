@@ -92,7 +92,16 @@ autodoc_mock_imports = [
     "selenium.webdriver.support",
     "selenium.webdriver.support.ui",
     "selenium.webdriver.common",
-    "selenium.webdriver.common.by"
+    "selenium.webdriver.common.by",
+    "mdgo",
+    "mdgo.conductivity",
+    "mdgo.coordination",
+    "mdgo.core",
+    "mdgo.forcefield",
+    "mdgo.msd",
+    "mdgo.mdgopackmol",
+    "mdgo.residence_time",
+    "mdgo.util"
 ]
 
 
