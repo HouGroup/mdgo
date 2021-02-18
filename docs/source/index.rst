@@ -1,5 +1,5 @@
 ==============================================
-Make molecular dynamics simulation easy: mdgo!
+Mdgo documentation
 ==============================================
 
 .. toctree::

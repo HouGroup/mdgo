@@ -4,8 +4,7 @@ A code base for classical molecualr dynamics (MD) simulation setup and results a
 
 Requirements
 ------------
-mdgo requires ase, tqdm, statsmodels, re, pymatgen, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.
-                          
+mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.                          
 Source Code
 ------------
 If not available already, use the following steps.
