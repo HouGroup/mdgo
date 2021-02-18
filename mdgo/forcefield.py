@@ -22,6 +22,7 @@ for details.
 
 from pymatgen.io.lammps.data import LammpsData
 from mdgo.util import mass_to_name, ff_parser
+import pubchempy as pcp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -349,58 +350,88 @@ class MaestroRunner:
                 print("Output format not supported, ff format not converted.")
 
 
-class PubChemCrawler:
+class PubChemRunner:
 
     """
+    Wrapper for accessing PubChem data that can be used to retriving compound
+     structure and infomation.
 
     Examples:
-    >>> web = PubChemCrawler('/path/to/work/dir', '/path/to/chromedriver')
+    >>> web = PubChemRunner('/path/to/work/dir', '/path/to/chromedriver')
     >>> long_name = "ethylene carbonate"
     >>> short_name = "PC"
-    >>> pubchem_id = web.obtain_entry(long_name, short_name)
+    >>> cid = web.obtain_entry(long_name, short_name)
     """
 
     def __init__(
             self,
             write_dir,
             chromedriver_dir,
+            api=True,
             headless=False,
-            format="sdf"
     ):
         """
         Base constructor.
         Args:
             write_dir (str): Directory for writing output.
             chromedriver_dir (str): Directory to the ChromeDriver executable.
+            api (bool): Whether to use the PUG REST web interface for accessing
+                PubChem data. If None, then all search/download will be
+                performed via web browser mode. Default to True.
             headless (bool): Whether to run Chrome in headless (silent) mode.
                 Default to False.
-            format (str): The output format of the structure. Default to sdf.
         """
         self.write_dir = write_dir
-        self.format = format
-        self.preferences = {"download.default_directory": write_dir,
-                            "safebrowsing.enabled": "false",
-                            "profile.managed_default_content_settings.images":
-                                2}
-        self.options = webdriver.ChromeOptions()
-        self.options.add_argument('user-agent="Mozilla/5.0 '
-                                  '(Macintosh; Intel Mac OS X 10_14_6) '
-                                  'AppleWebKit/537.36 (KHTML, like Gecko) '
-                                  'Chrome/88.0.4324.146 Safari/537.36"')
-        self.options.add_argument("--window-size=1920,1080")
-        if headless:
-            self.options.add_argument('--headless')
-        self.options.add_experimental_option("prefs", self.preferences)
-        self.options.add_experimental_option('excludeSwitches',
-                                             ['enable-automation'])
-        self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
-        self.wait = WebDriverWait(self.web, 10)
-        self.web.get("https://pubchem.ncbi.nlm.nih.gov/")
-        time.sleep(1)
-        print("PubChem server connected.")
+        self.api = api
+        if not self.api:
+            self.preferences = {
+                "download.default_directory": write_dir,
+                "safebrowsing.enabled": "false",
+                "profile.managed_default_content_settings.images": 2
+            }
+            self.options = webdriver.ChromeOptions()
+            self.options.add_argument(
+                'user-agent="Mozilla/5.0 '
+                '(Macintosh; Intel Mac OS X 10_14_6) '
+                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                'Chrome/88.0.4324.146 Safari/537.36"'
+            )
+            self.options.add_argument("--window-size=1920,1080")
+            if headless:
+                self.options.add_argument('--headless')
+            self.options.add_experimental_option("prefs", self.preferences)
+            self.options.add_experimental_option('excludeSwitches',
+                                                 ['enable-automation'])
+            self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
+            self.wait = WebDriverWait(self.web, 10)
+            self.web.get("https://pubchem.ncbi.nlm.nih.gov/")
+            time.sleep(1)
+            print("PubChem server connected.")
 
-    def obtain_entry(self, search_text, name):
-        pubchem_id = None
+    def obtain_entry(self, search_text, name, output_format='sdf'):
+        """
+
+        Args:
+            search_text (str): The text to use as a search query.
+            name (str): The short name for the molecule.
+            output_format (str): The output format of the structure.
+                Default to sdf.
+        """
+        if self.api:
+            return self._obtain_entry_api(
+                search_text,
+                name,
+                output_format=output_format
+            )
+        else:
+            return self._obtain_entry_web(
+                search_text,
+                name,
+                output_format=output_format
+            )
+
+    def _obtain_entry_web(self, search_text, name, output_format):
+        cid = None
         try:
             query = quote(search_text)
             url = "https://pubchem.ncbi.nlm.nih.gov/#query=" + query
@@ -412,34 +443,27 @@ class PubChemCrawler:
             )
             relevant_xpath = (
                 '//*[@id="collection-results-container"]'
-                '/div/div/div[2]/ul/li[1]/div/div/div[1]/div[2]/div[1]/a/span/span'
+                '/div/div/div[2]/ul/li[1]/div/div/div[1]'
+                '/div[2]/div[1]/a/span/span'
             )
             if EC.presence_of_element_located((By.XPATH, best_xpath)):
                 match = self.web.find_element_by_xpath(best_xpath)
             else:
                 match = self.web.find_element_by_xpath(relevant_xpath)
             match.click()
-            self.wait.until(
-                EC.presence_of_element_located(
-                    (
-                        By.XPATH,
-                        (
-                            '//*[@id="main-content"]/div/div/div[1]'
-                            '/div[3]/div/table/tbody'
-                        )
-                    )
-                )
-            )
-            id = self.web.find_element_by_xpath(
+            cid_locator = (
                 '//*[@id="main-content"]/div/div/div[1]/'
                 'div[3]/div/table/tbody/tr[1]/td'
-            ).text
-            pubchem_id = id
-            print("Best match found, PubChem ID:", id)
+            )
+            self.wait.until(
+                EC.presence_of_element_located((By.XPATH, cid_locator))
+            )
+            cid = self.web.find_element_by_xpath(cid_locator).text
+            print("Best match found, PubChem ID:", cid)
             self.web.get(
-                f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{id}/'
-                f'record/{self.format.upper()}/?record_type=3d&'
-                f'response_type=save&response_basename={name + "_" + id}'
+                f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/'
+                f'record/{output_format.upper()}/?record_type=3d&'
+                f'response_type=save&response_basename={name + "_" + cid}'
              )
             print("Waiting for downloads.", end="")
             time.sleep(1)
@@ -461,7 +485,26 @@ class PubChemCrawler:
             )
         finally:
             self.web.quit()
-        return pubchem_id
+        return cid
+
+    def _obtain_entry_api(self, search_text, name, output_format):
+        cid = None
+        cids = pcp.get_cids(search_text, 'name', record_type='3d')
+        if len(cids) == 0:
+            print("No exact match found, please try the web search")
+        else:
+            cid = str(cids[0])
+            pcp.download(
+                output_format.upper(),
+                os.path.join(
+                    self.write_dir,
+                    name + '_' + cid + '.' + output_format.lower()
+                ),
+                cid,
+                record_type='3d',
+                overwrite=True
+            )
+        return cid
 
 
 def main():
@@ -478,20 +521,30 @@ def main():
                        "/Users/th/Downloads/test_mr")
     MR.get_mae()
     MR.get_ff()
-    """
-    web = PubChemCrawler(
+
+    pcr = PubChemCrawler(
         "/Users/th/Downloads/test_pc/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
         headless=True
     )
-    long_name = "propylene carbonate"
+    long_name = "Propylene Carbonate"
     short_name = "PC"
-    pubchem_id = web.obtain_entry(long_name, short_name)
+    cid = pcr.obtain_entry(long_name, short_name)
     MR = MaestroRunner(
-        f"/Users/th/Downloads/test_pc/{short_name}_{pubchem_id}.sdf",
+        f"/Users/th/Downloads/test_pc/{short_name}_{cid}.sdf",
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
+    """
+
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_pc/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=False
+    )
+    long_name = "Propylene Carbonate"
+    short_name = "PC"
+    cid = pcr.obtain_entry(long_name, short_name, "json")
 
 
 if __name__ == "__main__":

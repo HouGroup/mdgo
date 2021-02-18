@@ -33,6 +33,7 @@ if __name__ == "__main__":
             "tqdm",
             "pymatgen",
             "statsmodels",
+            "pubchempy",
             "MDAnalysis==2.0.0.dev0",
             "selenium"],
         python_requires='>=3.6'
