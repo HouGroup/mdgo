@@ -19,7 +19,7 @@ License
 Mdgo is released under the MIT License. The terms of the license are as
 follows:
 
-.. literalinclude:: ./LICENSE.rst
+.. literalinclude:: ../../LICENSE.rst
 
 About the Team
 ==============
