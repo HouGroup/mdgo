@@ -13,7 +13,6 @@
 import os
 import sys
 import sphinx_rtd_theme
-from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../../mdgo'))
 
 # -- Project information -----------------------------------------------------
@@ -62,48 +61,4 @@ html_theme = "sphinx_rtd_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-autodoc_mock_imports = [
-    "numpy",
-    "pandas",
-    "matplotlib",
-    "scipy",
-    "tqdm",
-    "pymatgen",
-    "statsmodels",
-    "pubchempy",
-    "MDAnalysis",
-    "selenium",
-    "matplotlib.pyplot",
-    "MDAnalysis.lib",
-    "MDAnalysis.lib.distances",
-    "MDAnalysis.analysis",
-    "MDAnalysis.analysis.msd",
-    "MDAnalysis.analysis.distances",
-    "pymatgen.io",
-    "pymatgen.io.lammps",
-    "pymatgen.io.lammps.data",
-    "statsmodels.tsa",
-    "statsmodels.tsa.stattools",
-    "scipy.signal",
-    "scipy.optimize",
-    "selenium.common",
-    "selenium.common.exceptions",
-    "selenium.webdriver",
-    "selenium.webdriver.support",
-    "selenium.webdriver.support.ui",
-    "selenium.webdriver.common",
-    "selenium.webdriver.common.by",
-    "mdgo",
-    "mdgo.conductivity",
-    "mdgo.coordination",
-    "mdgo.core",
-    "mdgo.forcefield",
-    "mdgo.msd",
-    "mdgo.mdgopackmol",
-    "mdgo.residence_time",
-    "mdgo.util"
-]
 
-
-for mod_name in autodoc_mock_imports:
-   sys.modules[mod_name] = MagicMock()
