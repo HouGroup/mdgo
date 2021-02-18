@@ -4,7 +4,9 @@ A code base for classical molecualr dynamics (MD) simulation setup and results a
 
 Requirements
 ------------
+
 mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.                          
+
 Source Code
 ------------
 If not available already, use the following steps.
@@ -36,7 +38,7 @@ Installation in development mode
     `pip install -e .`
 
 
-Current functions
+Features
 ------------
 
 1. Write OPLS-AA forcefield file from LigParGen
