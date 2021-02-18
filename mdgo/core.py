@@ -51,8 +51,8 @@ class MdRun:
             cation_charge: Charge of cation. Default to 1.
             anion_charge: Charge of anion. Default to 1.
             cond (bool): Whether to calculate conductivity MSD. Default to True.
-
         """
+
         self.wrapped_run = MDAnalysis.Universe(data_dir,
                                                wrapped_dir,
                                                format="LAMMPS")

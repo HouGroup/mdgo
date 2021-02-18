@@ -55,8 +55,9 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
 
     Returns an array of MSD values for each time in the trajectory.
 
-    NOTE: coordinates must be unwrapped (in dcd file when creating MDAnalysis
-    Universe)
+    Note:
+        Coordinates must be unwrapped (in dcd file when creating MDAnalysis
+        Universe)
     """
     # Current code assumes anion and cation selections are single atoms
     qr = []

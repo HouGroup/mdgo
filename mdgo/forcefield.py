@@ -7,16 +7,19 @@ This module implements two core class FFcrawler and MaestroRunner
 for generating LAMMPS/GROMACS data files from molecule structure using
 the LigParGen web server and Maestro, respectively.
 
+For using the FFcrawler class:
 
-For using the FFcrawler class, download the ChromeDriver executable that
-matches your Chrome version via https://chromedriver.chromium.org/downloads
+  * Download the ChromeDriver executable that
+    matches your Chrome version via https://chromedriver.chromium.org/downloads
 
-For using the MaestroRunner:
-    1. download a free Maestro via https://www.schrodinger.com/freemaestro
-    2. install the package and set the environment variable $SCHRODINGER
-(e.g. 'export SCHRODINGER=/opt/schrodinger/suites2020-4', please check
-https://www.schrodinger.com/kb/446296 or https://www.schrodinger.com/kb/1842
-for details.
+For using the MaestroRunner class:
+
+  * Download a free Maestro via https://www.schrodinger.com/freemaestro
+
+  * Install the package and set the environment variable $SCHRODINGER
+    (e.g. 'export SCHRODINGER=/opt/schrodinger/suites2020-4', please
+    check https://www.schrodinger.com/kb/446296 or
+    https://www.schrodinger.com/kb/1842 for details.
 
 """
 
@@ -53,8 +56,9 @@ class FFcrawler:
     server and download LAMMPS/GROMACS data file.
 
     Examples:
-    >>> LPG = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
-    >>> LPG.data_from_pdb("/path/to/pdb")
+
+        >>> lpg = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
+        >>> lpg.data_from_pdb("/path/to/pdb")
     """
 
     def __init__(
@@ -219,9 +223,10 @@ class MaestroRunner:
     $SCHRODINGER/mmshare-vversion/data/f14/
 
     Examples:
-    >>> MR = MaestroRunner('/path/to/structure', '/path/to/working/dir')
-    >>> MR.get_mae()
-    >>> MR.get_ff()
+
+        >>> mr = MaestroRunner('/path/to/structure', '/path/to/working/dir')
+        >>> mr.get_mae()
+        >>> mr.get_ff()
     """
 
     template_assignbond = os.path.join(
@@ -352,15 +357,13 @@ class MaestroRunner:
 
 class PubChemRunner:
 
-    """
-    Wrapper for accessing PubChem data that can be used to retriving compound
-     structure and information.
+    """Wrapper for accessing PubChem data that can be used to retriving compound
+    structure and information.
 
     Examples:
-    >>> web = PubChemRunner('/path/to/work/dir', '/path/to/chromedriver')
-    >>> long_name = "ethylene carbonate"
-    >>> short_name = "PC"
-    >>> cid = web.obtain_entry(long_name, short_name)
+        >>> web = PubChemRunner('/path/to/work/dir', '/path/to/chromedriver')
+        >>> long_name, short_name = "ethylene carbonate", "PC"
+        >>> cid = web.obtain_entry(long_name, short_name)
     """
 
     def __init__(
@@ -372,6 +375,7 @@ class PubChemRunner:
     ):
         """
         Base constructor.
+
         Args:
             write_dir (str): Directory for writing output.
             chromedriver_dir (str): Directory to the ChromeDriver executable.
@@ -507,7 +511,16 @@ class PubChemRunner:
         return cid
 
 
-def main():
+if __name__ == "__main__":
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_pc/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=False
+    )
+    long_name = "Propylene Carbonate"
+    short_name = "PC"
+    cid = pcr.obtain_entry(long_name, short_name, "json")
+
     """
     LPG = FFcrawler(
         "/Users/th/Downloads/test_selenium",
@@ -536,16 +549,3 @@ def main():
     MR.get_mae()
     MR.get_ff()
     """
-
-    pcr = PubChemRunner(
-        "/Users/th/Downloads/test_pc/",
-        "/Users/th/Downloads/package/chromedriver/chromedriver",
-        api=False
-    )
-    long_name = "Propylene Carbonate"
-    short_name = "PC"
-    cid = pcr.obtain_entry(long_name, short_name, "json")
-
-
-if __name__ == "__main__":
-    main()

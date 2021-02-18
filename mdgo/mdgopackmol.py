@@ -5,6 +5,12 @@
 """
 This module implements a core class PackmolWrapper for packing molecules
 into a single box.
+
+You need the Packmol package to run the code, see
+http://m3g.iqm.unicamp.br/packmol or
+http://leandro.iqm.unicamp.br/m3g/packmol/home.shtml
+for download and setup instructions. You may need to manually
+set the folder of the packmol executable to the PATH environment variable.
 """
 
 import subprocess
@@ -21,6 +27,17 @@ class PackmolWrapper:
     """
     Wrapper for the Packmol software that can be used to pack various types of
     molecules into a one single unit.
+
+    Examples:
+
+        >>> structures = [{"name": "structure_name", "file": "/path/to/xyz"}]
+        >>> pw = PackmolWrapper("/path/to/work/dir",
+        ...                     structures,
+        ...                     {"structure_name": '2'},
+        ...                     [0., 0., 0., 10., 10., 10.]
+        ... )
+        >>> pw.make_packmol_input()
+        >>> pw.run_packmol()
     """
     def __init__(self, path, structures, numbers, box, tolerance=None,
                  seed=None, inputfile='packmol.inp', outputfile='output.xyz'):
@@ -77,14 +94,10 @@ class PackmolWrapper:
                 out.write("end structure\n\n")
 
 
-def main():
+if __name__ == "__main__":
     structures = [{"name": "EMC",
                    "file": "/Users/th/Downloads/test_selenium/EMC.lmp.xyz"}]
     pw = PackmolWrapper("/Users/th/Downloads/test_selenium/", structures,
                         {"EMC": '2'}, [0., 0., 0., 10., 10., 10.])
     pw.make_packmol_input()
     pw.run_packmol()
-
-
-if __name__ == "__main__":
-    main()
