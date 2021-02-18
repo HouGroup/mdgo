@@ -354,7 +354,7 @@ class PubChemRunner:
 
     """
     Wrapper for accessing PubChem data that can be used to retriving compound
-     structure and infomation.
+     structure and information.
 
     Examples:
     >>> web = PubChemRunner('/path/to/work/dir', '/path/to/chromedriver')

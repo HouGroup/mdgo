@@ -3,6 +3,101 @@ Introduction
 
 Welcome to the documentation site for mdgo! Mdgo is an python toolkit for classical molecualr dynamics (MD) simulation setup and results analysis, especially for electrolyte systems. The purpose of making this package is for supporting a high-throughput workflow for screening novel electrolytes for battery use. Currently, the package is under active development.
 
+Function
+------------
+
+Using mdgo, you may:
+
+#. Retriving compound structure and information from PubChem
+
+   * Supported searching text:
+
+     * cid, name, smiles, inchi, inchikey or formula
+
+   * Supported output format:
+
+     * XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
+
+#. Write OPLS-AA forcefield file from LigParGen
+
+   * Supported input format:
+
+     * mol/pdb
+
+     * SMILES code
+
+   * Supported output format:
+
+     * LAMMPS(.lmp)
+
+     * GROMACS(.gro, .itp)
+
+#. Write OPLS-AA forcefield file from Maestro
+
+   * Supported input format:
+
+     * Any `format that Maestro support <https://www.schrodinger.com/kb/1278>`_
+
+   * Supported output format:
+
+     * LAMMPS(.lmp)
+
+     * Others pending...
+
+#. Packmol wrapper
+
+   * Supported input format:
+
+     * xyz
+
+     * Others pending...
+
+#. Basic simulation properties
+
+   * Initial box dimension
+
+   * Equilibrium box dimension
+
+   * Salt concentration
+
+#. Conductivity analysis
+
+   * Green–Kubo conductivity
+
+   * Nernst–Einstein conductivity
+
+#. Coordination analysis
+
+   * The distribution of the coordination number of single species
+
+   * The integral of radial distribution function (The average coordination numbers of multiple species)
+
+   * Solvation structure write out
+
+   * Population of solvent separated ion pairs (SSIP), contact ion pairs (CIP), and aggregates (AGG)
+
+   * The trajectory (distance) of cation and coordinating species as a function of time
+
+   * The hopping frequency of cation between binding sites
+
+   * The distribution heat map of cation around binding sites
+
+   * The averaged nearest neighbor distance of a species
+
+#. Diffusion analysis
+
+   * The mean square displacement of all species
+
+   * The mean square displacement of coordinated species and uncoordinated species, separately
+
+   * Self-diffusion coefficients
+
+#. Residence time analysis
+
+   * The residence time of all species
+
+
+
 Installation
 ------------
 
