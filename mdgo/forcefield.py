@@ -479,9 +479,9 @@ class PubChemRunner:
             )
         except NoSuchElementException:
             print(
-                "The download link was not correctly loacted on the website, "
+                "The download link was not correctly generated, "
                 "file download failed!\n"
-                "Please try another search text."
+                "Please try another search text or output format."
             )
         finally:
             self.web.quit()
@@ -511,11 +511,11 @@ if __name__ == "__main__":
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_pc/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
-        api=False
+        api=True
     )
-    long_name = "Propylene Carbonate"
-    short_name = "PC"
-    cid = pcr.obtain_entry(long_name, short_name, "json")
+    long_name = "Co2"
+    short_name = "sugar"
+    cid = pcr.obtain_entry(long_name, short_name, "sdf")
 
     """
     LPG = FFcrawler(
