@@ -25,17 +25,17 @@ if __name__ == "__main__":
         maintainer_email='tingzheng_hou@berkeley.edu',
         url="https://github.com/htz1992213/mdgo",
         packages=find_packages(),
-        install_requires=[
-            "numpy",
-            "pandas",
-            "matplotlib",
-            "scipy",
-            "tqdm",
-            "pymatgen",
-            "statsmodels",
-            "pubchempy",
-            "MDAnalysis==2.0.0.dev0",
-            "selenium"],
+        install_requires=[],
+        #    "numpy",
+        #    "pandas",
+        #    "matplotlib",
+        #    "scipy",
+        #    "tqdm",
+        #    "pymatgen",
+        #    "statsmodels",
+        #    "pubchempy",
+        #    "MDAnalysis==2.0.0.dev0",
+        #    "selenium"],
         python_requires='>=3.6'
     )
 
