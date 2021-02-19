@@ -357,7 +357,7 @@ class PubChemRunner:
 
     """Wrapper for accessing PubChem data that can be used to retriving compound
     structure and information.
-    
+
     Args:
         write_dir (str): Directory for writing output.
         chromedriver_dir (str): Directory to the ChromeDriver executable.

@@ -33,6 +33,21 @@ __date__ = "Feb 9, 2021"
 
 
 class MdRun:
+    """
+    A core class for MD results analysis.
+
+    Args:
+        data_dir (str): Path to the data file.
+        wrapped_dir (str): Path to the wrapped dcd file.
+        unwrapped_dir (str): Path to the unwrapped dcd file.
+        nvt_start (int): NVT start time step.
+        time_step (int or float): LAMMPS timestep.
+        name (str): Name of the MD run.
+        select_dict: A dictionary of species selection.
+        cation_charge: Charge of cation. Default to 1.
+        anion_charge: Charge of anion. Default to 1.
+        cond (bool): Whether to calculate conductivity MSD. Default to True.
+    """
 
     def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
@@ -40,17 +55,7 @@ class MdRun:
         """
         Base constructor.
 
-        Args:
-            data_dir (str): Path to the data file.
-            wrapped_dir (str): Path to the wrapped dcd file.
-            unwrapped_dir (str): Path to the unwrapped dcd file.
-            nvt_start (int): NVT start time step.
-            time_step (int or float): LAMMPS timestep.
-            name (str): Name of the MD run.
-            select_dict: A dictionary of species selection.
-            cation_charge: Charge of cation. Default to 1.
-            anion_charge: Charge of anion. Default to 1.
-            cond (bool): Whether to calculate conductivity MSD. Default to True.
+
         """
 
         self.wrapped_run = MDAnalysis.Universe(data_dir,
