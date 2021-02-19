@@ -13,7 +13,6 @@
 import os
 import sys
 import sphinx_rtd_theme
-from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../../mdgo'))
 
 # -- Project information -----------------------------------------------------
@@ -94,7 +93,3 @@ autodoc_mock_imports = [
     "selenium.webdriver.common",
     "selenium.webdriver.common.by"
 ]
-
-
-#for mod_name in autodoc_mock_imports:
-#   sys.modules[mod_name] = MagicMock()

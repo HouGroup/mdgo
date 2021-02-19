@@ -24,9 +24,9 @@ INSTALL_REQUIRES = [
     "selenium"
 ]
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
-if on_rtd:
-    INSTALL_REQUIRES = []
+#on_rtd = os.environ.get('READTHEDOCS') == 'True'
+#if on_rtd:
+#    INSTALL_REQUIRES = []
 
 if __name__ == "__main__":
     setup(
