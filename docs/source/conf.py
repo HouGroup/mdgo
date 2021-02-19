@@ -96,5 +96,5 @@ autodoc_mock_imports = [
 ]
 
 
-for mod_name in autodoc_mock_imports:
-   sys.modules[mod_name] = MagicMock()
+#for mod_name in autodoc_mock_imports:
+#   sys.modules[mod_name] = MagicMock()
