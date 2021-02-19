@@ -11,6 +11,23 @@ module_dir = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(module_dir, "README.md"), 'r') as f:
     readme = f.read()
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+if on_rtd:
+    INSTALL_REQUIRES = []
+else:
+    INSTALL_REQUIRES = [
+        "numpy",
+        "pandas",
+        "matplotlib",
+        "scipy",
+        "tqdm",
+        "pymatgen",
+        "statsmodels",
+        "pubchempy",
+        "MDAnalysis==2.0.0.dev0",
+        "selenium"
+    ]
+
 if __name__ == "__main__":
     setup(
         name='mdgo',
@@ -25,17 +42,7 @@ if __name__ == "__main__":
         maintainer_email='tingzheng_hou@berkeley.edu',
         url="https://github.com/htz1992213/mdgo",
         packages=find_packages(),
-        install_requires=[],
-        #    "numpy",
-        #    "pandas",
-        #    "matplotlib",
-        #    "scipy",
-        #    "tqdm",
-        #    "pymatgen",
-        #    "statsmodels",
-        #    "pubchempy",
-        #    "MDAnalysis==2.0.0.dev0",
-        #    "selenium"],
+        install_requires=INSTALL_REQUIRES,
         python_requires='>=3.6'
     )
 
