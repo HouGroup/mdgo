@@ -2,7 +2,12 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-import MDAnalysis.analysis.msd as msd
+try:
+    import MDAnalysis.analysis.msd as msd
+except ImportError:
+    msd = None
+
+
 import numpy as np
 from tqdm import tqdm_notebook
 
@@ -14,10 +19,32 @@ __date__ = "Feb 9, 2021"
 
 
 def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):
-    msd_calculator = msd.EinsteinMSD(nvt_run, select=select,
-                                     msd_type=msd_type, fft=fft)
-    msd_calculator.run(start=start, stop=stop)
-    total_array = msd_calculator.timeseries
+    if msd is not None:
+        msd_calculator = msd.EinsteinMSD(nvt_run, select=select,
+                                         msd_type=msd_type, fft=fft)
+        msd_calculator.run(start=start, stop=stop)
+        total_array = msd_calculator.timeseries
+        return total_array
+    else:
+        if fft:
+            print(
+                "Warning! MDAnalysis version too low, fft not supported. "
+                "Use conventional instead"
+            )
+        return _total_msd(nvt_run, select, start, stop)
+
+
+def _total_msd(nvt_run, select, run_start, run_end):
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    li_atoms = nvt_run.select_atoms(select)
+    all_list = list()
+    for li_atom in li_atoms:
+        coords = list()
+        for ts in trj_analysis:
+            current_coord = ts[li_atom.id - 1]
+            coords.append(current_coord)
+        all_list.append(np.array(coords))
+    total_array = msd_states(all_list, run_end - run_start - 1)
     return total_array
 
 
