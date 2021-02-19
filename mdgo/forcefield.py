@@ -55,6 +55,18 @@ class FFcrawler:
     Web scrapper that can automatically upload structure to the LigParGen
     server and download LAMMPS/GROMACS data file.
 
+    Args:
+        write_dir (str): Directory for writing output.
+        chromedriver_dir (str): Directory to the ChromeDriver executable.
+        headless (bool): Whether to run Chrome in headless (silent) mode.
+            Default to True.
+        xyz (bool): Whether to write the structure in the LigParGen
+            generated data file as .xyz. Default to False. This is useful
+            because the order and the name of the atoms could be
+            different from the initial input.)
+        gromacs (bool): Whether to save GROMACS format data files.
+            Default to False.
+
     Examples:
 
         >>> lpg = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
@@ -69,20 +81,7 @@ class FFcrawler:
             xyz=False,
             gromacs=False
     ):
-        """
-        Base constructor.
-        Args:
-            write_dir (str): Directory for writing output.
-            chromedriver_dir (str): Directory to the ChromeDriver executable.
-            headless (bool): Whether to run Chrome in headless (silent) mode.
-                Default to True.
-            xyz (bool): Whether to write the structure in the LigParGen
-                generated data file as .xyz. Default to False. This is useful
-                because the order and the name of the atoms could be
-                different from the initial input.)
-            gromacs (bool): Whether to save GROMACS format data files.
-                Default to False.
-        """
+        """Base constructor."""
         self.write_dir = write_dir
         self.xyz = xyz
         self.gromacs = gromacs
@@ -208,6 +207,21 @@ class MaestroRunner:
     Wrapper for the Maestro software that can be used to generate the OPLS_2005
     force field parameter for a molecule.
 
+    Args:
+        structure_dir (str): Path to the structure file.
+            Supported input format please check
+            https://www.schrodinger.com/kb/1278
+        working_dir (str): Directory for writing intermediate
+            and final output.
+        out (str): Force field output form. Default to "lmp",
+            the data file for LAMMPS. Other supported formats
+            are under development.
+        cmd_template (str): String template for input script
+            with placeholders. Default to None, i.e., using
+            the default template.
+        assign_bond (bool): Whether to assign bond to the input
+            structure. Default to None.
+
     Supported input format please check https://www.schrodinger.com/kb/1278
 
     The OPLS_2005 parameters are described in
@@ -249,23 +263,7 @@ class MaestroRunner:
             cmd_template=None,
             assign_bond=False
     ):
-        """
-        Base constructor.
-        Args:
-            structure_dir (str): Path to the structure file.
-                Supported input format please check
-                https://www.schrodinger.com/kb/1278
-            working_dir (str): Directory for writing intermediate
-                and final output.
-            out (str): Force field output form. Default to "lmp",
-                the data file for LAMMPS. Other supported formats
-                are under development.
-            cmd_template (str): String template for input script
-                with placeholders. Default to None, i.e., using
-                the default template.
-            assign_bond (bool): Whether to assign bond to the input
-                structure. Default to None.
-        """
+        """Base constructor."""
         self.structure = structure_dir
         self.out = out
         self.structure_format = os.path.splitext(self.structure)[1][1:]
@@ -359,6 +357,15 @@ class PubChemRunner:
 
     """Wrapper for accessing PubChem data that can be used to retriving compound
     structure and information.
+    
+    Args:
+        write_dir (str): Directory for writing output.
+        chromedriver_dir (str): Directory to the ChromeDriver executable.
+        api (bool): Whether to use the PUG REST web interface for accessing
+            PubChem data. If None, then all search/download will be
+            performed via web browser mode. Default to True.
+        headless (bool): Whether to run Chrome in headless (silent) mode.
+            Default to False.
 
     Examples:
         >>> web = PubChemRunner('/path/to/work/dir', '/path/to/chromedriver')
@@ -373,18 +380,7 @@ class PubChemRunner:
             api=True,
             headless=False,
     ):
-        """
-        Base constructor.
-
-        Args:
-            write_dir (str): Directory for writing output.
-            chromedriver_dir (str): Directory to the ChromeDriver executable.
-            api (bool): Whether to use the PUG REST web interface for accessing
-                PubChem data. If None, then all search/download will be
-                performed via web browser mode. Default to True.
-            headless (bool): Whether to run Chrome in headless (silent) mode.
-                Default to False.
-        """
+        """Base constructor."""
         self.write_dir = write_dir
         self.api = api
         if not self.api:

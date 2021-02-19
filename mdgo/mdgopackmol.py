@@ -28,6 +28,18 @@ class PackmolWrapper:
     Wrapper for the Packmol software that can be used to pack various types of
     molecules into a one single unit.
 
+    Args:
+        path (str): The path to the directory for file i/o.
+        structures (list): A list containing dict information of molecules.
+            Each molecule have two keys, "name", the structure name,
+            and "file", the path to the structure file.
+        numbers (dict): A dict of the numbers of each molecule
+        box (list): A list of xlo, ylo, zlo, xhi, yhi, zhi, in Å.
+        tolerance (float): Tolerance for packmol.
+        seed (int): Random seed for packmol.
+        inputfile (str): Path to the input file. Default to 'packmol.inp'.
+        outputfile (str): Path to the output file. Default to 'output.xyz'.
+
     Examples:
 
         >>> structures = [{"name": "structure_name", "file": "/path/to/xyz"}]
