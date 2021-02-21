@@ -108,8 +108,7 @@ BOX = """{0:6f} {1:6f} xlo xhi
 
 def atom_vec(atom1, atom2, dimension):
     """
-    Helper function that can wrap the coordinates of two atom object
-    and calculate the vector.
+    Calculate the vector of the positions from atom2 to atom1.
     """
     vec = [0, 0, 0]
     for i in range(3):
@@ -125,7 +124,7 @@ def atom_vec(atom1, atom2, dimension):
 
 def position_vec(pos1, pos2, dimension):
     """
-    Helper function that can wrap two coordinates and calculate the vector.
+    Calculate the vector from pos2 to pos2.
     """
     vec = [0, 0, 0]
     for i in range(3):
@@ -146,7 +145,7 @@ def mass_to_name(df):
     Args:
         df (pandas.DataFrame): The masses attribute from LammpsData object
     Return:
-        atoms (dict): The element dict.
+        dict: The element dict.
     """
     atoms = {}
     for row in df.index:
@@ -165,7 +164,7 @@ def ff_parser(ff_dir, xyz_dir):
         ff_dir (str): The path to the Maestro force field file.
         xyz_dir (str): The path to the xyz structure file.
     Return:
-        data_string (str): The output LAMMPS data string.
+        str: The output LAMMPS data string.
     """
     with open(xyz_dir, 'r') as f_xyz:
         molecule = pd.read_table(
