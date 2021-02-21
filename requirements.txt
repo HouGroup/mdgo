@@ -1,5 +1,5 @@
 matplotlib
-MDAnalysis==2.0.0.dev0
+MDAnalysis
 numpy>=1.16.0
 pandas
 pubchempy
