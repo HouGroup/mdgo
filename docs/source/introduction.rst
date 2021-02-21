@@ -122,7 +122,7 @@ Installation from source
 
 2. Install the code, using the command::
 
-    pip install .
+    python -m pip install -e .
 
 Installation in development mode
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -130,9 +130,13 @@ Installation in development mode
 
     cd mdgo
 
-2. Install the code, using the command::
+2. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may install it via the following command::
 
-    pip install -e .
+    python -m pip install "git+https://github.com/MDAnalysis/mdanalysis.git#subdirectory=package&egg=mdanalysis"
+
+3. Install the code in "editable" mode, using the command::
+
+    python -m pip install -e .
 
 
 

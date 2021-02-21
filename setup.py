@@ -38,11 +38,9 @@ if __name__ == "__main__":
             "selenium"
         ],
         extras_require={
-            'dev': [
-                'Cython',
-                'MDAnalysis @ git+https://github.com/MDAnalysis/mdanalysis.git#subdirectory=package',
+            'web': [
                 'sphinx',
-                'sphinx_rtd_theme'
+                'sphinx_rtd_theme',
             ]
         },
         python_requires='>=3.6'
