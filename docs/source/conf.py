@@ -62,12 +62,6 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ['_static']
 
 autodoc_mock_imports = [
-    "mdgo",
-    "mdgo.util",
-    "mdgo.conductivity",
-    "mdgo.coordination",
-    "mdgo.msd",
-    "mdgo.residence_time"
     "numpy",
     "pandas",
     "matplotlib",
