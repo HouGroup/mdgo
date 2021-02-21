@@ -107,6 +107,14 @@ class FFcrawler:
         print("LigParGen server connected.")
 
     def data_from_pdb(self, pdb_dir):
+        """
+        Use the LigParGen server to generate a LAMMPS data file from a pdb file.
+
+        Arg:
+            pdb_dir (str): The path to the input pdb structure file.
+
+        Write out a LAMMPS data file.
+        """
         upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
         upload.send_keys(pdb_dir)
         submit = self.web.find_element_by_xpath(
@@ -123,6 +131,15 @@ class FFcrawler:
             self.web.quit()
 
     def data_from_smiles(self, smiles_code):
+        """
+        Use the LigParGen server to generate a LAMMPS data file
+        from a SMILES code.
+
+        Arg:
+            smiles_code (str): The SMILES code for the LigParGen input.
+
+        Write out a LAMMPS data file.
+        """
         smile = self.web.find_element_by_xpath('//*[@id="smiles"]')
         smile.send_keys(smiles_code)
         submit = self.web.find_element_by_xpath(
@@ -138,6 +155,12 @@ class FFcrawler:
             self.web.quit()
 
     def download_data(self, lmp_name):
+        """
+        Helper function that download and write out the LAMMPS data file.
+
+        Arg:
+            lmp_name (str): Name of the LAMMPS data file.
+        """
         print("Structure info uploaded. Rendering force field...")
         self.wait.until(
             EC.presence_of_element_located((By.NAME, 'go'))
@@ -326,7 +349,8 @@ class MaestroRunner:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
     def get_ff(self):
-        """Read out and save the force field from the Maestro file"""
+        """Read the Maestro file and save the force field as LAMMPS data file.
+        """
         try:
             p = subprocess.run(
                 FFLD.format(self.mae + ".mae", self.ff),
@@ -410,6 +434,8 @@ class PubChemRunner:
 
     def obtain_entry(self, search_text, name, output_format='sdf'):
         """
+        Search the PubChem database with a text entry and save the
+        structure in desired format.
 
         Args:
             search_text (str): The text to use as a search query.
