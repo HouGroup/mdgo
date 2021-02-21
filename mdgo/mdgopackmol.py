@@ -70,7 +70,7 @@ class PackmolWrapper:
             self.seed = seed
 
     def run_packmol(self):
-        """Run and check that Packmol worked correctly"""
+        """Run packmol and write out the packed structure."""
         try:
             p = subprocess.run('packmol < {}'.format(self.input),
                                check=True,
@@ -85,7 +85,7 @@ class PackmolWrapper:
                 out.write(p.stdout.decode())
 
     def make_packmol_input(self):
-        """Make a Packmol usable input file"""
+        """Make a Packmol usable input file."""
 
         with open(self.input, 'w') as out:
             out.write("# " + ' + '.join(self.numbers[structure["name"]] + " "
