@@ -534,16 +534,21 @@ class PubChemRunner:
 
 
 if __name__ == "__main__":
+    MR = MaestroRunner("/Users/th/Downloads/test_mr/EC_7303.sdf",
+                       "/Users/th/Downloads/test_mr")
+    MR.get_mae()
+    MR.get_ff()
+    """
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_pc/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
         api=True
     )
-    long_name = "Co2"
-    short_name = "sugar"
+    long_name = "ethylene carbonate"
+    short_name = "EC"
     cid = pcr.obtain_entry(long_name, short_name, "sdf")
 
-    """
+    
     LPG = FFcrawler(
         "/Users/th/Downloads/test_selenium",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
