@@ -2,48 +2,53 @@
 
 A code base for classical molecualr dynamics (MD) simulation setup and results analysis. 
 
-Requirements
-------------
+# Installation
 
-mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.                          
+## Installing from PyPI
 
-Source Code
-------------
+To install the latest version of mdgo:
+
+    pip install mdgo
+    
+## Installing from source code
+
+mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.           
+
+### Getting Source Code
+
 If not available already, use the following steps.
 
 1. Install [git](http://git-scm.com), if not already packaged with your system.
 
-2. Download the mdgo source code using the command::
+2. Download the mdgo source code using the command:
 
-    `git clone https://github.com/htz1992213/mdgo.git`
+       git clone https://github.com/htz1992213/mdgo.git
     
-Installation
-------------
+### Installation
+
 1. Navigate to mdgo root directory:
 
-    `cd mdgo`
+        cd mdgo
 
 2. Install the code, using the command:
 
-    `pip install .`
+        pip install .
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
-Installation in development mode
-------------
+### Installation in development mode
+
 1. Navigate to mdgo root directory:
 
-    `cd mdgo`
+        cd mdgo
 
 2. Install the code in "editable" mode, using the command::
 
-    `pip install -e .`
+        pip install -e .
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
-Features
-------------
-
+## Features
 
 1.  Retriving compound structure and information from PubChem
     -   Supported searching text:
