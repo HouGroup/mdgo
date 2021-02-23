@@ -8,7 +8,7 @@ A code base for classical molecualr dynamics (MD) simulation setup and results a
 
 To install the latest version of mdgo:
 
-    pip install mdgo
+`pip install mdgo`
     
 ## Installing from source code
 
@@ -22,17 +22,17 @@ If not available already, use the following steps.
 
 2. Download the mdgo source code using the command:
 
-       git clone https://github.com/htz1992213/mdgo.git
+   `git clone https://github.com/htz1992213/mdgo.git`
     
 ### Installation
 
 1. Navigate to mdgo root directory:
 
-        cd mdgo
+   `cd mdgo`
 
 2. Install the code, using the command:
 
-        pip install .
+   `pip install .`
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
@@ -40,11 +40,11 @@ If not available already, use the following steps.
 
 1. Navigate to mdgo root directory:
 
-        cd mdgo
+   `cd mdgo`
 
 2. Install the code in "editable" mode, using the command::
 
-        pip install -e .
+   `pip install -e .`
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
