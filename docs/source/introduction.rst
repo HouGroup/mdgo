@@ -3,8 +3,10 @@ Introduction
 
 Welcome to the documentation site for mdgo! Mdgo is an python toolkit for classical molecualr dynamics (MD) simulation setup and results analysis, especially for electrolyte systems. The purpose of making this package is for supporting a high-throughput workflow for screening novel electrolytes for battery use. Currently, the package is under active development.
 
-1. Features
-===========
+.. sectnum::
+
+Features
+========
 
 #. Retriving compound structure and information from PubChem
 
@@ -96,18 +98,18 @@ Welcome to the documentation site for mdgo! Mdgo is an python toolkit for classi
 
 
 
-2. Installation
-===============
+Installation
+============
 
-2.1 Installing from PyPI
-------------------------
+Installing from PyPI
+--------------------
 
 To install the latest version of mdgo::
 
     pip install mdgo
 
-2.2 Installing from Source
---------------------------
+Installing from Source
+----------------------
 
 Mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.
 
@@ -146,8 +148,8 @@ Installation in development mode
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
-3. Contributing
-===============
+Contributing
+============
 
 Reporting bugs
 --------------
@@ -160,26 +162,26 @@ Developing new functionality
 
 You may submit new code/bugfixes by sending a pull request to the mdgo's github repository. 
 
-4. How to cite mdgo
-===================
+How to cite mdgo
+================
 
 pending...
 
-5. License
-==========
+License
+=======
 
 Mdgo is released under the MIT License. The terms of the license are as
 follows:
 
 .. literalinclude:: ../../LICENSE.rst
 
-6. About the Team
-=================
+About the Team
+==============
 
 Tingzheng Hou started mdgo in 2020 under the supervision of Prof. Kristin Persson at University of California, berkeley. 
 
-7. Copyright Policy
-===================
+Copyright Policy
+================
 
 The following banner should be used in any source code file
 to indicate the copyright and license terms::
@@ -187,8 +189,8 @@ to indicate the copyright and license terms::
     # Copyright (c) Tingzheng Hou.
     # Distributed under the terms of the MIT License.
 
-8. Indices and tables
-=====================
+Indices and tables
+==================
 
 * :ref:`genindex`
 * :ref:`modindex`
