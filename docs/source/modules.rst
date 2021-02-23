@@ -1,3 +1,6 @@
+.. _my-section:
+
+====
 mdgo
 ====
 

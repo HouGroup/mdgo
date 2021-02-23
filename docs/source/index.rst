@@ -6,7 +6,7 @@ Mdgo documentation
    :hidden:
 
    introduction
-   change_log
    modules<modules>
+   change_log
 
 .. include:: introduction.rst
