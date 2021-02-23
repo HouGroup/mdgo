@@ -2,15 +2,15 @@
 
 A code base for classical molecualr dynamics (MD) simulation setup and results analysis. 
 
-# Installation
+# 1. Installation
 
-## Installing from PyPI
+## 1.1 Installing from PyPI
 
 To install the latest version of mdgo:
 
 `pip install mdgo`
     
-## Installing from source code
+## 1.2 Installing from source code
 
 mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.           
 
@@ -48,7 +48,7 @@ If not available already, use the following steps.
 
 3. The latest version MDAnalysis==2.0.0.dev0 is recommended, you may download the source code of the latest MDAnalysis from github and install using pip to replace an existing version.
 
-## Features
+## 2. Features
 
 1.  Retriving compound structure and information from PubChem
     -   Supported searching text:
