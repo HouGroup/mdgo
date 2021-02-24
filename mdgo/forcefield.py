@@ -48,6 +48,8 @@ __date__ = "Feb 9, 2021"
 MAESTRO = "$SCHRODINGER/maestro -console -nosplash"
 FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} " \
        "-version 14 -print_parameters -out_file {}"
+MolecularWeight = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" \
+                  "cid/{}/property/MolecularWeight/txt"
 
 
 class FFcrawler:
@@ -106,6 +108,9 @@ class FFcrawler:
         time.sleep(1)
         print("LigParGen server connected.")
 
+    def quit(self):
+        self.web.quit()
+
     def data_from_pdb(self, pdb_dir):
         """
         Use the LigParGen server to generate a LAMMPS data file from a pdb file.
@@ -128,7 +133,7 @@ class FFcrawler:
                 "Timeout! Web server no response for 10s, file download failed!"
             )
         finally:
-            self.web.quit()
+            self.quit()
 
     def data_from_smiles(self, smiles_code):
         """
@@ -152,7 +157,7 @@ class FFcrawler:
                 "Timeout! Web server no response for 10s, file download failed!"
             )
         finally:
-            self.web.quit()
+            self.quit()
 
     def download_data(self, lmp_name):
         """
@@ -432,6 +437,10 @@ class PubChemRunner:
             time.sleep(1)
             print("PubChem server connected.")
 
+    def quit(self):
+        if not self.api:
+            self.web.quit()
+
     def obtain_entry(self, search_text, name, output_format='sdf'):
         """
         Search the PubChem database with a text entry and save the
@@ -458,6 +467,7 @@ class PubChemRunner:
 
     def _obtain_entry_web(self, search_text, name, output_format):
         cid = None
+
         try:
             query = quote(search_text)
             url = "https://pubchem.ncbi.nlm.nih.gov/#query=" + query
@@ -477,6 +487,7 @@ class PubChemRunner:
             else:
                 match = self.web.find_element_by_xpath(relevant_xpath)
             match.click()
+            density_locator = '//*[@id="Density"]/div[2]/div[1]/p'
             cid_locator = (
                 '//*[@id="main-content"]/div/div/div[1]/'
                 'div[3]/div/table/tbody/tr[1]/td'
@@ -510,7 +521,7 @@ class PubChemRunner:
                 "Please try another search text or output format."
             )
         finally:
-            self.web.quit()
+            self.quit()
         return cid
 
     def _obtain_entry_api(self, search_text, name, output_format):
@@ -534,10 +545,19 @@ class PubChemRunner:
 
 
 if __name__ == "__main__":
-    MR = MaestroRunner("/Users/th/Downloads/test_mr/EC_7303.sdf",
-                       "/Users/th/Downloads/test_mr")
-    MR.get_mae()
-    MR.get_ff()
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_pc/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=False,
+        headless=True
+    )
+    long_name = "ethylene carbonate"
+    short_name = "EC"
+    # cid = pcr.obtain_entry(long_name, short_name, "json")
+    pcr.quit()
+    p = pcp.get_properties('MolecularWeight', 7303,)[0].get("MolecularWeight")
+    print(p)
+
     """
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_pc/",

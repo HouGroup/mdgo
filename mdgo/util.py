@@ -290,3 +290,54 @@ def ff_parser(ff_dir, xyz_dir):
         ]
         data_string = "\n\n".join(header + masses + ff + topo) + "\n"
         return data_string
+
+
+def concentration_matcher(concentration,
+                          solv_mass,
+                          solv_density,
+                          solv_ratio,
+                          num_salt=100,
+                          mode="v"):
+    n_solvent = list()
+    # salt_density = salt_density / 0.24
+    salt_molar_volume = 18  # salt_mass / salt_density
+    n = len(solv_ratio)
+    if mode.lower().startswith("v"):
+        for i in range(n):
+            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])
+        n_salt = 1 / (1000 / concentration - salt_molar_volume)
+        n_all = [m/n_salt*num_salt for m in n_solvent]
+        n_all.insert(0, num_salt)
+        volume = (
+                (1 + salt_molar_volume * n_salt) / n_salt * num_salt
+        ) / 6.022e23
+        return n_all, volume**(1/3)*1e8
+    elif mode.lower().startswith("w"):
+        for i in range(n):
+            n_solvent.append(solv_ratio[i] / solv_mass[i])
+        v_solv = np.divide(solv_ratio, solv_density).sum()
+        n_salt = v_solv / (1000 / concentration - salt_molar_volume)
+        n_all = [m / n_salt * num_salt for m in n_solvent]
+        n_all.insert(0, num_salt)
+        volume = (
+                (v_solv + salt_molar_volume * n_salt) / n_salt * num_salt
+        ) / 6.022e23
+        return n_all, volume**(1/3)*1e8
+    else:
+        mode = input("Volume or weight ratio? (w or v): ")
+        return concentration_matcher(concentration,
+                                     solv_mass,
+                                     solv_density,
+                                     solv_ratio,
+                                     num_salt=num_salt,
+                                     mode=mode)
+
+
+if __name__ == "__main__":
+    num = concentration_matcher(1.1885,
+                                [88.06, 104.05],
+                                [1.32, 1.006],
+                                [0.3, 0.7],
+                                num_salt=166,
+                                mode="w")
+    print(num)

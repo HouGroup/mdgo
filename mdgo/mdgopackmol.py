@@ -107,9 +107,12 @@ class PackmolWrapper:
 
 
 if __name__ == "__main__":
+    """
     structures = [{"name": "EMC",
                    "file": "/Users/th/Downloads/test_selenium/EMC.lmp.xyz"}]
     pw = PackmolWrapper("/Users/th/Downloads/test_selenium/", structures,
                         {"EMC": '2'}, [0., 0., 0., 10., 10., 10.])
     pw.make_packmol_input()
     pw.run_packmol()
+    """
+
