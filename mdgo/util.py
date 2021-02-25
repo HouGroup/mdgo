@@ -389,7 +389,8 @@ def concentration_matcher(concentration,
               3. A pymatgen molecule object of the salt structure.
               4. The path to the salt structure xyz file, will estimate
                  the VdW volume according to the Bondi radii of atoms.
-        solvents (list): A list of solvent molecule name.
+        solvents (list): A list of solvent molecules. A molecule could either be
+            a name (str) or a dict containing two keys "mass" and "density".
         solv_ratio (list): A list of weight or volume ratio of solvents.
             The sum don't need to be normalized.
         num_salt (int): The number of salt in the box.
