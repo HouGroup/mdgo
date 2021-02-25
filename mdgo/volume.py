@@ -284,7 +284,8 @@ def print_occupied_volume(matrix, res, name):
                     v += 1
 
     v = v * res * res * res
-    print(name + ",%-5.1f" % v)
+    print(name + " volume = %5.1f Å^3" % v)
+    print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
     return v * 0.6022
 
 
@@ -333,21 +334,28 @@ if __name__ == "__main__":
             print_occupied_volume(volume_matrix, options.res)
         elif options.mode == "act":
             print_unoccupied_volume(volume_matrix, options.res)
-    """
-    coords = [[0.52794, -0.29400, -0.31589],
-              [-1.16942, -0.52614, -0.18584],
-              [0.72781, -0.85395, 1.29591],
-              [0.32776, 0.26583, -1.92760],
-              [0.70310, -1.90146, -0.89582],
-              [0.35263, 1.31360, 0.26416],
-              [2.22509, -0.06215, -0.44638]]
-    pf6 = Molecule(["P", "F", "F", "F", "F", "F", "F"], coords)
-    ec = Molecule.from_file("/Users/th/Downloads/package/packmol-17.163/EC.xyz")
+    
+
+    ec = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/EC.xyz"
+    )
     emc = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/EMC.xyz")
+        "/Users/th/Downloads/package/packmol-17.163/EMC.xyz"
+    )
     dec = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/DEC.xyz")
-    #print(molecular_volume("/Users/th/Documents/pymatgen/pymatgen-1/test_files/fragmenter_files/TFSI.xyz", "tfsi", ))
-    print(molecular_volume("/Users/th/Downloads/package/packmol-17.163/PF6.xyz", "pf6", ))
+        "/Users/th/Downloads/package/packmol-17.163/DEC.xyz"
+    )
+    pf6 = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/PF6.xyz"
+    )
+    tfsi = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/TFSI.xyz"
+    )
+    lipf6 = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/LiPF6.xyz"
+    )
+    print(molecular_volume(lipf6, "lipf6"), "cm^3/mol")
+    print(molecular_volume(pf6, "pf6"), "cm^3/mol")
+    """
 
 

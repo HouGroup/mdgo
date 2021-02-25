@@ -6,7 +6,7 @@ A code base for classical molecualr dynamics (MD) simulation setup and results a
 
 ## 1.1 Installing from PyPI
 
-To install the latest version of mdgo:
+To install the latest release version of mdgo:
 
 `pip install mdgo`
     

@@ -108,7 +108,7 @@ Installation
 Installing from PyPI
 --------------------
 
-To install the latest version of mdgo::
+To install the latest release version of mdgo::
 
     pip install mdgo
 

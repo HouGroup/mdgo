@@ -4,9 +4,14 @@
 
 import numpy as np
 from io import StringIO
+import os
 import re
 import pandas as pd
 import math
+import numbers
+import sys
+from mdgo.volume import molecular_volume
+from pymatgen import Molecule
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -104,6 +109,78 @@ SECTION_SORTER = {
 BOX = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
+
+MOLAR_VOLUME = {"lipf6": 18, "litfsi": 100}  # empirical value
+
+ALIAS = {
+    "ethylene carbonate": "ec",
+    "ec": "ec",
+    "propylene carbonate": "pc",
+    "pc": "pc",
+    "dimethyl carbonate": "dmc",
+    "dmc": "dmc",
+    "diethyl carbonate": "dec",
+    "dec": "dec",
+    "ethyl methyl carbonate": "emc",
+    "emc": "emc",
+    "fluoroethylene carbonate": "fec",
+    "fec": "fec",
+    "vinyl carbonate": "vc",
+    "vinylene carbonate": "vc",
+    "vc": "vc",
+    "1,3-dioxolane": "dol",
+    "dioxolane": "dol",
+    "dol": "dol",
+    "ethylene glycol monomethyl ether": "egme",
+    "2-methoxyethanol": "egme",
+    "egme": "egme",
+    "dme": "dme",
+    "1,2-dimethoxyethane": "dme",
+    "glyme": "dme",
+    "monoglyme": "dme",
+    "2-methoxyethyl ether": "diglyme",
+    "diglyme": "diglyme",
+    "triglyme": "triglyme",
+    "tetraglyme": "tetraglyme",
+    "acetonitrile": "acn",
+    "acn": "acn"
+}
+
+# From PubChem
+MOLAR_MASS = {
+    "ec": 88.06,
+    "pc": 102.09,
+    "dec": 118.13,
+    "dmc": 90.08,
+    "emc": 104.05,
+    "fec": 106.05,
+    "vc": 86.05,
+    "dol": 74.08,
+    "egme": 76.09,
+    "dme": 90.12,
+    "diglyme": 134.17,
+    "triglyme": 178.23,
+    "tetraglyme": 222.28,
+    "acn": 41.05
+}
+
+# from Sigma-Aldrich
+DENSITY = {
+    "ec": 1.321,
+    "pc": 1.204,
+    "dec": 	0.975,
+    "dmc": 1.069,
+    "emc": 1.006,
+    "fec": 1.454,  # from qm-ht.com
+    "vc": 1.355,
+    "dol": 1.06,
+    "dme": 0.867,
+    "egme": 0.965,
+    "diglyme": 0.939,
+    "triglyme": 0.986,
+    "tetraglyme": 1.009,
+    "acn": 0.786
+}
 
 
 def atom_vec(atom1, atom2, dimension):
@@ -293,20 +370,70 @@ def ff_parser(ff_dir, xyz_dir):
 
 
 def concentration_matcher(concentration,
-                          solv_mass,
-                          solv_density,
+                          salt,
+                          solvents,
                           solv_ratio,
                           num_salt=100,
                           mode="v"):
+    """
+    Estimate the number of molecules of each species in a box,
+    given the salt concentration, salt type, solvent molecular weight,
+    solvent density, solvent ratio and total number of salt.
+
+    Args:
+        concentration (float): Salt concentration.
+        salt (str or int or float or Molecule):
+            Four types of input are accepted:
+              1. The salt name in string (lipf6 or litfsi)
+              2. Salt molar volume in float/int
+              3. A pymatgen molecule object of the salt structure.
+              4. The path to the salt structure xyz file, will estimate
+                 the VdW volume according to the Bondi radii of atoms.
+        solvents (list): A list of solvent molecule name.
+        solv_ratio (list): A list of weight or volume ratio of solvents.
+            The sum don't need to be normalized.
+        num_salt (int): The number of salt in the box.
+        mode (str): Weight mode (Weight/weight/W/w/W./w.) or volume mode
+            (Volume/volume/V/v/V./v.).
+
+    Returns:
+        (list, float):
+            A list of molecule numbers in the box starting with the salt,
+            and the approximate box length
+
+    """
     n_solvent = list()
-    # salt_density = salt_density / 0.24
-    salt_molar_volume = 18  # salt_mass / salt_density
     n = len(solv_ratio)
+    if isinstance(salt, numbers.Number):
+        salt_molar_volume = salt
+    elif type(salt) is Molecule:
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)
+    elif salt.lower() in MOLAR_VOLUME:
+        salt_molar_volume = MOLAR_VOLUME.get(salt.lower())
+    else:
+        if not os.path.exists(salt):
+            print("\nError: Input file '{}' not found.\n".format(salt))
+            sys.exit(1)
+        name = os.path.splitext(os.path.split(salt)[-1])[0]
+        ext = os.path.splitext(os.path.split(salt)[-1])[1]
+        if not ext == ".xyz":
+            print("Error: Wrong file format, please use a .xyz file.\n")
+            sys.exit(1)
+        salt_molar_volume = molecular_volume(salt, name)
+    solv_mass = list()
+    solv_density = list()
+    for solv in solvents:
+        if isinstance(solv, dict):
+            solv_mass.append(solv.get("mass"))
+            solv_density.append(solv.get("density"))
+        else:
+            solv_mass.append(MOLAR_MASS[ALIAS[solv.lower()]])
+            solv_density.append(DENSITY[ALIAS[solv.lower()]])
     if mode.lower().startswith("v"):
         for i in range(n):
             n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])
         n_salt = 1 / (1000 / concentration - salt_molar_volume)
-        n_all = [m/n_salt*num_salt for m in n_solvent]
+        n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
         volume = (
                 (1 + salt_molar_volume * n_salt) / n_salt * num_salt
@@ -317,7 +444,7 @@ def concentration_matcher(concentration,
             n_solvent.append(solv_ratio[i] / solv_mass[i])
         v_solv = np.divide(solv_ratio, solv_density).sum()
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
-        n_all = [m / n_salt * num_salt for m in n_solvent]
+        n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
         volume = (
                 (v_solv + salt_molar_volume * n_salt) / n_salt * num_salt
@@ -326,18 +453,22 @@ def concentration_matcher(concentration,
     else:
         mode = input("Volume or weight ratio? (w or v): ")
         return concentration_matcher(concentration,
-                                     solv_mass,
-                                     solv_density,
+                                     salt_molar_volume,
+                                     solvents,
                                      solv_ratio,
                                      num_salt=num_salt,
                                      mode=mode)
 
 
 if __name__ == "__main__":
-    num = concentration_matcher(1.1885,
-                                [88.06, 104.05],
-                                [1.32, 1.006],
-                                [0.3, 0.7],
-                                num_salt=166,
-                                mode="w")
-    print(num)
+    litfsi = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/LiTFSI.xyz"
+    )
+    mols, box_len = concentration_matcher(1.083,
+                                          "litfsi",
+                                          ["ec", "emc"],
+                                          [0.3, 0.7],
+                                          num_salt=166,
+                                          mode="w")
+    print(mols)
+    print(box_len)
