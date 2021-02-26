@@ -100,15 +100,21 @@ def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time):
     line_styles = ['-', '--', '-.', ':']
     for i, kw in enumerate(species_list):
         plt.plot(times, acf_avg_norm[kw], label=kw, color=colors[i])
-        plt.plot(np.linspace(0, 10000, 1000),
-                 exponential_func(np.linspace(0, 10000, 1000), *popt[kw]),
-                 line_styles[i], color='k', label=kw + ' Fit')
+        plt.plot(
+            np.linspace(0, cutoff_time * 10, cutoff_time),
+            exponential_func(
+                np.linspace(0, cutoff_time * 10, cutoff_time),
+                *popt[kw]
+            ),
+            line_styles[i],
+            color='k',
+            label=kw + ' Fit')
 
     plt.xlabel('Time (ps)')
     plt.legend()
     plt.ylabel('Neighbor Autocorrelation Function')
     plt.ylim(0, 1)
-    plt.xlim(0, 10000)
+    plt.xlim(0, cutoff_time * 10)
     plt.show()
 
     return tau
