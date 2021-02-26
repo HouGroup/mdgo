@@ -15,7 +15,6 @@ from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
     num_of_neighbor_one_li,
-    num_of_neighbor_one_li_multi,
     num_of_neighbor_one_li_simple,
     trajectory,
     find_nearest,
@@ -173,20 +172,20 @@ class MdRun:
         in the trajectory.
         """
         nvt_run = self.wrapped_run
+        species_dict = {species: distance}
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li,
-                                      li_atoms, species, self.select_dict,
-                                      distance, run_start, run_end)
+                                      li_atoms, species_dict, self.select_dict,
+                                      run_start, run_end)["total"]
         return num_array
 
-    def coord_num_array_multi_species(self, species, distances,
-                                      run_start, run_end):
+    def coord_num_array_multi_species(self, species_dict, run_start, run_end):
         """ Calculates the coordination number array of multiple species around
         the cation
 
         Args:
-            species (str): The interested species.
-            distances (dict): A dict of coordination cutoff distance of species.
+            species_dict (dict): A dict of coordination cutoff distance
+                of the interested species.
             run_start (int): Start time step.
             run_end (int): End time step.
 
@@ -195,18 +194,24 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
-        num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_multi,
-                                      li_atoms, species, self.select_dict,
-                                      distances, run_start, run_end)
+        num_array = coord_shell_array(
+            nvt_run,
+            num_of_neighbor_one_li,
+            li_atoms,
+            species_dict,
+            self.select_dict,
+            run_start,
+            run_end)
+
         return num_array
 
-    def get_solvation_structure(self, species, distances, run_start, run_end,
+    def get_solvation_structure(self, species_dict, run_start, run_end,
                                 structure_code, write_freq, write_path):
         """ Writes out the desired solvation structure
 
         Args:
-            species (str): The interested species.
-            distances (dict): A dict of coordination cutoff distance of species.
+            species_dict (dict): A dict of coordination cutoff distance
+                of interested species.
             run_start (int): Start time step.
             run_end (int): End time step.
             structure_code: An integer code representing the solvation
@@ -219,17 +224,24 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        species = list(species_dict.keys())
         for li in tqdm_notebook(li_atoms):
-            num_of_neighbor_one_li_multi(nvt_run, li, species, self.select_dict,
-                                         distances, run_start, run_end,
-                                         write=True,
-                                         structure_code=structure_code,
-                                         write_freq=write_freq,
-                                         write_path=write_path,
-                                         element_id_dict=self.element_id_dict)
+            num_of_neighbor_one_li(
+                nvt_run,
+                li,
+                species,
+                self.select_dict,
+                run_start,
+                run_end,
+                write=True,
+                structure_code=structure_code,
+                write_freq=write_freq,
+                write_path=write_path,
+                element_id_dict=self.element_id_dict
+            )
 
     def coord_num_array_simple(self, species, distance, run_start, run_end):
-        """ Calculates the solvation structure type (1 for ssIP, 2 for CIP,
+        """ Calculates the solvation structure type (1 for SSIP, 2 for CIP,
         3 for AGG) array of the cation
 
         Args:
@@ -242,10 +254,11 @@ class MdRun:
         for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
+        species_dict = {species: distance}
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_simple,
-                                      li_atoms, species, self.select_dict,
-                                      distance, run_start, run_end)
+                                      li_atoms, species_dict, self.select_dict,
+                                      run_start, run_end)["total"]
         return num_array
 
     def coordination_one_species(self, species, distance, run_start, run_end):
@@ -280,21 +293,21 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def rdf_integral(self, species, distances, run_start, run_end):
+    def rdf_integral(self, species_dict, run_start, run_end):
         """ Calculate the integral of the radial distribution function of
         selected species
 
         Args:
-            species (str): The interested species.
-            distances (dict): A dict of coordination cutoff distance of species.
+            species_dict (dict): A dict of coordination cutoff distance
+                of interested species.
             run_start (int): Start time step.
             run_end (int): End time step.
 
         Returns pandas.dataframe of the species and the coordination number.
         """
-
-        cn_values = self.coord_num_array_multi_species(species, distances,
-                                                       run_start, run_end)
+        cn_values = self.coord_num_array_multi_species(
+            species_dict, run_start, run_end
+        )
         item_name = "species in first solvation shell"
         item_list = []
         cn_list = []
@@ -402,20 +415,26 @@ class MdRun:
             print("Diffusivity of all Li:", d, "m^2/s")
             print("NE Conductivity of all Li:", sigma, "mS/cm")
 
-    def get_neighbor_corr(self, species_list, distance, run_start, run_end):
-        """ Calculates the neighbor auto-corelation function (ACF)
+    def get_neighbor_corr(self, species_dict, run_start, run_end):
+        """ Calculates the neighbor auto-correlation function (ACF)
         of selected species around cation
 
         Args:
-            species_list (list): List of species name.
-            distance (int or float): Cutoff distance of neighbor.
+            species_dict (dict): Dict of Cutoff distance of neighbor
+                for each species.
             run_start: Start time step.
             run_end (int): End time step.
 
         Returns an array of the time series and a dict of ACFs of each species.
         """
-        return calc_neigh_corr(self.wrapped_run, species_list, self.select_dict,
-                               distance, self.time_step, run_start, run_end)
+        return calc_neigh_corr(
+            self.wrapped_run,
+            species_dict,
+            self.select_dict,
+            self.time_step,
+            run_start,
+            run_end
+        )
 
     @staticmethod
     def get_residence_time(species_list, times, acf_avg_dict, cutoff_time):

@@ -51,7 +51,7 @@ def exponential_func(x, a, b, c):
     return a * np.exp(-b * x) + c
 
 
-def calc_neigh_corr(nvt_run, species_list, selection_dict, distance, time_step,
+def calc_neigh_corr(nvt_run, species_dict, selection_dict, time_step,
                     run_start, run_end):
     # Set up times array
     times = []
@@ -63,11 +63,18 @@ def calc_neigh_corr(nvt_run, species_list, selection_dict, distance, time_step,
     times = np.array(times)
 
     acf_avg = dict()
-    for kw in species_list:
+    for kw in species_dict.keys():
         acf_all = list()
         for li in tqdm_notebook(li_atoms[::]):
-            adjacency_matrix = neighbors_one_li(nvt_run, li, kw, selection_dict,
-                                                distance, run_start, run_end)
+            adjacency_matrix = neighbors_one_li(
+                nvt_run,
+                li,
+                kw,
+                selection_dict,
+                species_dict.get(kw),
+                run_start,
+                run_end
+            )
             acfs = calc_acf(adjacency_matrix)
             [acf_all.append(acf) for acf in acfs]
         acf_avg[kw] = np.mean(acf_all, axis=0)

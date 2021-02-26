@@ -7,7 +7,6 @@ from tqdm import tqdm_notebook
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec
-# from itertools import groupby
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -18,7 +17,7 @@ __date__ = "Feb 9, 2021"
 
 def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict,
                distance):
-    A_values = {}
+    dist_values = {}
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     if species not in list(selection_dict):
@@ -30,17 +29,18 @@ def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict,
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
         for atom in shell.atoms:
-            if str(atom.id) not in A_values:
-                A_values[str(atom.id)] = np.full(run_end-run_start, 100.)
+            if str(atom.id) not in dist_values:
+                dist_values[str(atom.id)] = np.full(run_end-run_start, 100.)
         time_count += 1
-    #print(A_values.keys())
     time_count = 0
     for ts in trj_analysis:
-        for atomid in A_values.keys():
-            dist = distance_array(ts[li_atom.id-1], ts[(int(atomid)-1)], ts.dimensions)
-            A_values[atomid][time_count] = dist
+        for atomid in dist_values.keys():
+            dist = distance_array(
+                ts[li_atom.id-1], ts[(int(atomid)-1)], ts.dimensions
+            )
+            dist_values[atomid][time_count] = dist
         time_count += 1
-    return A_values
+    return dist_values
 
 
 def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
@@ -199,36 +199,16 @@ def cluster_coordinates(nvt_run, select_dict, run_start, run_end, species,
         return cluster
 
 
-def num_of_neighbor_one_li(nvt_run, li_atom, species, select_dict,
-                           distance, run_start, run_end):
-
-    time_count = 0
-    trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    if species in select_dict.keys():
-        cn_values = np.zeros(int(len(trj_analysis)))
-    else:
-        print('Invalid species selection')
-        return None
-    for ts in trj_analysis:
-        selection = "(" + select_dict[species] + ") and (around "\
-                    + str(distance) + " index "\
-                    + str(li_atom.id - 1) + ")"
-        shell = nvt_run.select_atoms(selection, periodic=True)
-        for _ in shell.atoms:
-            cn_values[time_count] += 1
-        time_count += 1
-    return cn_values
-
-
-def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
-                                 distances, run_start, run_end, write=False,
-                                 structure_code=None, write_freq=0,
-                                 write_path=None, element_id_dict=None):
+def num_of_neighbor_one_li(nvt_run, li_atom, species_dict, select_dict,
+                           run_start, run_end, write=False,
+                           structure_code=None, write_freq=0,
+                           write_path=None, element_id_dict=None):
 
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = dict()
-    for kw in species_list:
+    species = list(species_dict.keys())
+    for kw in species:
         if kw in select_dict.keys():
             cn_values[kw] = np.zeros(int(len(trj_analysis)))
         else:
@@ -236,10 +216,10 @@ def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
             return None
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
     for ts in trj_analysis:
-        digit_of_species = len(species_list) - 1
-        for kw in species_list:
+        digit_of_species = len(species) - 1
+        for kw in species:
             selection = "(" + select_dict[kw] + ") and (around "\
-                        + str(distances[kw]) + " index "\
+                        + str(species_dict[kw]) + " index "\
                         + str(li_atom.id - 1) + ")"
             shell = nvt_run.select_atoms(selection, periodic=True)
             # for each atom in shell, create/add to dictionary
@@ -253,9 +233,9 @@ def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
             if a > 1 - write_freq:
                 print("writing")
                 species = ' or '.join("(same resid as (" + select_dict[kw]
-                                      + " and around " + str(distances[kw])
+                                      + " and around " + str(species_dict[kw])
                                       + " index " + str(li_atom.id - 1)
-                                      + "))" for kw in species_list)
+                                      + "))" for kw in species)
                 species = "((" + species + ")and not " \
                           + select_dict["cation"] + ")"
                 structure = nvt_run.select_atoms(species,
@@ -268,11 +248,13 @@ def num_of_neighbor_one_li_multi(nvt_run, li_atom, species_list, select_dict,
     return cn_values
 
 
-def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
-                                  distance, run_start, run_end):
+def num_of_neighbor_one_li_simple(
+        nvt_run, li_atom, species_dict, select_dict, run_start, run_end
+):
 
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    species = species_dict.keys()[0]
     if species in select_dict.keys():
         cn_values = np.zeros(int(len(trj_analysis)))
     else:
@@ -280,7 +262,7 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
         return None
     for ts in trj_analysis:
         selection = "(" + select_dict[species] + ") and (around "\
-                    + str(distance) + " index "\
+                    + str(species_dict.get(species)) + " index "\
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
@@ -288,7 +270,7 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
             cn_values[time_count] = 1
         elif shell_len == 1:
             selection_species = "(" + select_dict["cation"] + " and around " + \
-                                str(distance) + " index " + \
+                                str(species_dict.get(species)) + " index " + \
                                 str(shell.atoms[0].id - 1) + ")"
             shell_species = nvt_run.select_atoms(selection_species,
                                                  periodic=True)
@@ -300,6 +282,7 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species, select_dict,
         else:
             cn_values[time_count] = 3
         time_count += 1
+    cn_values = {"total": cn_values}
     return cn_values
 
 
@@ -422,8 +405,8 @@ def angle(a, b, c):
     bc = c - b
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-    angle = np.arccos(cosine_angle)
-    return np.degrees(angle)
+    angle_in_radian = np.arccos(cosine_angle)
+    return np.degrees(angle_in_radian)
 
 
 # Depth-first traversal
@@ -431,61 +414,70 @@ def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict,
                                    distance, run_start, run_end):
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    A_values = np.zeros((int(len(trj_analysis)), 4))
+    cn_values = np.zeros((int(len(trj_analysis)), 4))
     for ts in trj_analysis:
-        li_list = [li_atom.id]
-        p_list = []
+        cation_list = [li_atom.id]
+        anion_list = []
         shell = nvt_run.select_atoms("(" + selection_dict[species] +
                                      " and around " + str(distance)
                                      + " index " + str(li_atom.id - 1) + ")",
                                      periodic=True)
-        for atom in shell.atoms:
-            if atom.resid not in p_list:
-                p_list.append(atom.resid)
-                A_values[time_count][0] += 1
-                shell_pf6 = nvt_run.select_atoms("(type 17 and around 3 resid "
-                                                 + str(atom.resid) + ")",
-                                                 periodic=True)
-                for li in shell_pf6:
-                    if li.id not in li_list:
-                        li_list.append(li.id)
-                        A_values[time_count][1] += 1
-                        shell_li = nvt_run.select_atoms("(type 15 and around 3 index " + str(li.id - 1) + ")",
-                                                        periodic=True)
-                        for p in shell_li.atoms:
-                            if p.resid not in p_list:
-                                p_list.append(p.resid)
-                                A_values[time_count][2] += 1
-                                shell_p = nvt_run.select_atoms("(type 17 and around 3 resid " + str(p.resid) + ")",
-                                                               periodic=True)
-                                for moreli in shell_pf6:
-                                    if moreli.id not in li_list:
-                                        li_list.append(moreli.id)
-                                        A_values[time_count][3] += 1
+        for anion_1 in shell.atoms:
+            if anion_1.resid not in anion_list:
+                anion_list.append(anion_1.resid)
+                cn_values[time_count][0] += 1
+                shell_anion_1 = nvt_run.select_atoms(
+                    "(type 17 and around 3 resid " + str(anion_1.resid) + ")",
+                    periodic=True
+                )
+                for cation_2 in shell_anion_1:
+                    if cation_2.id not in cation_list:
+                        cation_list.append(cation_2.id)
+                        cn_values[time_count][1] += 1
+                        shell_cation_2 = nvt_run.select_atoms(
+                            "(type 15 and around 3 index "
+                            + str(cation_2.id - 1) + ")",
+                            periodic=True
+                        )
+                        for anion_3 in shell_cation_2.atoms:
+                            if anion_3.resid not in anion_list:
+                                anion_list.append(anion_3.resid)
+                                cn_values[time_count][2] += 1
+                                shell_anion_3 = nvt_run.select_atoms(
+                                    "(type 17 and around 3 resid "
+                                    + str(anion_3.resid) + ")",
+                                    periodic=True
+                                )
+                                for cation_4 in shell_anion_3:
+                                    if cation_4.id not in cation_list:
+                                        cation_list.append(cation_4.id)
+                                        cn_values[time_count][3] += 1
 
 
-def coord_shell_array(nvt_run, func, li_atoms, species, select_dict,
-                      distance, run_start, run_end):
+def coord_shell_array(nvt_run, func, li_atoms, species_dict, select_dict,
+                      run_start, run_end):
     """
     Args:
         nvt_run: MDAnalysis Universe
-        func: One of the neighbor statistical method
-        li_atoms: atom group of the Li atoms.
+        func: One of the neighbor statistical method (num_of_neighbor_one_li,
+            num_of_neighbor_one_li_simple)
+        li_atoms: Atom group of the Li atoms.
+        species_dict (dict): A dict of coordination cutoff distance
+            of the interested species.
+        select_dict: A dictionary of species selection.
+        run_start (int): Start time step.
+        run_end (int): End time step.
     """
-    num_array = func(nvt_run, li_atoms[0], species, select_dict,
-                     distance, run_start, run_end)
-    if isinstance(num_array, np.ndarray):
-        for li in tqdm_notebook(li_atoms[1::]):
-            this_li = func(nvt_run, li, species, select_dict,
-                           distance, run_start, run_end)
-            num_array = np.concatenate((num_array, this_li), axis=0)
-    else:
-        for li in tqdm_notebook(li_atoms[1::]):
-            this_li = func(nvt_run, li, species, select_dict,
-                           distance, run_start, run_end)
-            for kw in num_array.keys():
-                num_array[kw] = np.concatenate((num_array.get(kw),
-                                                this_li.get(kw)), axis=0)
+    num_array = func(
+        nvt_run, li_atoms[0], species_dict, select_dict, run_start, run_end
+    )
+    for li in tqdm_notebook(li_atoms[1::]):
+        this_li = func(
+            nvt_run, li, species_dict, select_dict, run_start, run_end
+        )
+        for kw in num_array.keys():
+            num_array[kw] = np.concatenate((num_array.get(kw),
+                                            this_li.get(kw)), axis=0)
     return num_array
 
 
