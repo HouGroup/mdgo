@@ -22,15 +22,14 @@ from mdgo.shell_functions import get_counts, get_pair_type, count_dicts, \
 
 class MdRun:
 
-    def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
+    def __init__(self, data_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
-                 cond=True):
+                 temperature=298.5, cond=True):
         """
         Base constructor.
 
         Args:
             data_dir (str): path to the data file.
-            wrapped_dir (str): path to the wrapped dcd file.
             unwrapped_dir (str): dpath to the unwrapped dcd file.
             nvt_start (int): nvt start time step
             time_step (int or float): LAMMPS timestep
@@ -41,22 +40,26 @@ class MdRun:
             cond (bool): Whether to calculate conductivity MSD. Default to True.
 
         """
-        self.wrapped_run = MDAnalysis.Universe(data_dir,
-                                               wrapped_dir,
+        self.u_unwrapped = MDAnalysis.Universe(str(data_dir),
+                                               str(unwrapped_dir),
                                                format="LAMMPS")
-        self.unwrapped_run = MDAnalysis.Universe(data_dir,
-                                                 unwrapped_dir,
-                                                 format="LAMMPS")
+        self.u_wrapped = MdRun.transform_run(self.u_unwrapped, 'wrap')
+        self.rdf_memoizer = RdfMemoizer(self.u_wrapped)
         self.nvt_start = nvt_start
         self.time_step = time_step
         self.name = name
         self.select_dict = select_dict
-        self.nvt_steps = self.wrapped_run.trajectory.n_frames
+        self.nvt_steps = self.u_wrapped.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.cation_name = None
+        self.anion_name = None
+        self.cations = self.u_unwrapped.select_atoms(self.select_dict["cation"])
+        self.anion_center = self.u_unwrapped.select_atoms(self.select_dict["anion"])
+        self.anions = self.anion_center.residues.atoms
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
-        self.num_li = \
-            len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
+        self.electrolytes = None  # TODO: extract electrolyte and anion_center from select_dict
+        self.num_cation = len(self.cations)
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -72,7 +75,7 @@ class MdRun:
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
-        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022*1e23)
+        self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     def get_init_dimension(self):
