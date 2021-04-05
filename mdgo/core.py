@@ -566,3 +566,53 @@ class MdRun:
             distance_matrix[distance_matrix == 0] = np.nan
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
+
+    def get_rdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                     rdf_range=[1, 10], fresh_rdf=False):
+        """
+        This initial implementation must rely on atom types, in the future this should be
+        changed to allow more sophisticated atom grouping in the rdfs.
+
+        Args:
+            neighbor_atom_type:
+            central_atom_type:
+            timestep:
+            rdf_range:
+            fresh_rdf:
+
+        Returns:
+
+        """
+        values, bins = self.rdf_memoizer.rdf_data(central_atom_type, neighbor_atom_type,
+                                                  timestep, rdf_range, fresh_rdf)
+        return values, bins
+
+    def get_cdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                              rdf_range=[1, 10], fresh_rdf=False):
+        values, bins = self.rdf_memoizer. \
+            rdf_integral_data(central_atom_type, neighbor_atom_type,
+                              timestep, rdf_range, fresh_rdf)
+        return values, bins
+
+    def get_ion_pairing(self, timestep, raw_counts=False):
+        """
+        This function can only be used in a universe with names.
+
+        Args:
+            timestep:
+            raw_counts:
+
+        Returns:
+
+        """
+        self.u_unwrapped.trajectory[timestep]
+        pairs = [get_pair_type(self.u_unwrapped, cation, self.cations, self.anions)
+                 for cation in self.cations]
+        counts = {pair_type: pairs.count(pair_type) for pair_type in pairs}
+        total_cations = len(self.cations)
+        counts_normed = {pair_type: round(count / total_cations, 3)
+                         for pair_type, count, in counts.items()}
+        if raw_counts:
+            return counts
+        else:
+            return counts_normed
