@@ -2,6 +2,7 @@
 from mdgo.shell_functions import get_cation_anion_shells
 import numpy as np
 
+
 def get_counts(atom_group):
     unique_ids = np.unique(atom_group.resids, return_index=True)
     names, counts = np.unique(atom_group.resnames[unique_ids[1]], return_counts=True)
@@ -36,3 +37,20 @@ def count_dicts(dict_list):
             unique_dicts.append(dic)
             dict_counts.append(1)
     return zip(dict_counts, unique_dicts)
+
+# def get_detailed_cation_speciation(self, timestep):
+#     """
+#     This function should be move to a utility folder and wrapped, right now
+#     its not very useful. Currently broken
+#
+#     Returns:
+#
+#     """
+#     self.u_wrapped.trajectory[timestep]
+#     solvation_shell_speciation = [get_counts(get_radial_shell(self.u, cation, 3))
+#                                   for cation in self.cations]
+#     counts_by_speciation = count_dicts(solvation_shell_speciation)
+#     print('before: ', len(solvation_shell_speciation))
+#     print('after: ', len(counts_by_speciation))
+#     print('after: ', sum(counts_by_speciation.keys()))
+#     return counts_by_speciation
