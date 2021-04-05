@@ -134,20 +134,20 @@ class MdRun:
         """
         Returns the initial box dimension.
         """
-        return self.wrapped_run.dimensions
+        return self.u_wrapped.dimensions
 
     def get_nvt_dimension(self):
         """
         Returns the equilibrium box dimension.
         """
-        return self.wrapped_run.trajectory[-1].dimensions
+        return self.u_wrapped.trajectory[-1].dimensions
 
     def get_cond_array(self):
         """ Calculates the conductivity "mean square displacement".
 
         Returns an array of MSD values for each time in the trajectory.
         """
-        nvt_run = self.unwrapped_run
+        nvt_run = self.u_unwrapped
         cations = nvt_run.select_atoms(self.select_dict["cation"])
         anions = nvt_run.select_atoms(self.select_dict["anion"])
         cond_array = calc_cond(nvt_run, anions, cations, self.nvt_start,
@@ -208,7 +208,7 @@ class MdRun:
         Returns an array of the species coordination number for each time
         in the trajectory.
         """
-        nvt_run = self.wrapped_run
+        nvt_run = self.u_wrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li,
                                       li_atoms, species, self.select_dict,
@@ -229,7 +229,7 @@ class MdRun:
         Returns a python dict of arrays of coordination numbers of each species
          for each time in the trajectory.
         """
-        nvt_run = self.wrapped_run
+        nvt_run = self.u_wrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_multi,
                                       li_atoms, species, self.select_dict,
@@ -249,7 +249,7 @@ class MdRun:
         Returns an array of the solvation structure type
         for each time in the trajectory.
         """
-        nvt_run = self.wrapped_run
+        nvt_run = self.u_wrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_simple,
                                       li_atoms, species, self.select_dict,
@@ -359,12 +359,12 @@ class MdRun:
 
         Returns an array of MSD values for each time in the trajectory
         """
-        msd_array = total_msd(self.unwrapped_run, start=start, stop=stop,
+        msd_array = total_msd(self.u_unwrapped, start=start, stop=stop,
                               select=self.select_dict["cation"], fft=fft)
         return msd_array
 
     def get_msd_by_length(self, distance, run_start, run_end):
-        nvt_run = self.unwrapped_run
+        nvt_run = self.u_unwrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         free_array, attach_array = special_msd(nvt_run, li_atoms,
                                                self.select_dict, distance,
@@ -372,7 +372,7 @@ class MdRun:
         return free_array, attach_array
 
     def get_msd_partial(self, distance, run_start, run_end, largest=1000):
-        nvt_run = self.unwrapped_run
+        nvt_run = self.u_unwrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         free_array, attach_array = partial_msd(nvt_run, li_atoms, largest,
                                                self.select_dict, distance,
@@ -397,7 +397,7 @@ class MdRun:
         s_m_to_ms_cm = 10
         if percentage != 1:
             d = (msd_array[start] - msd_array[stop]) \
-                / (start-stop) / self.time_step / 6 * a2 / ps
+                / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
             print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ",
                   d, "m^2/s")
@@ -422,7 +422,7 @@ class MdRun:
 
         Returns an array of the time series and a dict of ACFs of each species.
         """
-        return calc_neigh_corr(self.wrapped_run, species_list, self.select_dict,
+        return calc_neigh_corr(self.u_wrapped, species_list, self.select_dict,
                                distance, self.time_step, run_start, run_end)
 
     @staticmethod
@@ -454,7 +454,7 @@ class MdRun:
         Returns a dict of distance arrays of cation-neighbor
         as a function of time with neighbor id as keys.
         """
-        return trajectory(self.wrapped_run, li_atom, run_start, run_end,
+        return trajectory(self.u_wrapped, li_atom, run_start, run_end,
                           species, self.select_dict, distance)
 
     def get_hopping_freq_dist(self, run_start, run_end, species, distance,
@@ -471,7 +471,7 @@ class MdRun:
 
         Returns the cation average hopping rate and average hopping distance.
         """
-        nvt_run = self.wrapped_run
+        nvt_run = self.u_wrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         freqs = []
         hopping_distance = []
@@ -518,7 +518,7 @@ class MdRun:
                 which is no sampling.
             smooth (int): The length of the smooth filter window. Default to 51.
         """
-        nvt_run = self.wrapped_run
+        nvt_run = self.u_wrapped
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         coord_list = np.array([[0, 0, 0]])
         for li in tqdm_notebook(li_atoms[:]):
@@ -554,8 +554,8 @@ class MdRun:
                 Default to "center".
         """
         center_atoms = \
-            self.wrapped_run.select_atoms(self.select_dict[cluster_center])
-        trj = self.wrapped_run.trajectory[run_start:run_end:]
+            self.u_wrapped.select_atoms(self.select_dict[cluster_center])
+        trj = self.u_wrapped.trajectory[run_start:run_end:]
         means = []
         for ts in trj:
             distance_matrix = capped_distance(center_atoms.positions,
