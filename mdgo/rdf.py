@@ -12,7 +12,7 @@ class RdfMemoizer:
         Args:
             universe:
         """
-        self.u = universe
+        self.u_wrapped = universe
         self.rdfs = {}
 
 
@@ -35,9 +35,9 @@ class RdfMemoizer:
         if not fresh_rdf and (rdf_key in self.rdfs.keys()):
             return self.rdfs[rdf_key]
         else:
-            central_atoms = self.u.select_atoms(f'type {central_atom_type}')
-            neighbor_atoms = self.u.select_atoms(f'type {neighbor_atom_type}')
-            self.u.trajectory[time_step]
+            central_atoms = self.u_wrapped.select_atoms(f'type {central_atom_type}')
+            neighbor_atoms = self.u_wrapped.select_atoms(f'type {neighbor_atom_type}')
+            self.u_wrapped.trajectory[time_step]
             local_rdf = rdf.InterRDF(central_atoms, neighbor_atoms, range=rdf_range)
             local_rdf.run()
             self.rdfs[rdf_key] = local_rdf
