@@ -3,6 +3,19 @@ import warnings
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances
+import nglview as nv
+
+# all functions
+"get_atom_group, get_n_shells, \
+    get_cation_anion_shells, get_closest_n_mol, get_radial_shell, \
+    get_counts, get_pair_type, count_dicts"
+
+
+def visualize(selection):
+    mda_view = nv.show_mdanalysis(selection)
+    mda_view.add_representation('licorice', selection='Li', color='blue')
+    return mda_view.display()
+
 
 def get_atom_group(u, selection):
     """
@@ -51,6 +64,7 @@ def get_n_shells(u, central_species, n_shell=2, radius=3, ignore_atoms=None):
     central_species = get_atom_group(u, central_species)
     if not ignore_atoms:
         ignore_atoms = u.select_atoms('')
+
 
 def get_cation_anion_shells(u, central_species, cation_group, anion_group, radius=4):
     """
@@ -138,6 +152,7 @@ def get_radial_shell(u, central_species, radius):
     full_shell = partial_shell.residues.atoms
     return full_shell
 
+
 # atom group counters
 
 def get_counts(atom_group):
@@ -145,15 +160,41 @@ def get_counts(atom_group):
     names, counts = np.unique(atom_group.resnames[unique_ids[1]], return_counts=True)
     return {i: j for i, j in zip(names, counts)}
 
+
 def get_pair_type(u, central_species, cation_group, anion_group, radius=4):
     cation_name = cation_group.names[0]
     anion_name = anion_group.names[0]
     first, second, third, fourth = (get_counts(shell) for shell in
                                     get_cation_anion_shells(u, central_species, cation_group,
-                                                           anion_group, radius))
+                                                            anion_group, radius))
     if len(first) == 0:
         return "SSIP"
     if (len(first) == 1) & (len(second) == 0):
         return "CIP"
     else:
         return "AGG"
+
+
+def count_dicts(dict_list):
+    unique_dicts = []
+    dict_counts = []
+    j = 0
+    new_dics = 0
+    for dic in dict_list:
+        j += 1
+        new = True
+        for i, unique_dict in enumerate(unique_dicts):
+            if unique_dict == dic:
+                dict_counts[i] += 1
+                new = False
+        if new:
+            new_dics += 1
+            unique_dicts.append(dic)
+            dict_counts.append(1)
+    print('unique:', len(unique_dicts))
+    print('length: ', len(dict_counts))
+    print('sum: ', sum(dict_counts))
+    print('j', j)
+    print('new dics: ', new_dics)
+    #for i in rang
+    return {count: dic for count, dic in zip(dict_counts, unique_dicts)}
