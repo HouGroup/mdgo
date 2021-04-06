@@ -70,6 +70,7 @@ class MdRun:
         self.rdf_memoizer = RdfMemoizer(self.wrapped_run)
         self.nvt_start = nvt_start
         self.time_step = time_step
+        self.temp = temperature
         self.name = name
         self.data = LammpsData.from_file(data_dir)
         self.element_id_dict = mass_to_name(self.data.masses)
@@ -85,6 +86,7 @@ class MdRun:
         self.anion_charge = anion_charge
         self.num_li = \
             len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
+        self.electrolyte_names = None
         self.electrolytes = None  # TODO: extract electrolyte and anion_center from select_dict
         self.num_cation = len(self.cations)
         if cond:
@@ -128,6 +130,7 @@ class MdRun:
         run.anion_center = \
             run.unwrapped_run.select_atoms(f"resname {anion_name} and "
                                            f"name {anion_central_atom}")
+        run.electrolyte_names = electrolyte_names
         run.electrolytes = {elyte: run.unwrapped_run.select_atoms(f'resname {elyte}')
                             for elyte in electrolyte_names}
         run.wrapped_run = run.transform_run(run.unwrapped_run, 'wrap')
@@ -208,7 +211,7 @@ class MdRun:
         ax.legend()
         fig.show()
 
-    def get_conductivity(self, start, end):
+    def get_conductivity(self, start, end, print_cond=True):
         """ Calculates the Green-Kubo (GK) conductivity
 
         Args:
@@ -217,9 +220,10 @@ class MdRun:
 
         Print conductivity in mS/cm.
         """
-        conductivity_calculator(self.time_array, self.cond_array,
-                                self.nvt_v, self.name, start, end)
-        return None
+        cond, error = conductivity_calculator(self.time_array, self.cond_array,
+                                              self.nvt_v, self.name, start, end,
+                                              print_cond)
+        return cond, error
 
     def coord_num_array_one_species(self, species, distance,
                                     run_start, run_end):

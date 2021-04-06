@@ -72,7 +72,8 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
     return msd
 
 
-def conductivity_calculator(time_array, cond_array, v, name, start, end):
+def conductivity_calculator(time_array, cond_array, v, name, start, end,
+                            print_cond=True):
     # Unit conversions
     A2cm = 1e-8
     ps2s = 1e-12
@@ -86,6 +87,7 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
         = stats.linregress(time_array[start:end], cond_array[start:end])
     cond_einstein_mof = slope_cond_avg/6/kb/T/v*convert
     error_mof = std_err/6/kb/T/v*convert
-
-    print("GK Conductivity of " + name + ": " + str(cond_einstein_mof)
-          + " ± " + str(error_mof) + " mS/cm")
+    if print_cond:
+        print("GK Conductivity of " + name + ": " + str(cond_einstein_mof)
+              + " ± " + str(error_mof) + " mS/cm")
+    return cond_einstein_mof, error_mof
