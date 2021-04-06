@@ -123,14 +123,14 @@ class MdRun:
                                   for name in electrolyte_names}
         run.select_dict = {**select_dict, **electrolyte_selections}
         run.name_residues(residue_mass_dict)
-        run.cations = run.u_unwrapped.select_atoms(f"resname {cation_name}")
-        run.anions = run.u_unwrapped.select_atoms(f"resname {anion_name}")
+        run.cations = run.unwrapped_run.select_atoms(f"resname {cation_name}")
+        run.anions = run.unwrapped_run.select_atoms(f"resname {anion_name}")
         run.anion_center = \
-            run.u_unwrapped.select_atoms(f"resname {anion_name} and "
-                                         f"name {anion_central_atom}")
-        run.electrolytes = {elyte: run.u_unwrapped.select_atoms(f'resname {elyte}')
+            run.unwrapped_run.select_atoms(f"resname {anion_name} and "
+                                           f"name {anion_central_atom}")
+        run.electrolytes = {elyte: run.unwrapped_run.select_atoms(f'resname {elyte}')
                             for elyte in electrolyte_names}
-        run.u_wrapped = run.transform_run(run.u_unwrapped, 'wrap')
+        run.wrapped_run = run.transform_run(run.unwrapped_run, 'wrap')
         return run
 
     def get_cation_molarity(self):
@@ -152,10 +152,10 @@ class MdRun:
         return wrapped_run
 
     def name_residues(self, residue_mass_dict):
-        atom_names = mass_to_el(self.u_unwrapped.atoms.masses)
-        self.u_unwrapped.add_TopologyAttr('name', values=atom_names)
-        residue_names = resnames(self.u_unwrapped, residue_mass_dict)
-        self.u_unwrapped.add_TopologyAttr('resname', values=residue_names)
+        atom_names = mass_to_el(self.unwrapped_run.atoms.masses)
+        self.unwrapped_run.add_TopologyAttr('name', values=atom_names)
+        residue_names = resnames(self.unwrapped_run, residue_mass_dict)
+        self.unwrapped_run.add_TopologyAttr('resname', values=residue_names)
 
     def get_init_dimension(self):
         """
@@ -680,8 +680,8 @@ class MdRun:
         Returns:
 
         """
-        self.u_unwrapped.trajectory[timestep]
-        pairs = [get_pair_type(self.u_unwrapped, cation, self.cations, self.anions)
+        self.unwrapped_run.trajectory[timestep]
+        pairs = [get_pair_type(self.unwrapped_run, cation, self.cations, self.anions)
                  for cation in self.cations]
         counts = {pair_type: pairs.count(pair_type) for pair_type in pairs}
         total_cations = len(self.cations)
