@@ -217,14 +217,22 @@ class MdRun:
         """ Calculates the Green-Kubo (GK) conductivity
 
         Args:
-            start (int): Start time step.
-            end (int): End time step.
-
+            start (int): Start time step, measured from nvt_start.
+            end (int): End time step, measured from nvt_start.
+            print_cond (bool): Prints the conductivity if True.
         Print conductivity in mS/cm.
         """
-        cond, error = conductivity_calculator(self.time_array, self.cond_array,
-                                              self.nvt_v, self.name, start, end,
-                                              print_cond)
+        # if start < self.nvt_start:
+        #     raise ValueError("Conductivity is only calculated from nvt_start to "
+        #                      "the end of the simulation. Therefore the start time "
+        #                      "must be greater than nvt_start")
+
+        adjusted_time_array = [i * self.time_step
+                               for i in range(len(self.cond_array))]
+        cond, error = \
+            conductivity_calculator(adjusted_time_array, self.cond_array,
+                                    self.nvt_v, self.name, start,
+                                    end, print_cond=print_cond)
         return cond, error
 
     def coord_num_array_one_species(self, species, distance,
