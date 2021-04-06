@@ -54,7 +54,7 @@ class MdRun:
         cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
-    def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
+    def __init__(self, data_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
                  temperature=298.5, cond=True):
         """
@@ -63,17 +63,11 @@ class MdRun:
 
         """
 
-        self.wrapped_run = MDAnalysis.Universe(data_dir,
-                                               wrapped_dir,
-                                               format="LAMMPS")
-        self.unwrapped_run = MDAnalysis.Universe(data_dir,
-                                                 unwrapped_dir,
+        self.unwrapped_run = MDAnalysis.Universe(str(data_dir),
+                                                 str(unwrapped_dir),
                                                  format="LAMMPS")
-        self.u_unwrapped = MDAnalysis.Universe(str(data_dir),
-                                               str(unwrapped_dir),
-                                               format="LAMMPS")
-        self.u_wrapped = MdRun.transform_run(self.u_unwrapped, 'wrap')
-        self.rdf_memoizer = RdfMemoizer(self.u_wrapped)
+        self.wrapped_run = MdRun.transform_run(self.unwrapped_run, 'wrap')
+        self.rdf_memoizer = RdfMemoizer(self.wrapped_run)
         self.nvt_start = nvt_start
         self.time_step = time_step
         self.name = name
@@ -84,8 +78,8 @@ class MdRun:
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
         self.cation_name = None
         self.anion_name = None
-        self.cations = self.u_unwrapped.select_atoms(self.select_dict["cation"])
-        self.anion_center = self.u_unwrapped.select_atoms(self.select_dict["anion"])
+        self.cations = self.unwrapped_run.select_atoms(self.select_dict["cation"])
+        self.anion_center = self.unwrapped_run.select_atoms(self.select_dict["anion"])
         self.anions = self.anion_center.residues.atoms
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
