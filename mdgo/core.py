@@ -104,7 +104,7 @@ class MdRun:
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
-        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022*1e23)
+        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     @classmethod
@@ -120,13 +120,15 @@ class MdRun:
                     anion_charge=anion_charge, temperature=temperature,
                     cond=cond)
         select_dict = {"cation": f"resname {cation_name}",
-                       "anion": f"resname {anion_name}"}
+                       "anion": f"resname {anion_name} and "
+                                f"name {anion_central_atom}"}
         electrolyte_selections = {name: f"resname {name}"
                                   for name in electrolyte_names}
         run.select_dict = {**select_dict, **electrolyte_selections}
         run.name_residues(residue_mass_dict)
         run.cations = run.unwrapped_run.select_atoms(f"resname {cation_name}")
         run.anions = run.unwrapped_run.select_atoms(f"resname {anion_name}")
+        run.cond_array = run.get_cond_array()
         run.anion_center = \
             run.unwrapped_run.select_atoms(f"resname {anion_name} and "
                                            f"name {anion_central_atom}")
@@ -207,7 +209,7 @@ class MdRun:
         ax.set_ylabel('MSD (A^2)')
         ax.set_xlabel('Time (ps)')
         ax.set_ylim([10, 1000000])
-        ax.set_xlim([100, 500000000])
+        ax.set_xlim([10, 1000000])
         ax.legend()
         fig.show()
 
@@ -667,7 +669,7 @@ class MdRun:
         return values, bins
 
     def get_cdf_data(self, central_atom_type, neighbor_atom_type, timestep,
-                              rdf_range=[1, 10], fresh_rdf=False):
+                     rdf_range=[1, 10], fresh_rdf=False):
         values, bins = self.rdf_memoizer. \
             rdf_integral_data(central_atom_type, neighbor_atom_type,
                               timestep, rdf_range, fresh_rdf)
