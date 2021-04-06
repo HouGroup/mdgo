@@ -3,6 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 import numpy as np
+import math
 from io import StringIO
 import os
 import re
@@ -459,6 +460,45 @@ def concentration_matcher(concentration,
                                      solv_ratio,
                                      num_salt=num_salt,
                                      mode=mode)
+
+
+def resname(residue, residue_mass_dict):
+    """
+    Currently this does not support residues with masses within 0.05. It may
+    return the name of either residue
+    :param residue:
+    :param residue_mass_dict:
+    :return:
+    """
+    for resname, mass in residue_mass_dict.items():
+        if math.isclose(residue.mass, mass, abs_tol=0.05):
+            return resname
+    print("the relevant residues are: \n", residue.atoms.names, "\n and ")
+    raise ValueError(f'mass of residue, {residue.mass}, is not in name_mass_dict,'
+                     f' {residue_mass_dict}')
+
+
+def resnames(u, residue_mass_dict):
+    """
+    Currently this does not support residues with masses within 0.05. It may
+    return the name of either residue
+    :param u:
+    :param residue_mass_dict:
+    :return:
+    """
+    residue_names = []
+    for res in u.residues:
+        residue_names.append(resname(res, residue_mass_dict))
+    return np.array(residue_names)
+
+
+@np.vectorize
+def mass_to_el(atom_mw, tol=0.01):
+    for name, mw in MM_of_Elements.items():
+        if abs(mw - atom_mw) < tol:
+            return name
+    raise Exception(f'the molecular weight: {atom_mw} amu, is not valid')
+
 
 
 if __name__ == "__main__":

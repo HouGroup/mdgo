@@ -3,6 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 import re
+# import regex as re
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acovf

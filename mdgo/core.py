@@ -6,6 +6,8 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import MDAnalysis
+from MDAnalysis import transformations
 from pymatgen.io.lammps.data import LammpsData
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
@@ -23,6 +25,10 @@ from mdgo.coordination import (
 )
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.util import resnames, mass_to_el
+from mdgo.rdf import RdfMemoizer
+from mdgo.shell_functions import get_counts, get_pair_type, count_dicts, \
+    get_radial_shell
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -50,7 +56,7 @@ class MdRun:
 
     def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
-                 cond=True):
+                 temperature=298.5, cond=True):
         """
         Base constructor.
 
@@ -63,6 +69,11 @@ class MdRun:
         self.unwrapped_run = MDAnalysis.Universe(data_dir,
                                                  unwrapped_dir,
                                                  format="LAMMPS")
+        self.u_unwrapped = MDAnalysis.Universe(str(data_dir),
+                                               str(unwrapped_dir),
+                                               format="LAMMPS")
+        self.u_wrapped = MdRun.transform_run(self.u_unwrapped, 'wrap')
+        self.rdf_memoizer = RdfMemoizer(self.u_wrapped)
         self.nvt_start = nvt_start
         self.time_step = time_step
         self.name = name
@@ -71,10 +82,17 @@ class MdRun:
         self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.cation_name = None
+        self.anion_name = None
+        self.cations = self.u_unwrapped.select_atoms(self.select_dict["cation"])
+        self.anion_center = self.u_unwrapped.select_atoms(self.select_dict["anion"])
+        self.anions = self.anion_center.residues.atoms
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
         self.num_li = \
             len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
+        self.electrolytes = None  # TODO: extract electrolyte and anion_center from select_dict
+        self.num_cation = len(self.cations)
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -92,6 +110,58 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022*1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+
+    @classmethod
+    def auto_constructor(cls, data_dir, unwrapped_dir, nvt_start,
+                         time_step, name, residue_mass_dict, cation_name,
+                         anion_name, anion_central_atom, electrolyte_names,
+                         cation_charge=1, anion_charge=-1, temperature=298.5,
+                         cond=True):
+
+        empty_select_dict = {"cation": "", "anion": ""}
+        run = MdRun(data_dir, unwrapped_dir, nvt_start, time_step,
+                    name, empty_select_dict, cation_charge=cation_charge,
+                    anion_charge=anion_charge, temperature=temperature,
+                    cond=cond)
+        select_dict = {"cation": f"resname {cation_name}",
+                       "anion": f"resname {anion_name}"}
+        electrolyte_selections = {name: f"resname {name}"
+                                  for name in electrolyte_names}
+        run.select_dict = {**select_dict, **electrolyte_selections}
+        run.name_residues(residue_mass_dict)
+        run.cations = run.u_unwrapped.select_atoms(f"resname {cation_name}")
+        run.anions = run.u_unwrapped.select_atoms(f"resname {anion_name}")
+        run.anion_center = \
+            run.u_unwrapped.select_atoms(f"resname {anion_name} and "
+                                         f"name {anion_central_atom}")
+        run.electrolytes = {elyte: run.u_unwrapped.select_atoms(f'resname {elyte}')
+                            for elyte in electrolyte_names}
+        run.u_wrapped = run.transform_run(run.u_unwrapped, 'wrap')
+        return run
+
+    def get_cation_molarity(self):
+        A3_2_L3 = 1e-27
+        mol_cations = len(self.cations.residues) / 6.02214e23
+        liters = self.nvt_v * A3_2_L3
+        return round(mol_cations / liters, 2)
+
+    @staticmethod
+    def transform_run(universe, transformation):
+        wrapped_run = universe.copy()
+        all_atoms = wrapped_run.atoms
+        assert transformation in ["wrap", "unwrap"]
+        if transformation == "wrap":
+            transform = transformations.wrap(all_atoms)
+        elif transformation == "unwrap":
+            transform = transformations.unwrap(all_atoms)
+        wrapped_run.trajectory.add_transformations(transform)
+        return wrapped_run
+
+    def name_residues(self, residue_mass_dict):
+        atom_names = mass_to_el(self.u_unwrapped.atoms.masses)
+        self.u_unwrapped.add_TopologyAttr('name', values=atom_names)
+        residue_names = resnames(self.u_unwrapped, residue_mass_dict)
+        self.u_unwrapped.add_TopologyAttr('resname', values=residue_names)
 
     def get_init_dimension(self):
         """
@@ -402,7 +472,7 @@ class MdRun:
         s_m_to_ms_cm = 10
         if percentage != 1:
             d = (msd_array[start] - msd_array[stop]) \
-                / (start-stop) / self.time_step / 6 * a2 / ps
+                / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
             print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ",
                   d, "m^2/s")
@@ -577,3 +647,53 @@ class MdRun:
             distance_matrix[distance_matrix == 0] = np.nan
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
+
+    def get_rdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                     rdf_range=[1, 10], fresh_rdf=False):
+        """
+        This initial implementation must rely on atom types, in the future this should be
+        changed to allow more sophisticated atom grouping in the rdfs.
+
+        Args:
+            neighbor_atom_type:
+            central_atom_type:
+            timestep:
+            rdf_range:
+            fresh_rdf:
+
+        Returns:
+
+        """
+        values, bins = self.rdf_memoizer.rdf_data(central_atom_type, neighbor_atom_type,
+                                                  timestep, rdf_range, fresh_rdf)
+        return values, bins
+
+    def get_cdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                              rdf_range=[1, 10], fresh_rdf=False):
+        values, bins = self.rdf_memoizer. \
+            rdf_integral_data(central_atom_type, neighbor_atom_type,
+                              timestep, rdf_range, fresh_rdf)
+        return values, bins
+
+    def get_ion_pairing(self, timestep, raw_counts=False):
+        """
+        This function can only be used in a universe with names.
+
+        Args:
+            timestep:
+            raw_counts:
+
+        Returns:
+
+        """
+        self.u_unwrapped.trajectory[timestep]
+        pairs = [get_pair_type(self.u_unwrapped, cation, self.cations, self.anions)
+                 for cation in self.cations]
+        counts = {pair_type: pairs.count(pair_type) for pair_type in pairs}
+        total_cations = len(self.cations)
+        counts_normed = {pair_type: round(count / total_cations, 3)
+                         for pair_type, count, in counts.items()}
+        if raw_counts:
+            return counts
+        else:
+            return counts_normed
