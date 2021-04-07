@@ -5,7 +5,7 @@
 try:
     import MDAnalysis.analysis.msd as msd
 except ImportError:
-    msd = None
+    mda_msd = None
 
 
 import numpy as np
@@ -19,7 +19,7 @@ __date__ = "Feb 9, 2021"
 
 
 def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):
-    if msd is not None:
+    if mda_msd is not None:
         msd_calculator = msd.EinsteinMSD(nvt_run, select=select,
                                          msd_type=msd_type, fft=fft)
         msd_calculator.run(start=start, stop=stop)
@@ -79,9 +79,11 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance,
     prev_state = None
     prev_coord = None
     for ts in trj_analysis:
-        selection = "(" + select_dict["anion"] + ") and (around " \
-                    + str(distance) + " index " \
-                    + str(li_atom.id - 1) + ")"
+        selection = (
+                "(" + select_dict["anion"] + ") and (around "
+                + str(distance) + " index "
+                + str(li_atom.id - 1) + ")"
+        )
         shell_anion = nvt_run.select_atoms(selection, periodic=True)
         current_state = 0
         if len(shell_anion) > 0:

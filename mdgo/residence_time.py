@@ -23,9 +23,11 @@ def neighbors_one_li(nvt_run, li_atom, species, selection_dict, distance,
     time_count = 0
     for ts in nvt_run.trajectory[run_start:run_end:]:
         if species in selection_dict.keys():
-            selection = "(" + selection_dict[species] + ") and (around " \
-                        + str(distance) + " index " \
-                        + str(li_atom.id - 1) + ")"
+            selection = (
+                    "(" + selection_dict[species] + ") and (around "
+                    + str(distance) + " index "
+                    + str(li_atom.id - 1) + ")"
+            )
             shell = nvt_run.select_atoms(selection)
         else:
             print('Invalid species selection')

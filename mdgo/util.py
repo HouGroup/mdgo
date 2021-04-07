@@ -316,10 +316,12 @@ def ff_parser(ff_dir, xyz_dir):
         topo.append(atom_topo_string)
         for section in list(SECTION_SORTER.keys())[1:]:
             if SECTION_SORTER[section]["in_kw"] in lines_org:
-                a, b, c, d = SECTION_SORTER[section]["sec_number"],\
-                             SECTION_SORTER[section]["desired_split"],\
-                             SECTION_SORTER[section]["desired_cols"],\
-                             SECTION_SORTER[section]["in_header"]
+                a, b, c, d = (
+                    SECTION_SORTER[section]["sec_number"],
+                    SECTION_SORTER[section]["desired_split"],
+                    SECTION_SORTER[section]["desired_cols"],
+                    SECTION_SORTER[section]["in_header"]
+                )
                 section_str = lines[a].split("\n", b)[b]
                 dfs[section] = pd.read_csv(
                     StringIO(section_str),
