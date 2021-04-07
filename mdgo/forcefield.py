@@ -30,7 +30,11 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import (
+    TimeoutException,
+    NoSuchElementException,
+    WebDriverException
+)
 from string import Template
 from urllib.parse import quote
 import time
@@ -121,17 +125,19 @@ class FFcrawler:
         Write out a LAMMPS data file.
         """
         upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
-        upload.send_keys(pdb_dir)
-        submit = self.web.find_element_by_xpath(
-            '/html/body/div[2]/div/div[2]/form/button[1]')
-        submit.click()
-        pdb_filename = os.path.basename(pdb_dir)
         try:
+            upload.send_keys(pdb_dir)
+            submit = self.web.find_element_by_xpath(
+                '/html/body/div[2]/div/div[2]/form/button[1]')
+            submit.click()
+            pdb_filename = os.path.basename(pdb_dir)
             self.download_data(os.path.splitext(pdb_filename)[0] + ".lmp")
         except TimeoutException:
             print(
                 "Timeout! Web server no response for 10s, file download failed!"
             )
+        except WebDriverException as e:
+            print(e)
         finally:
             self.quit()
 
