@@ -73,8 +73,9 @@ class MdRun:
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
-        self.num_li = \
-            len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
+        self.num_li = len(
+            self.wrapped_run.select_atoms(self.select_dict.get("cation"))
+        )
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -134,8 +135,8 @@ class MdRun:
         Returns an array of MSD values for each time in the trajectory.
         """
         nvt_run = self.unwrapped_run
-        cations = nvt_run.select_atoms(self.select_dict["cation"])
-        anions = nvt_run.select_atoms(self.select_dict["anion"])
+        cations = nvt_run.select_atoms(self.select_dict.get("cation"))
+        anions = nvt_run.select_atoms(self.select_dict.get("anion"))
         cond_array = calc_cond(nvt_run, anions, cations, self.nvt_start,
                                self.cation_charge, self.anion_charge)
         return cond_array
@@ -200,7 +201,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         species_dict = {species: distance}
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li,
                                       li_atoms, species_dict, self.select_dict,
                                       run_start, run_end)["total"]
@@ -220,7 +221,7 @@ class MdRun:
          for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         num_array = coord_shell_array(
             nvt_run,
             num_of_neighbor_one_li,
@@ -250,13 +251,12 @@ class MdRun:
         Write out a series of solvation structures as .xyz files .
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
-        species = list(species_dict.keys())
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         for li in tqdm(li_atoms):
             num_of_neighbor_one_li(
                 nvt_run,
                 li,
-                species,
+                species_dict,
                 self.select_dict,
                 run_start,
                 run_end,
@@ -282,7 +282,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         species_dict = {species: distance}
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         num_array = coord_shell_array(nvt_run, num_of_neighbor_one_li_simple,
                                       li_atoms, species_dict, self.select_dict,
                                       run_start, run_end)["total"]
@@ -307,8 +307,10 @@ class MdRun:
                                                  return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
-        item_name = "Num of " + species + " within " + str(distance) + " " \
-                    + "\u212B"
+        item_name = (
+                "Num of " + species + " within "
+                + str(distance) + " " + "\u212B"
+        )
         item_list = []
         percent_list = []
         for i in range(len(combined)):
@@ -340,8 +342,9 @@ class MdRun:
         cn_list = []
         for kw in cn_values.keys():
             if kw != "total":
-                shell_component, shell_count \
-                    = np.unique(cn_values[kw].flatten(), return_counts=True)
+                shell_component, shell_count = np.unique(
+                    cn_values[kw].flatten(), return_counts=True
+                )
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
                 item_list.append(kw)
                 cn_list.append(cn)
@@ -373,7 +376,7 @@ class MdRun:
         percent_list = []
         for i in range(len(combined)):
             item = str(int(combined[i, 0]))
-            item_list.append(item_dict[item])
+            item_list.append(item_dict.get(item))
             percent_list.append(str("%.4f" % (combined[i, 1] /
                                               combined[:, 1].sum() * 100))
                                 + '%')
@@ -381,7 +384,7 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def get_msd_all(self, start=None, stop=None, fft=True):
+    def get_msd_all(self, start=None, stop=None, fft=True, species="cation"):
         """ Calculates the mean square displacement (MSD) of the cation
 
         Args:
@@ -391,13 +394,18 @@ class MdRun:
 
         Returns an array of MSD values for each time in the trajectory
         """
-        msd_array = total_msd(self.unwrapped_run, start=start, stop=stop,
-                              select=self.select_dict["cation"], fft=fft)
+        msd_array = total_msd(
+            self.unwrapped_run,
+            start=start,
+            stop=stop,
+            select=self.select_dict.get(species),
+            fft=fft
+        )
         return msd_array
 
     def get_msd_by_length(self, distance, run_start, run_end):
         nvt_run = self.unwrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = special_msd(nvt_run, li_atoms,
                                                self.select_dict, distance,
                                                run_start, run_end)
@@ -405,13 +413,13 @@ class MdRun:
 
     def get_msd_partial(self, distance, run_start, run_end, largest=1000):
         nvt_run = self.unwrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = partial_msd(nvt_run, li_atoms, largest,
                                                self.select_dict, distance,
                                                run_start, run_end)
         return free_array, attach_array
 
-    def get_d(self, msd_array, start, stop, percentage=1):
+    def get_d(self, msd_array, start, stop, percentage=1, name="cation"):
         """ Calculates the self-diffusion coefficient of the cation and
         the Nernst-Einstein conductivity
 
@@ -428,19 +436,35 @@ class MdRun:
         ps = 1e-12
         s_m_to_ms_cm = 10
         if percentage != 1:
-            d = (msd_array[start] - msd_array[stop]) \
-                / (start-stop) / self.time_step / 6 * a2 / ps
+            d = (
+                    (msd_array[start] - msd_array[stop]) / (start-stop)
+                    / self.time_step / 6 * a2 / ps
+            )
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
-            print("Diffusivity of", "%.2f" % (percentage * 100) + "% Li: ",
-                  d, "m^2/s")
-            print("NE Conductivity of", "%.2f" % (percentage * 100) + "% Li: ",
-                  sigma, "mS/cm")
+            print(
+                "Diffusivity of",
+                "%.2f" % (percentage * 100) + "% " + name + ": ",
+                d,
+                "m^2/s")
+            if name.lower() == "cation" or name.lower() == "li":
+                print(
+                    "NE Conductivity of",
+                    "%.2f" % (percentage * 100) + "% " + name + ": ",
+                    sigma,
+                    "mS/cm")
         else:
-            d = (msd_array[start] - msd_array[stop]) \
-                / (start - stop) / self.time_step / 6 * a2 / ps
+            d = (
+                    (msd_array[start] - msd_array[stop]) / (start - stop)
+                    / self.time_step / 6 * a2 / ps
+            )
             sigma = d * self.d_to_sigma * s_m_to_ms_cm
-            print("Diffusivity of all Li:", d, "m^2/s")
-            print("NE Conductivity of all Li:", sigma, "mS/cm")
+            print(
+                "Diffusivity of all " + name + ":", d, "m^2/s"
+            )
+            if name.lower() == "cation" or name.lower() == "li":
+                print(
+                    "NE Conductivity of all " + name + ":", sigma, "mS/cm"
+                )
 
     def get_neighbor_corr(self, species_dict, run_start, run_end):
         """ Calculates the neighbor auto-correlation function (ACF)
@@ -510,7 +534,7 @@ class MdRun:
         Returns the cation average hopping rate and average hopping distance.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         freqs = []
         hopping_distance = []
         for li in tqdm(li_atoms[:]):
@@ -557,7 +581,7 @@ class MdRun:
             smooth (int): The length of the smooth filter window. Default to 51.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         coord_list = np.array([[0, 0, 0]])
         for li in tqdm(li_atoms[:]):
             neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species,
@@ -566,7 +590,7 @@ class MdRun:
                                               distance, hopping_cutoff,
                                               smooth=smooth)
             if bind_atom_type is None:
-                bind_atom_type = self.select_dict["anion"]
+                bind_atom_type = self.select_dict.get("anion")
             if cartesian_by_ref is None:
                 cartesian_by_ref = np.array([[1, 0, 0],
                                              [0, 1, 0],
@@ -591,8 +615,9 @@ class MdRun:
             cluster_center (str): species name of cluster center.
                 Default to "center".
         """
-        center_atoms = \
-            self.wrapped_run.select_atoms(self.select_dict[cluster_center])
+        center_atoms = (
+            self.wrapped_run.select_atoms(self.select_dict.get(cluster_center))
+        )
         trj = self.wrapped_run.trajectory[run_start:run_end:]
         means = []
         for ts in trj:

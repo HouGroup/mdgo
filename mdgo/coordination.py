@@ -24,7 +24,7 @@ def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict,
         print('Invalid species selection')
         return None
     for ts in trj_analysis:
-        selection = "(" + selection_dict[species] + ") and (around " \
+        selection = "(" + selection_dict.get(species) + ") and (around " \
                     + str(distance) + " index " \
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -162,8 +162,10 @@ def get_full_coords(coords, reflection=None, rotation=None, inversion=None,
 def cluster_coordinates(nvt_run, select_dict, run_start, run_end, species,
                         distance, basis_vectors=None, cluster_center="center"):
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    cluster_center = nvt_run.select_atoms(select_dict[cluster_center],
-                                          periodic=True)[0]
+    cluster_center = nvt_run.select_atoms(
+        select_dict.get(cluster_center),
+        periodic=True
+    )[0]
     selection = "(" + " or ".join([s for s in species]) \
                 + ") and (around " + str(distance) + " index "\
                     + str(cluster_center.id - 1) + ")"
@@ -218,8 +220,8 @@ def num_of_neighbor_one_li(nvt_run, li_atom, species_dict, select_dict,
     for ts in trj_analysis:
         digit_of_species = len(species) - 1
         for kw in species:
-            selection = "(" + select_dict[kw] + ") and (around "\
-                        + str(species_dict[kw]) + " index "\
+            selection = "(" + select_dict.get(kw) + ") and (around "\
+                        + str(species_dict.get(kw)) + " index "\
                         + str(li_atom.id - 1) + ")"
             shell = nvt_run.select_atoms(selection, periodic=True)
             # for each atom in shell, create/add to dictionary
@@ -232,14 +234,24 @@ def num_of_neighbor_one_li(nvt_run, li_atom, species_dict, select_dict,
             a = np.random.random()
             if a > 1 - write_freq:
                 print("writing")
-                species = ' or '.join("(same resid as (" + select_dict[kw]
-                                      + " and around " + str(species_dict[kw])
-                                      + " index " + str(li_atom.id - 1)
-                                      + "))" for kw in species)
-                species = "((" + species + ")and not " \
-                          + select_dict["cation"] + ")"
-                structure = nvt_run.select_atoms(species,
-                                                 periodic=True)
+                selection_write = (
+                                      ' or '.join(
+                                          "(same resid as ("
+                                          + select_dict.get(kw)
+                                          + " and around "
+                                          + str(species_dict.get(kw))
+                                          + " index " + str(li_atom.id - 1)
+                                          + "))" for kw in species
+                                      )
+                )
+                selection_write = (
+                        "((" + selection_write + ")and not "
+                        + select_dict.get("cation") + ")"
+                )
+                structure = nvt_run.select_atoms(
+                    selection_write,
+                    periodic=True
+                )
                 li_pos = ts[(int(li_atom.id)-1)]
                 path = write_path + str(li_atom.id) + "_" + str(int(ts.time)) \
                     + "_" + str(structure_code) + ".xyz"
@@ -254,14 +266,14 @@ def num_of_neighbor_one_li_simple(
 
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    species = species_dict.keys()[0]
+    species = list(species_dict.keys())[0]
     if species in select_dict.keys():
         cn_values = np.zeros(int(len(trj_analysis)))
     else:
         print('Invalid species selection')
         return None
     for ts in trj_analysis:
-        selection = "(" + select_dict[species] + ") and (around "\
+        selection = "(" + select_dict.get(species) + ") and (around "\
                     + str(species_dict.get(species)) + " index "\
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -269,7 +281,7 @@ def num_of_neighbor_one_li_simple(
         if shell_len == 0:
             cn_values[time_count] = 1
         elif shell_len == 1:
-            selection_species = "(" + select_dict["cation"] + " and around " + \
+            selection_species = "(" + select_dict.get("cation") + " and around " + \
                                 str(species_dict.get(species)) + " index " + \
                                 str(shell.atoms[0].id - 1) + ")"
             shell_species = nvt_run.select_atoms(selection_species,
@@ -299,7 +311,7 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict,
         print('Invalid species selection')
         return None
     for ts in trj_analysis:
-        selection = "(" + select_dict[species] + ") and (around "\
+        selection = "(" + select_dict.get(species) + ") and (around "\
                     + str(distance) + " index "\
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -307,9 +319,11 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict,
         if shell_len == 0:
             cn_values[time_count] = 1
         elif shell_len == 1:
-            selection_species = "(" + select_dict["cation"] + " and around " + \
-                                str(distance) + " index " + \
-                                str(shell.atoms[0].id - 1) + ")"
+            selection_species = (
+                    "(" + select_dict.get("cation") + " and around "
+                    + str(distance) + " index "
+                    + str(shell.atoms[0].id - 1) + ")"
+            )
             shell_species = nvt_run.select_atoms(selection_species,
                                                  periodic=True)
             shell_species_len = len(shell_species) - 1
@@ -317,10 +331,10 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict,
                 cn_values[time_count] = 2
                 li_pos = li_atom.position
                 p_pos = shell.atoms[0].position
-                ec_select = "(" + select_dict["EC"] + ") and (around "\
+                ec_select = "(" + select_dict.get("EC") + ") and (around "\
                     + str(3) + " index "\
                     + str(li_atom.id - 1) + ")"
-                emc_select = "(" + select_dict["EMC"] + ") and (around "\
+                emc_select = "(" + select_dict.get("EMC") + ") and (around "\
                     + str(3) + " index "\
                     + str(li_atom.id - 1) + ")"
                 ec_group = nvt_run.select_atoms(ec_select, periodic=True)
@@ -358,8 +372,8 @@ def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list,
     for ts in trj_analysis:
         digit_of_species = len(species_list) - 1
         for kw in species_list:
-            selection = "(" + select_dict[kw] + ") and (around "\
-                        + str(distances[kw]) + " index "\
+            selection = "(" + select_dict.get(kw) + ") and (around "\
+                        + str(distances.get(kw)) + " index "\
                         + str(li_atom.id - 1) + ")"
             shell = nvt_run.select_atoms(selection, periodic=True)
             # for each atom in shell, create/add to dictionary
@@ -369,17 +383,19 @@ def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list,
                 cn_values["total"][time_count] += 10**digit_of_species
             digit_of_species = digit_of_species - 1
 
-        selection = "(" + select_dict["anion"] + ") and (around "\
-                    + str(distances["anion"]) + " index "\
+        selection = "(" + select_dict.get("anion") + ") and (around "\
+                    + str(distances.get("anion")) + " index "\
                     + str(li_atom.id - 1) + ")"
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
         if shell_len == 0:
             ssip_step.append(time_count)
         elif shell_len == 1:
-            selection_species = "(" + select_dict["cation"] + " and around " + \
-                                str(distances["anion"]) + " index " + \
-                                str(shell.atoms[0].id - 1) + ")"
+            selection_species = (
+                    "(" + select_dict.get("cation") + " and around "
+                    + str(distances.get("anion")) + " index "
+                    + str(shell.atoms[0].id - 1) + ")"
+            )
             shell_species = nvt_run.select_atoms(selection_species,
                                                  periodic=True)
             shell_species_len = len(shell_species) - 1
@@ -418,10 +434,12 @@ def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict,
     for ts in trj_analysis:
         cation_list = [li_atom.id]
         anion_list = []
-        shell = nvt_run.select_atoms("(" + selection_dict[species] +
-                                     " and around " + str(distance)
-                                     + " index " + str(li_atom.id - 1) + ")",
-                                     periodic=True)
+        shell = nvt_run.select_atoms(
+            "(" + selection_dict.get(species)
+            + " and around " + str(distance)
+            + " index " + str(li_atom.id - 1) + ")",
+            periodic=True
+        )
         for anion_1 in shell.atoms:
             if anion_1.resid not in anion_list:
                 anion_list.append(anion_1.resid)
