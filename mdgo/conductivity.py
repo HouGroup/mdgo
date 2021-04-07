@@ -82,8 +82,9 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
     T = 298.15
 
     # Calculate conductivity of mof
-    slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err \
-        = stats.linregress(time_array[start:end], cond_array[start:end])
+    slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err = (
+        stats.linregress(time_array[start:end], cond_array[start:end])
+    )
     cond_einstein_mof = slope_cond_avg/6/kb/T/v*convert
     error_mof = std_err/6/kb/T/v*convert
 

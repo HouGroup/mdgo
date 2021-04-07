@@ -50,10 +50,14 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 MAESTRO = "$SCHRODINGER/maestro -console -nosplash"
-FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} " \
-       "-version 14 -print_parameters -out_file {}"
-MolecularWeight = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" \
-                  "cid/{}/property/MolecularWeight/txt"
+FFLD = (
+    "$SCHRODINGER/utilities/ffld_server -imae {} "
+    "-version 14 -print_parameters -out_file {}"
+)
+MolecularWeight = (
+    "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/"
+    "cid/{}/property/MolecularWeight/txt"
+)
 
 
 class FFcrawler:
