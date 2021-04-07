@@ -545,16 +545,6 @@ class PubChemRunner:
 
 
 if __name__ == "__main__":
-    pcr = PubChemRunner(
-        "/Users/th/Downloads/test_pc/",
-        "/Users/th/Downloads/package/chromedriver/chromedriver",
-        api=False,
-        headless=True
-    )
-    long_name = "ethylene carbonate"
-    short_name = "EC"
-    # cid = pcr.obtain_entry(long_name, short_name, "json")
-    pcr.quit()
     p = pcp.get_properties('MolecularWeight', 7303,)[0].get("MolecularWeight")
     print(p)
 
@@ -596,3 +586,16 @@ if __name__ == "__main__":
     MR.get_mae()
     MR.get_ff()
     """
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_pc/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=True
+    )
+    long_name = "Ethyl Methyl Carbonate"
+    short_name = "EMC"
+    cid = pcr.obtain_entry(long_name, short_name)
+    MR = MaestroRunner(
+        f"/Users/th/Downloads/test_pc/{short_name}_{cid}.sdf",
+        "/Users/th/Downloads/test_pc")
+    MR.get_mae()
+    MR.get_ff()

@@ -9,7 +9,7 @@ except ImportError:
 
 
 import numpy as np
-from tqdm import tqdm_notebook
+from tqdm.notebook import trange
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -121,7 +121,7 @@ def partial_msd(nvt_run, li_atoms, largest, select_dict, distance,
                 run_start, run_end):
     free_coords = list()
     attach_coords = list()
-    for i in tqdm_notebook(list(range(len(li_atoms)))):
+    for i in trange(len(li_atoms)):
         attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
                                                       select_dict, distance,
                                                       run_start, run_end)
@@ -159,7 +159,7 @@ def msd_by_length(coord_list):
 def special_msd(nvt_run, li_atoms, select_dict, distance, run_start, run_end):
     free_coords = list()
     attach_coords = list()
-    for i in tqdm_notebook(list(range(len(li_atoms)))):
+    for i in trange(len(li_atoms)):
         attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
                                                       select_dict, distance,
                                                       run_start, run_end)

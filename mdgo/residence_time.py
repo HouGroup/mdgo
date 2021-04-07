@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "1.0"
@@ -65,7 +65,7 @@ def calc_neigh_corr(nvt_run, species_dict, selection_dict, time_step,
     acf_avg = dict()
     for kw in species_dict.keys():
         acf_all = list()
-        for li in tqdm_notebook(li_atoms[::]):
+        for li in tqdm(li_atoms[::]):
             adjacency_matrix = neighbors_one_li(
                 nvt_run,
                 li,

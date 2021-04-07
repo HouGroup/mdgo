@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 import numpy as np
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 from scipy import stats
 
 __author__ = "Kara Fong, Tingzheng Hou"
@@ -61,7 +61,7 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
     """
     # Current code assumes anion and cation selections are single atoms
     qr = []
-    for ts in tqdm_notebook(u.trajectory[run_start:]):
+    for ts in tqdm(u.trajectory[run_start:]):
         qr_temp = np.zeros(3)
         for anion in anions.atoms:
             qr_temp += anion.position * anion_charge

@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 import numpy as np
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec
@@ -471,7 +471,7 @@ def coord_shell_array(nvt_run, func, li_atoms, species_dict, select_dict,
     num_array = func(
         nvt_run, li_atoms[0], species_dict, select_dict, run_start, run_end
     )
-    for li in tqdm_notebook(li_atoms[1::]):
+    for li in tqdm(li_atoms[1::]):
         this_li = func(
             nvt_run, li, species_dict, select_dict, run_start, run_end
         )

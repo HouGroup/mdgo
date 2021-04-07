@@ -14,7 +14,10 @@ import math
 import sys
 import os
 import argparse
-from pymatgen import Molecule
+try:
+    from pymatgen.core.structure import Molecule
+except ImportError:
+    from pymatgen import Molecule
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902

@@ -11,7 +11,10 @@ import math
 import numbers
 import sys
 from mdgo.volume import molecular_volume
-from pymatgen import Molecule
+try:
+    from pymatgen.core.structure import Molecule
+except ImportError:
+    from pymatgen import Molecule
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

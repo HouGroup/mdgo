@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from pymatgen.io.lammps.data import LammpsData
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
-from tqdm import tqdm_notebook
+from tqdm.notebook import tqdm
 from mdgo.util import mass_to_name
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
@@ -97,7 +97,30 @@ class MdRun:
         """
         Returns the initial box dimension.
         """
-        return self.wrapped_run.dimensions
+        return self.wrapped_run.trajectory[0].dimensions
+
+    def get_equilibrium_dimension(self, npt_range, period=200):
+        """
+        Returns the equilibrium box dimension.
+        """
+        ave_dx = [np.inf, np.inf-1]
+        count = 0
+        ave_dxi = 0
+        convergence = -1
+        for i in range(npt_range):
+            ave_dxi += self.wrapped_run.trajectory[i].dimensions[0]
+            count += 1
+            if count * self.time_step == period:
+                print(ave_dxi / count)
+                ave_dx.append(ave_dxi / count)
+                count = 0
+            if ave_dx[-1] >= ave_dx[-2]:
+                convergence = i
+                break
+        d = list()
+        for j in range(convergence, npt_range):
+            d.append(self.wrapped_run.trajectory[j].dimensions)
+        return np.mean(np.array(d), axis=0)
 
     def get_nvt_dimension(self):
         """
@@ -117,13 +140,15 @@ class MdRun:
                                self.cation_charge, self.anion_charge)
         return cond_array
 
-    def plot_cond_array(self, start, end, *runs):
+    def plot_cond_array(self, start, end, *runs, reference=True):
         """ Plots the conductivity MSD as a function of time
 
             Args:
                 start (int): Start time step.
                 end (int): End time step.
                 runs (MdRun): Other runs to be compared in the same plot.
+                reference (bool): Whether to plot reference line.
+                    Default to True.
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
@@ -137,6 +162,8 @@ class MdRun:
             ax.loglog(run.time_array[start:end],
                       run.cond_array[start:end], color=colors[i], lw=2,
                       label=run.name)
+        if reference:
+            ax.loglog((100000, 1000000), (1000, 10000))
         ax.set_ylabel('MSD (A^2)')
         ax.set_xlabel('Time (ps)')
         ax.set_ylim([10, 1000000])
@@ -225,7 +252,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         species = list(species_dict.keys())
-        for li in tqdm_notebook(li_atoms):
+        for li in tqdm(li_atoms):
             num_of_neighbor_one_li(
                 nvt_run,
                 li,
@@ -486,7 +513,7 @@ class MdRun:
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         freqs = []
         hopping_distance = []
-        for li in tqdm_notebook(li_atoms[:]):
+        for li in tqdm(li_atoms[:]):
             neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species,
                                       self.select_dict, distance)
             sites, freq, steps = find_nearest(neighbor_trj, self.time_step,
@@ -532,7 +559,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict["cation"])
         coord_list = np.array([[0, 0, 0]])
-        for li in tqdm_notebook(li_atoms[:]):
+        for li in tqdm(li_atoms[:]):
             neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species,
                                       self.select_dict, distance)
             sites, freq, steps = find_nearest(neighbor_trj, self.time_step,
