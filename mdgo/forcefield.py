@@ -24,7 +24,7 @@ For using the MaestroRunner class:
 """
 
 from pymatgen.io.lammps.data import LammpsData
-from mdgo.util import mass_to_name, ff_parser
+from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
 import pubchempy as pcp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -533,23 +533,32 @@ class PubChemRunner:
                 '//*[@id="main-content"]/div/div/div[1]/'
                 'div[3]/div/table/tbody/tr[1]/td'
             )
+            smiles_locator = (
+                '//*[@id="Canonical-SMILES"]/div[2]/div[1]/p'
+            )
             self.wait.until(
                 EC.presence_of_element_located((By.XPATH, cid_locator))
             )
             cid = self.web.find_element_by_xpath(cid_locator).text
+            smiles = self.web.find_element_by_xpath(smiles_locator).text
             print("Best match found, PubChem ID:", cid)
-            self.web.get(
-                f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/{cid}/'
-                f'record/{output_format.upper()}/?record_type=3d&'
-                f'response_type=save&response_basename={name + "_" + cid}'
-             )
-            print("Waiting for downloads.", end="")
-            time.sleep(1)
-            while any([filename.endswith(".crdownload") for filename in
-                       os.listdir(self.write_dir)]):
+            if output_format.lower() == "smiles":
+                print("SMILES code:", smiles)
+            elif output_format.lower() == "pdb":
+                self.smiles_to_pdb(smiles)
+            else:
+                self.web.get(
+                    f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/'
+                    f'{cid}/record/{output_format.upper()}/?record_type=3d&'
+                    f'response_type=save&response_basename={name + "_" + cid}'
+                 )
+                print("Waiting for downloads.", end="")
                 time.sleep(1)
-                print(".", end="")
-            print("\nStructure file saved.")
+                while any([filename.endswith(".crdownload") for filename in
+                           os.listdir(self.write_dir)]):
+                    time.sleep(1)
+                    print(".", end="")
+                print("\nStructure file saved.")
         except TimeoutException:
             print(
                 "Timeout! Web server no response for 10s, "
@@ -572,22 +581,43 @@ class PubChemRunner:
             print("No exact match found, please try the web search")
         else:
             cid = str(cids[0])
-            pcp.download(
-                output_format.upper(),
-                os.path.join(
+            if output_format.lower() == "smiles":
+                compound = pcp.Compound.from_cid(int(cid))
+                print("SMILES code:", compound.canonical_smiles)
+            elif output_format.lower() == "pdb":
+                sdf_file = os.path.join(
                     self.write_dir,
-                    name + '_' + cid + '.' + output_format.lower()
-                ),
-                cid,
-                record_type='3d',
-                overwrite=True
-            )
+                    name + '_' + cid + '.sdf'
+                )
+                pdb_file = os.path.join(
+                    self.write_dir,
+                    name + '_' + cid + '.pdb'
+                )
+                pcp.download(
+                    "SDF",
+                    sdf_file,
+                    cid,
+                    record_type='3d',
+                    overwrite=True
+                )
+                sdf_to_pdb(sdf_file, pdb_file)
+            else:
+                pcp.download(
+                    output_format.upper(),
+                    os.path.join(
+                        self.write_dir,
+                        name + '_' + cid + '.' + output_format.lower()
+                    ),
+                    cid,
+                    record_type='3d',
+                    overwrite=True
+                )
         return cid
 
 
 if __name__ == "__main__":
-    p = pcp.get_properties('MolecularWeight', 7303,)[0].get("MolecularWeight")
-    print(p)
+    #w = pcp.get_properties('MolecularWeight', 7303,)[0].get("MolecularWeight")
+    #print(w)
 
     """
     pcr = PubChemRunner(
@@ -626,7 +656,7 @@ if __name__ == "__main__":
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
-    """
+    
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_pc/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
@@ -640,3 +670,12 @@ if __name__ == "__main__":
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
+    """
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_mdgo/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=True
+    )
+    long_name = "Ethyl Methyl Carbonate"
+    short_name = "EMC"
+    cid = pcr.obtain_entry(long_name, short_name, "pdb")

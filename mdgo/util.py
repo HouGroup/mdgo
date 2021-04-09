@@ -596,7 +596,6 @@ def sdf_to_pdb(
                     break
         for i in range(1, len(bond_lines)):
             bond_lines[i][1:] = sorted(bond_lines[i][1:])
-        print(bond_lines)
         for i in range(1, len(bond_lines)):
             outp.write(
                 'CONECT'
