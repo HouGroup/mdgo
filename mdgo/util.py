@@ -466,7 +466,148 @@ def concentration_matcher(concentration,
                                      mode=mode)
 
 
+def sdf_to_pdb(
+        sdf_file,
+        pdb_file,
+        write_title=True,
+        remark4=True,
+        credit=True,
+        pubchem=True
+):
+    """
+    Convert SDF file to PDB file.
+    """
+
+    # parse sdf file file
+    with open(sdf_file, 'r') as inp:
+        sdf = inp.readlines()
+        sdf = map(str.strip, sdf)
+    if pubchem:
+        title = "cid_"
+    else:
+        title = ""
+    pdb_atoms = list()
+    # create pdb list of dictionaries
+    atoms = 0
+    bonds = 0
+    atom1s = list()
+    atom2s = list()
+    orders = list()
+    for i, line in enumerate(sdf):
+        if i == 0:
+            title += line.strip() + ' '
+            continue
+        elif i in [1, 2]:
+            continue
+        elif i == 3:
+            line = line.split()
+            atoms = int(line[0])
+            bonds = int(line[1])
+            continue
+        elif line.startswith('M  END'):
+            break
+        elif i in list(range(4, 4 + atoms)):
+            line = line.split()
+            newline = {
+                'ATOM': 'HETATM',
+                'serial': int(i-3),
+                'name': str(line[3]),
+                'resName': 'UNK',
+                'resSeq': 900,
+                'x': float(line[0]),
+                'y': float(line[1]),
+                'z': float(line[2]),
+                'occupancy': 1.00,
+                'tempFactor': 0.00,
+                'altLoc': str(''),
+                'chainID': str(''),
+                'iCode': str(''),
+                'element': str(line[3]),
+                'charge': str(''),
+                'segment': str('')
+            }
+            pdb_atoms.append(newline)
+        elif i in list(range(4 + atoms, 4 + atoms + bonds)):
+            atom1 = int(line.split()[0])
+            atom2 = int(line.split()[1])
+            order = int(line.split()[2])
+            atom1s.append(atom1)
+            atom2s.append(atom2)
+            while order > 1:
+                orders.append([atom1, atom2])
+                orders.append([atom2, atom1])
+                order -= 1
+        else:
+            continue
+
+    # write pdb file
+    with open(pdb_file, 'wt') as outp:
+        if write_title:
+            outp.write("TITLE     {:70s}\n".format(title))
+        if remark4:
+            outp.write(
+                "REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n"
+            )
+        if credit:
+            outp.write(
+                "REMARK 888\n"
+                "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n"
+            )
+        for n in range(atoms):
+            line = pdb_atoms[n].copy()
+            if len(line['name']) == 3:
+                line['name'] = ' ' + line['name']
+            # format pdb
+            formatted_line = (
+                (
+                    "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
+                    "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
+                    "{:<4s}{:>2s}{:<2s}"
+                ).format(
+                    line['ATOM'],
+                    line['serial'],
+                    line['name'],
+                    line['altLoc'],
+                    line['resName'],
+                    line['chainID'],
+                    str(line['resSeq']),
+                    line['iCode'],
+                    line['x'],
+                    line['y'],
+                    line['z'],
+                    line['occupancy'],
+                    line['tempFactor'],
+                    line['segment'],
+                    line['element'],
+                    line['charge'])
+            )
+            # write
+            outp.write(formatted_line + "\n")
+
+        bond_lines = [[i] for i in range(atoms + 1)]
+        for i, atom in enumerate(atom1s):
+            bond_lines[atom].append(atom2s[i])
+        for i, atom in enumerate(atom2s):
+            bond_lines[atom].append(atom1s[i])
+        for i in range(len(orders)):
+            for j, line in enumerate(bond_lines):
+                if line[0] == orders[i][0]:
+                    bond_lines.insert(j + 1, orders[i])
+                    break
+        for i in range(1, len(bond_lines)):
+            bond_lines[i][1:] = sorted(bond_lines[i][1:])
+        print(bond_lines)
+        for i in range(1, len(bond_lines)):
+            outp.write(
+                'CONECT'
+                + ''.join("{:>5d}".format(num) for num in bond_lines[i])
+                + "\n"
+            )
+        outp.write("END\n")  # final 'END'
+
+
 if __name__ == "__main__":
+    """
     litfsi = Molecule.from_file(
         "/Users/th/Downloads/package/packmol-17.163/LiTFSI.xyz"
     )
@@ -477,4 +618,9 @@ if __name__ == "__main__":
                                           num_salt=166,
                                           mode="w")
     print(mols)
-    print(box_len)
+    print(box_len)    
+    """
+    sdf_to_pdb(
+        "/Users/th/Downloads/test_mdgo/EC_7303.sdf",
+        "/Users/th/Downloads/test_mdgo/test_util.pdb",
+    )
