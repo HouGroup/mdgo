@@ -475,6 +475,37 @@ class PubChemRunner:
                 output_format=output_format
             )
 
+    def smiles_to_pdb(self, smiles):
+        convertor_url = 'https://cactus.nci.nih.gov/translate/'
+        input_xpath = (
+            '/html/body/div/div[2]/div[1]/form/'
+            'table[1]/tbody/tr[2]/td[1]/input[1]'
+        )
+        pdb_xpath = (
+            '/html/body/div/div[2]/div[1]/form/'
+            'table[1]/tbody/tr[2]/td[2]/div/input[4]'
+        )
+        translate_xpath = (
+            '/html/body/div/div[2]/div[1]/form/table[2]/tbody/tr/td/input[2]'
+        )
+        download_xpath = (
+            '/html/body/center/b/a'
+        )
+        self.web.get(convertor_url)
+        self.web.find_element_by_xpath(input_xpath).clear()
+        self.web.find_element_by_xpath(input_xpath).send_keys(smiles)
+        self.web.find_element_by_xpath(pdb_xpath).click()
+        self.web.find_element_by_xpath(translate_xpath).click()
+        time.sleep(1)
+        self.web.find_element_by_xpath(download_xpath).click()
+        print("Waiting for downloads.", end="")
+        time.sleep(1)
+        while any([filename.endswith(".crdownload") for filename in
+                   os.listdir(self.write_dir)]):
+            time.sleep(1)
+            print(".", end="")
+        print("\nStructure file saved.")
+
     def _obtain_entry_web(self, search_text, name, output_format):
         cid = None
 
