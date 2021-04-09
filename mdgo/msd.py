@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 try:
-    import MDAnalysis.analysis.msd as msd
+    import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
     mda_msd = None
 
@@ -20,8 +20,12 @@ __date__ = "Feb 9, 2021"
 
 def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):
     if mda_msd is not None:
-        msd_calculator = msd.EinsteinMSD(nvt_run, select=select,
-                                         msd_type=msd_type, fft=fft)
+        msd_calculator = mda_msd.EinsteinMSD(
+            nvt_run,
+            select=select,
+            msd_type=msd_type,
+            fft=fft
+        )
         msd_calculator.run(start=start, stop=stop)
         total_array = msd_calculator.timeseries
         return total_array
