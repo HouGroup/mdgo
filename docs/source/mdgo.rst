@@ -14,6 +14,7 @@ Submodules
    mdgo.mdgopackmol
    mdgo.msd
    mdgo.residence_time
+   mdgo.volume
    mdgo.util
 
 Module contents
