@@ -128,6 +128,8 @@ class FFcrawler:
 
         Write out a LAMMPS data file.
         """
+        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        time.sleep(1)
         upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
         try:
             upload.send_keys(pdb_dir)
@@ -155,6 +157,8 @@ class FFcrawler:
 
         Write out a LAMMPS data file.
         """
+        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        time.sleep(1)
         smile = self.web.find_element_by_xpath('//*[@id="smiles"]')
         smile.send_keys(smiles_code)
         submit = self.web.find_element_by_xpath(
