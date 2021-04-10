@@ -54,7 +54,7 @@ If not available already, use the following steps.
     -   Supported searching text:
         -   cid, name, smiles, inchi, inchikey or formula
     -   Supported output format:
-        -   XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
+        -   smiles code, PDB, XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
 2.  Write OPLS-AA forcefield file from LigParGen
     -   Supported input format:
         -   mol/pdb
