@@ -37,8 +37,10 @@ from selenium.common.exceptions import (
 )
 from string import Template
 from urllib.parse import quote
+from pathlib import Path
 import time
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -58,6 +60,30 @@ MolecularWeight = (
     "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/"
     "cid/{}/property/MolecularWeight/txt"
 )
+MODULE_DIR = Path(__file__).absolute().parent
+DATA_DIR = os.path.join(MODULE_DIR, "data")
+DATA_MODELS = {
+    "water": {
+        "spc": "water_spc.lmp",
+        "spce": "water_spce.lmp",
+        "tip3pew": "water_tip3p_ew.lmp",
+        "tip4p2005": "water_tip4p_2005.lmp",
+        "tip4pew": "water_tip4p_ew.lmp"
+    },
+    "ion": {
+        "aq": ["default"],
+        "aqvist": ["default"],
+        "jj": ["default"],
+        "jensen_jorgensen": ["default"],
+        "jc": ["spce", "tip3p", "tip4pew"],
+        "joung_cheatham": ["spce", "tip3p", "tip4pew"]
+    },
+    "alias": {
+        "aq": "aqvist",
+        "jj": "jensen_jorgensen",
+        "jc": "joung_cheatham"
+    }
+}
 
 
 class FFcrawler:
@@ -619,6 +645,115 @@ class PubChemRunner:
         return cid
 
 
+class WaterModel:
+
+    """A class for retreiving water and ion force filed parameters.
+
+    Args:
+        additional_dir (str): Directory for writing output.
+
+    Examples:
+        Retreive SPC/E water model:
+        >>> models = WaterModel()
+        >>> spce_data = WaterModel.get_water(model="spce")
+        Retreive Li+ ion by Jensen and Jorgensen:
+        >>> models = WaterModel()
+        >>> spce_data = WaterModel.get_ion(model="jj")
+        Retreive a customized water data file:
+        >>> models = WaterModel(additional_dir="path/to/data/file")
+        >>> spce_data = WaterModel.get_ion(file_name="xxx.lmp")
+    """
+
+    def __init__(self, additional_dir=None):
+        """Base constructor."""
+        self.data_path = DATA_DIR
+        self.additional_path = additional_dir
+
+    def get_water(self, model="spce", file_name=None):
+        if file_name is None:
+            signature = "".join(re.split('[\W|_]+', model)).lower()
+            if signature in DATA_MODELS.get("water").keys():
+                return LammpsData.from_file(
+                    os.path.join(
+                        self.data_path,
+                        "water",
+                        DATA_MODELS.get("water").get(signature)
+                    )
+                )
+            else:
+                print(
+                    "Water model not found. Please specify a customized data "
+                    "path or try another water model.\n"
+                )
+                return None
+        elif os.path.exists(os.path.join(self.additional_path, file_name)):
+            return LammpsData.from_file(
+                os.path.join(self.additional_path, file_name)
+            )
+        else:
+            print(
+                "Please check the customized data file path.\n"
+            )
+            return None
+
+    def get_ion(
+            self,
+            model="jensen_jorgensen",
+            water="default",
+            ion="li+",
+            file_name=None
+    ):
+        alias = DATA_MODELS.get("alias")
+        signature = model.lower()
+        if signature in alias:
+            signature = alias.get(model)
+        ion_type = ion.capitalize()
+        if file_name is None:
+            for key in DATA_MODELS.get("ion").keys():
+                if key.startswith(signature):
+                    ion_model = DATA_MODELS.get("ion").get(key)
+                    if water in ion_model:
+                        if water == "default":
+                            file_path = os.path.join(
+                                self.data_path, "ion", key, ion_type + ".lmp"
+                            )
+                        else:
+                            file_path = os.path.join(
+                                self.data_path,
+                                "ion",
+                                key,
+                                water,
+                                ion_type + ".lmp"
+                            )
+                        if os.path.exists(file_path):
+                            return LammpsData.from_file(file_path)
+                        else:
+                            print(
+                                "Ion not found. Please try another ion.\n"
+                            )
+                            return None
+                    else:
+                        print(
+                            "Water model not found. Please "
+                            "try another water model.\n"
+                        )
+                        return None
+            print(
+                "Ion model not found. Please "
+                "try another ion model.\n"
+            )
+            return None
+        elif os.path.exists(os.path.join(self.additional_path, file_name)):
+            return LammpsData.from_file(
+                os.path.join(self.additional_path, file_name)
+            )
+        else:
+            print(
+                "Please check the customized data file path.\n"
+            )
+            return None
+
+
 if __name__ == "__main__":
     #w = pcp.get_properties('MolecularWeight', 7303,)[0].get("MolecularWeight")
     #print(w)
@@ -674,7 +809,7 @@ if __name__ == "__main__":
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
-    """
+    
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_mdgo/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
@@ -683,3 +818,6 @@ if __name__ == "__main__":
     long_name = "Ethyl Methyl Carbonate"
     short_name = "EMC"
     cid = pcr.obtain_entry(long_name, short_name, "pdb")
+    """
+    data = WaterModel().get_ion(model="aq", ion="Na+")
+    print(data.get_string())
