@@ -60,7 +60,7 @@ If not available already, use the following steps.
         -   SCP, SPC/E, TIP3P_EW, TIP4P_EW, TIP4P_2005
     -   Supported ion models:
         -   alkali, ammonium, and halide monovalent ions by Jensen and Jorgensen 
-        -   alkali and halide monovalent ions by Joung† and Cheatham
+        -   alkali and halide monovalent ions by Joung and Cheatham
         -   alkali and alkaline-earth metal cations by Åqvist
 3.  Write OPLS-AA forcefield file from LigParGen
     -   Supported input format:

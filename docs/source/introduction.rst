@@ -32,7 +32,7 @@ Please see :any:`modules <modules>` for detailed documentation of the code.
 
      * alkali, ammonium, and halide monovalent ions by Jensen and Jorgensen
 
-     * alkali and halide monovalent ions by Joung† and Cheatham
+     * alkali and halide monovalent ions by Joung and Cheatham
 
      * alkali and alkaline-earth metal cations by Åqvist
 
