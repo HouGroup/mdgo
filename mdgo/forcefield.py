@@ -111,7 +111,7 @@ class FFcrawler:
     def __init__(
             self,
             write_dir,
-            chromedriver_dir,
+            chromedriver_dir=None,
             headless=True,
             xyz=False,
             gromacs=False
@@ -135,7 +135,10 @@ class FFcrawler:
         self.options.add_experimental_option("prefs", self.preferences)
         self.options.add_experimental_option('excludeSwitches',
                                              ['enable-automation'])
-        self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
+        if chromedriver_dir is None:
+            self.web = webdriver.Chrome(options=self.options)
+        else:
+            self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
         self.wait = WebDriverWait(self.web, 10)
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
@@ -782,5 +785,13 @@ if __name__ == "__main__":
     short_name = "EMC"
     cid = pcr.obtain_entry(long_name, short_name, "pdb")
     """
-    lmp_data = Aqueous().get_ion(model="aq", ion="Na+")
-    print(lmp_data.get_string())
+    #lmp_data = Aqueous().get_ion(model="aq", ion="Na+")
+    #print(lmp_data.get_string())
+    pcr = PubChemRunner(
+        "/Users/th/Downloads/test_mdgo/",
+        "/Users/th/Downloads/package/chromedriver/chromedriver",
+        api=True
+    )
+    long_name = "Ethyl Methyl Carbonate"
+    short_name = "EMC"
+    cid = pcr.obtain_entry(long_name, short_name, "pdb")

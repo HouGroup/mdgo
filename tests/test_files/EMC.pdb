@@ -1,0 +1,37 @@
+TITLE     cid_522046                                                            
+REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012
+REMARK 888
+REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)
+HETATM    1  O   UNK   900       0.680  -0.454   0.001  1.00  0.00           O  
+HETATM    2  O   UNK   900      -1.500  -0.780   0.000  1.00  0.00           O  
+HETATM    3  O   UNK   900      -0.709   1.385   0.000  1.00  0.00           O  
+HETATM    4  C   UNK   900       1.825   0.406  -0.000  1.00  0.00           C  
+HETATM    5  C   UNK   900       3.079  -0.441  -0.000  1.00  0.00           C  
+HETATM    6  C   UNK   900      -0.528   0.175   0.001  1.00  0.00           C  
+HETATM    7  C   UNK   900      -2.846  -0.292  -0.001  1.00  0.00           C  
+HETATM    8  H   UNK   900       1.805   1.039  -0.895  1.00  0.00           H  
+HETATM    9  H   UNK   900       1.806   1.040   0.894  1.00  0.00           H  
+HETATM   10  H   UNK   900       3.975   0.186  -0.001  1.00  0.00           H  
+HETATM   11  H   UNK   900       3.103  -1.093   0.879  1.00  0.00           H  
+HETATM   12  H   UNK   900       3.103  -1.094  -0.879  1.00  0.00           H  
+HETATM   13  H   UNK   900      -3.034   0.301   0.899  1.00  0.00           H  
+HETATM   14  H   UNK   900      -3.519  -1.153  -0.001  1.00  0.00           H  
+HETATM   15  H   UNK   900      -3.033   0.300  -0.901  1.00  0.00           H  
+CONECT    1    4    6
+CONECT    2    6    7
+CONECT    3    6
+CONECT    3    6
+CONECT    4    1    5    8    9
+CONECT    5    4   10   11   12
+CONECT    6    1    2    3
+CONECT    6    3
+CONECT    7    2   13   14   15
+CONECT    8    4
+CONECT    9    4
+CONECT   10    5
+CONECT   11    5
+CONECT   12    5
+CONECT   13    7
+CONECT   14    7
+CONECT   15    7
+END
