@@ -37,7 +37,6 @@ from selenium.common.exceptions import (
 )
 from string import Template
 from urllib.parse import quote
-from pathlib import Path
 import time
 import os
 import re
@@ -60,7 +59,7 @@ MolecularWeight = (
     "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/"
     "cid/{}/property/MolecularWeight/txt"
 )
-MODULE_DIR = Path(__file__).absolute().parent
+MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(MODULE_DIR, "data")
 DATA_MODELS = {
     "water": {
@@ -311,13 +310,13 @@ class MaestroRunner:
     """
 
     template_assignbond = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        MODULE_DIR,
         "templates",
         "mae_cmd_assignbond.txt"
     )
 
     template_noassignbond = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        MODULE_DIR,
         "templates",
         "mae_cmd_noassignbond.txt"
     )
