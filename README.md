@@ -1,4 +1,4 @@
-# mdgo
+# ![MDGO](docs/mdgo.svg)
 
 A code base for classical molecualr dynamics (MD) simulation setup and results analysis. 
 
