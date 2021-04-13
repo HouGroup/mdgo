@@ -20,7 +20,21 @@ Please see :any:`modules <modules>` for detailed documentation of the code.
 
    * Supported output format:
 
-     * XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
+     * smiles code, PDB, XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
+
+#. Retrieving water and ion models
+
+   * Supported water models:
+
+     * SCP, SPC/E, TIP3P_EW, TIP4P_EW, TIP4P_2005
+
+   * Supported ion models:
+
+     * alkali, ammonium, and halide monovalent ions by Jensen and Jorgensen
+
+     * alkali and halide monovalent ions by Joung† and Cheatham
+
+     * alkali and alkaline-earth metal cations by Åqvist
 
 #. Write OPLS-AA forcefield file from LigParGen
 

@@ -1,6 +1,6 @@
 # ![MDGO](docs/logo_mdgo.svg)
 
-A code base for classical molecualr dynamics (MD) simulation setup and results analysis. 
+An all-in-one code base for the classical molecualr dynamics (MD) simulation setup and results analysis. 
 
 # 1. Installation
 
@@ -50,36 +50,43 @@ If not available already, use the following steps.
 
 ## 2. Features
 
-1.  Retriving compound structure and information from PubChem
+1.  Retrieving compound structure and information from PubChem
     -   Supported searching text:
         -   cid, name, smiles, inchi, inchikey or formula
     -   Supported output format:
         -   smiles code, PDB, XML, ASNT/B, JSON, SDF, CSV, PNG, TXT
-2.  Write OPLS-AA forcefield file from LigParGen
+2.  Retrieving water and ion models
+    -   Supported water models:
+        -   SCP, SPC/E, TIP3P_EW, TIP4P_EW, TIP4P_2005
+    -   Supported ion models:
+        -   alkali, ammonium, and halide monovalent ions by Jensen and Jorgensen 
+        -   alkali and halide monovalent ions by Joung† and Cheatham
+        -   alkali and alkaline-earth metal cations by Åqvist
+3.  Write OPLS-AA forcefield file from LigParGen
     -   Supported input format:
         -   mol/pdb
         -   SMILES code
     -   Supported output format:
         -   LAMMPS(.lmp)
         -   GROMACS(.gro, .itp)
-3.  Write OPLS-AA forcefield file from Maestro
+4.  Write OPLS-AA forcefield file from Maestro
     -   Supported input format:
         -   Any [format that Maestro support]
     -   Supported output format:
         -   LAMMPS(.lmp)
         -   Others pending\...
-4.  Packmol wrapper
+5.  Packmol wrapper
     -   Supported input format:
         -   xyz
         -   Others pending\...
-5.  Basic simulation properties
+6.  Basic simulation properties
     -   Initial box dimension
     -   Equilibrium box dimension
     -   Salt concentration
-6.  Conductivity analysis
+7.  Conductivity analysis
     -   Green--Kubo conductivity
     -   Nernst--Einstein conductivity
-7.  Coordination analysis
+8.  Coordination analysis
     -   The distribution of the coordination number of single species
     -   The integral of radial distribution function (The average
         coordination numbers of multiple species)
@@ -91,12 +98,12 @@ If not available already, use the following steps.
     -   The hopping frequency of cation between binding sites
     -   The distribution heat map of cation around binding sites
     -   The averaged nearest neighbor distance of a species
-8.  Diffusion analysis
+9.  Diffusion analysis
     -   The mean square displacement of all species
     -   The mean square displacement of coordinated species and
         uncoordinated species, separately
     -   Self-diffusion coefficients
-9.  Residence time analysis
+10.  Residence time analysis
     -   The residence time of all species
 
   [format that Maestro support]: https://www.schrodinger.com/kb/1278
