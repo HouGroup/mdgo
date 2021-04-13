@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 678 195">
+  <defs>
+    <style>
+      .cls-1 {
+        font-size: 166.667px;
+        font-family: Counter-Strike;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        fill: #1f497d;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        stroke: #1f497d;
+      }
+
+      .cls-2 {
+        stroke-width: 1px;
+      }
+
+      .cls-3, .cls-4 {
+        stroke-width: 4px;
+        fill-rule: evenodd;
+      }
+
+      .cls-4 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <text id="GO" class="cls-1" x="432.239" y="183.945">GO</text>
+  <text id="MD" class="cls-1" x="-2.762" y="183.945">MD</text>
+  <circle class="cls-2" cx="355.469" cy="94.5" r="12.5"/>
+  <g>
+    <circle class="cls-2" cx="384.453" cy="70.5" r="7.484"/>
+    <path id="Line_1" data-name="Line 1" class="cls-3" d="M386.953,66l7-14Z"/>
+    <path id="Polygon_1" data-name="Polygon 1" class="cls-4" d="M424.62,46.835l-30.18,4.782L380.558,24.389l21.6-21.609,27.232,13.872Z"/>
+  </g>
+  <g id="Group_1_copy" data-name="Group 1 copy">
+    <circle class="cls-2" cx="330.531" cy="119.656" r="7.5"/>
+    <path id="Line_1-2" data-name="Line 1" class="cls-3" d="M326.622,123.05L315.26,133.811Z"/>
+    <path id="Polygon_1-2" data-name="Polygon 1" class="cls-4" d="M284.677,128.17l30,5.83,3.732,30.334-27.69,12.916L269.87,154.9Z"/>
+  </g>
+  <g id="Group_1_copy_2" data-name="Group 1 copy 2">
+    <circle class="cls-2" cx="326.453" cy="67.938" r="7.484"/>
+    <path id="Line_1-3" data-name="Line 1" class="cls-3" d="M322.044,65.284L308.3,57.8Z"/>
+    <path id="Polygon_1-3" data-name="Polygon 1" class="cls-4" d="M304.212,26.957l3.714,30.331L280.227,70.2l-20.834-22.35,14.824-26.726Z"/>
+  </g>
+  <g id="Group_1_copy_3" data-name="Group 1 copy 3">
+    <circle class="cls-2" cx="381.438" cy="122.891" r="7.5"/>
+    <path id="Line_1-4" data-name="Line 1" class="cls-3" d="M382.926,127.817l5.206,14.76Z"/>
+    <path id="Polygon_1-4" data-name="Polygon 1" class="cls-4" d="M370.541,168.24l17.519-25.028,29.208,8.933L417.8,182.7l-28.879,9.947Z"/>
+  </g>
+</svg>
