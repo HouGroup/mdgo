@@ -4,7 +4,7 @@
       .cls-1 {
         font-size: 166.667px;
         font-family: Counter-Strike;
-        scr: url('https://www.fontmirror.com/app_public/files/t/1/2020/03/cs_regular.ttf') format('truetype')
+        scr: url('https://www.fontmirror.com/app_public/files/t/1/2020/03/cs_regular.ttf') format('truetype');
       }
 
       .cls-1, .cls-2, .cls-3 {
