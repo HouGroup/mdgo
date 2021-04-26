@@ -629,3 +629,20 @@ class MdRun:
             distance_matrix[distance_matrix == 0] = np.nan
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
+
+
+class MdJob:
+    """
+    A core class for MD results analysis.
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    @classmethod
+    def from_dict(cls):
+        return cls("name")
+
+    @classmethod
+    def from_recipe(cls):
+        return cls("name")

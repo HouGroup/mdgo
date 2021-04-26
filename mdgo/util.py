@@ -146,7 +146,9 @@ ALIAS = {
     "triglyme": "triglyme",
     "tetraglyme": "tetraglyme",
     "acetonitrile": "acn",
-    "acn": "acn"
+    "acn": "acn",
+    "water": "water",
+    "h2o": "water"
 }
 
 # From PubChem
@@ -164,7 +166,8 @@ MOLAR_MASS = {
     "diglyme": 134.17,
     "triglyme": 178.23,
     "tetraglyme": 222.28,
-    "acn": 41.05
+    "acn": 41.05,
+    "water": 18.01528
 }
 
 # from Sigma-Aldrich
@@ -182,7 +185,8 @@ DENSITY = {
     "diglyme": 0.939,
     "triglyme": 0.986,
     "tetraglyme": 1.009,
-    "acn": 0.786
+    "acn": 0.786,
+    "water": 0.99707
 }
 
 
