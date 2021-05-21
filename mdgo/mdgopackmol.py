@@ -15,6 +15,7 @@ set the folder of the packmol executable to the PATH environment variable.
 
 import subprocess
 import os
+from typing import Optional, List
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -27,18 +28,6 @@ class PackmolWrapper:
     """
     Wrapper for the Packmol software that can be used to pack various types of
     molecules into a one single unit.
-
-    Args:
-        path (str): The path to the directory for file i/o.
-        structures (list): A list containing dict information of molecules.
-            Each molecule have two keys, "name", the structure name,
-            and "file", the path to the structure file.
-        numbers (dict): A dict of the numbers of each molecule
-        box (list): A list of xlo, ylo, zlo, xhi, yhi, zhi, in Å.
-        tolerance (float): Tolerance for packmol.
-        seed (int): Random seed for packmol.
-        inputfile (str): Path to the input file. Default to 'packmol.inp'.
-        outputfile (str): Path to the output file. Default to 'output.xyz'.
 
     Examples:
 
@@ -54,15 +43,35 @@ class PackmolWrapper:
 
     def __init__(
         self,
-        path,
-        structures,
-        numbers,
-        box,
-        tolerance=None,
-        seed=None,
-        inputfile="packmol.inp",
-        outputfile="output.xyz",
+        path: str,
+        structures: List[dict],
+        numbers: dict[str, int],
+        box: List[float],
+        tolerance: Optional[float] = None,
+        seed: Optional[int] = None,
+        inputfile: str = "packmol.inp",
+        outputfile: str = "output.xyz",
     ):
+        """
+        Args:
+            path: The path to the directory for file i/o. Note that the path
+                cannot contain any spaces.
+            structures: A list of dict containing information about molecules.
+                Each dict requires two keys, "name", the structure name,
+                and "file", the path to the structure file, e.g.
+                {"name": "water",
+                 "file": "/path/to/water.xyz"}
+            numbers: A dict of the numbers of each molecule. Each dict must have
+                keys corresponding to 'name' keys in 'structures', and integer
+                values representing the number of that molecule to pack into the
+                box, e.g.
+                {"water": 20}
+            box: A list of xlo, ylo, zlo, xhi, yhi, zhi, in Å.
+            tolerance: Tolerance for packmol.
+            seed: Random seed for packmol.
+            inputfile: Path to the input file. Default to 'packmol.inp'.
+            outputfile: Path to the output file. Default to 'output.xyz'.
+        """
         self.path = path
         self.input = os.path.join(self.path, inputfile)
         self.output = os.path.join(self.path, outputfile)
