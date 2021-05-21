@@ -10,6 +10,7 @@ import pandas as pd
 import math
 import numbers
 import sys
+from typing import List, Union, Tuple
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule
@@ -433,37 +434,58 @@ def ff_parser(ff_dir, xyz_dir):
         return data_string
 
 
-def concentration_matcher(concentration, salt, solvents, solv_ratio, num_salt=100, mode="v"):
+def concentration_matcher(
+    concentration: float,
+    salt: Union[float, int, str, Molecule],
+    solvents: List[Molecule],
+    solv_ratio: List[float],
+    num_salt: int = 100,
+    mode: str = "v",
+) -> Tuple[List, float]:
     """
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
     solvent density, solvent ratio and total number of salt.
 
     Args:
-        concentration (float): Salt concentration.
-        salt (str or int or float or Molecule):
-            Four types of input are accepted:
-              1. The salt name in string (lipf6 or litfsi)
-              2. Salt molar volume in float/int
-              3. A pymatgen molecule object of the salt structure.
-              4. The path to the salt structure xyz file, will estimate
-                 the VdW volume according to the Bondi radii of atoms.
-        solvents (list): A list of solvent molecules. A molecule could either be
-            a name (str) or a dict containing two keys "mass" and "density".
-        solv_ratio (list): A list of weight or volume ratio of solvents.
-            The sum don't need to be normalized.
-        num_salt (int): The number of salt in the box.
-        mode (str): Weight mode (Weight/weight/W/w/W./w.) or volume mode
-            (Volume/volume/V/v/V./v.).
+        concentration: Salt concentration.
+        salt: Four types of input are accepted:
+              1. The salt name in string ('lipf6' or 'litfsi')
+              2. Salt molar volume in as a float/int (cm^3/mol)
+              3. A pymatgen Molecule object of the salt structure
+              4. The path to the salt structure xyz file
+
+            Valid names are listed in the MOLAR_VOLUME dictionary at the beginning
+            of this file and currently include only 'lipf6' or 'litfsi'
+
+            If a Molecule or structure file is provided, mdgo will estimate
+            the molar volume according to the Bondi (VdW) radii of the atoms.
+        solvents: A list of solvent molecules. A molecule could either be
+            a name (e.g. "water" or "ethylene carbonate") or a dict containing
+            two keys "mass" and "density" in g/mol and g/mL, respectively.
+
+            Valid names are listed in the ALIAS dictionary at the beginning
+            of this file.
+        solv_ratio: A list of relative weights or volumes of solvents. Must be the
+            same length as solvents. For example, for a 30% / 70% (w/w) mix of
+            two solvent, pass [0.3, 0.7] or [30, 70]. The sum of weights / volumes
+            does not need to be normalized.
+        num_salt: The number of salt in the box.
+        mode: Weight mode (Wweight/weight/W/w/W./w.) or volume mode
+            (Volume/volume/V/v/V./v.) for interpreting the ratio of solvents.
 
     Returns:
         (list, float):
-            A list of molecule numbers in the box starting with the salt,
-            and the approximate box length
+            A list the number of molecules in the simulation box, starting with
+            the salt and followed by each solvent in 'solvents'. The list is followed
+            by a float of the approximate length of one side of the box in Å.
 
     """
     n_solvent = list()
     n = len(solv_ratio)
+    if n != len(solvents):
+        raise ValueError("solvents and solv_ratio must be the same length!")
+
     if isinstance(salt, numbers.Number):
         salt_molar_volume = salt
     elif type(salt) is Molecule:
