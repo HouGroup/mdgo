@@ -15,6 +15,7 @@ import sys
 import os
 import argparse
 from pymatgen.core import Molecule
+from typing import Union, Optional
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902
@@ -289,7 +290,19 @@ def print_occupied_volume(matrix, res, name):
     return v * 0.6022
 
 
-def molecular_volume(path, name, res=0.1, radii_type="Bondi"):
+def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi"):
+    """
+    Estimate the molar volume in cm^3/mol
+
+    Args:
+        path: Molecule object or path to .xyz or other file that can be read
+            by Molecule.from_file()
+        name: String representing the name of the molecule, e.g. "NaCl"
+        res: Resolution of the mesh to use when estimating molar volume, in Å
+        radii_type: "Bondi" or "Lange"
+    Returns:
+        float: The molar volume in cm^3/mol.
+    """
     if isinstance(path, str):
         molecule = Molecule.from_file(path)
     else:
