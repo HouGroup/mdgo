@@ -18,23 +18,15 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 
-def total_msd(nvt_run, start, stop, select='all', msd_type='xyz', fft=True):
+def total_msd(nvt_run, start, stop, select="all", msd_type="xyz", fft=True):
     if mda_msd is not None:
-        msd_calculator = mda_msd.EinsteinMSD(
-            nvt_run,
-            select=select,
-            msd_type=msd_type,
-            fft=fft
-        )
+        msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
         msd_calculator.run(start=start, stop=stop)
         total_array = msd_calculator.timeseries
         return total_array
     else:
         if fft:
-            print(
-                "Warning! MDAnalysis version too low, fft not supported. "
-                "Use conventional instead"
-            )
+            print("Warning! MDAnalysis version too low, fft not supported. " "Use conventional instead")
         return _total_msd(nvt_run, select, start, stop)
 
 
@@ -74,8 +66,7 @@ def msd_states(coord_list, largest):
     return timeseries
 
 
-def states_coord_array(nvt_run, li_atom, select_dict, distance,
-                       run_start, run_end):
+def states_coord_array(nvt_run, li_atom, select_dict, distance, run_start, run_end):
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     attach_list = list()
     free_list = list()
@@ -84,15 +75,13 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance,
     prev_coord = None
     for ts in trj_analysis:
         selection = (
-                "(" + select_dict["anion"] + ") and (around "
-                + str(distance) + " index "
-                + str(li_atom.id - 1) + ")"
+            "(" + select_dict["anion"] + ") and (around " + str(distance) + " index " + str(li_atom.id - 1) + ")"
         )
         shell_anion = nvt_run.select_atoms(selection, periodic=True)
         current_state = 0
         if len(shell_anion) > 0:
             current_state = 1
-        current_coord = ts[li_atom.id-1]
+        current_coord = ts[li_atom.id - 1]
 
         if prev_state:
             if current_state == prev_state:
@@ -123,14 +112,11 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance,
     return attach_list, free_list
 
 
-def partial_msd(nvt_run, li_atoms, largest, select_dict, distance,
-                run_start, run_end):
+def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, run_end):
     free_coords = list()
     attach_coords = list()
     for i in trange(len(li_atoms)):
-        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
-                                                      select_dict, distance,
-                                                      run_start, run_end)
+        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i], select_dict, distance, run_start, run_end)
         attach_coords.extend(attach_coord)
         free_coords.extend(free_coord)
     attach_data = None
@@ -149,7 +135,6 @@ def msd_by_length(coord_list):
         disp = state[0, :] - state[-1, :]
         sqdist = np.square(disp).sum()
         if n_frames in list(msd_dict):
-            msd = msd_dict.get(n_frames)
             msd_dict[n_frames].append(sqdist)
         else:
             msd_dict[n_frames] = [sqdist]
@@ -166,9 +151,7 @@ def special_msd(nvt_run, li_atoms, select_dict, distance, run_start, run_end):
     free_coords = list()
     attach_coords = list()
     for i in trange(len(li_atoms)):
-        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i],
-                                                      select_dict, distance,
-                                                      run_start, run_end)
+        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i], select_dict, distance, run_start, run_end)
         attach_coords.extend(attach_coord)
         free_coords.extend(free_coord)
     attach_data = None

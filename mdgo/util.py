@@ -11,10 +11,8 @@ import math
 import numbers
 import sys
 from mdgo.volume import molecular_volume
-try:
-    from pymatgen.core.structure import Molecule
-except ImportError:
-    from pymatgen import Molecule
+
+from pymatgen.core import Molecule
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -22,37 +20,127 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182,
-                  'B': 10.811, 'C': 12.0107, 'N': 14.0067, 'O': 15.9994,
-                  'F': 18.9984032, 'Ne': 20.1797, 'Na': 22.98976928,
-                  'Mg': 24.305, 'Al': 26.9815386, 'Si': 28.0855, 'P': 30.973762,
-                  'S': 32.065, 'Cl': 35.453, 'Ar': 39.948, 'K': 39.0983,
-                  'Ca': 40.078, 'Sc': 44.955912, 'Ti': 47.867, 'V': 50.9415,
-                  'Cr': 51.9961, 'Mn': 54.938045, 'Fe': 55.845, 'Co': 58.933195,
-                  'Ni': 58.6934, 'Cu': 63.546, 'Zn': 65.409, 'Ga': 69.723,
-                  'Ge': 72.64, 'As': 74.9216, 'Se': 78.96, 'Br': 79.904,
-                  'Kr': 83.798, 'Rb': 85.4678, 'Sr': 87.62, 'Y': 88.90585,
-                  'Zr': 91.224, 'Nb': 92.90638, 'Mo': 95.94, 'Tc': 98.9063,
-                  'Ru': 101.07, 'Rh': 102.9055, 'Pd': 106.42, 'Ag': 107.8682,
-                  'Cd': 112.411, 'In': 114.818, 'Sn': 118.71, 'Sb': 121.760,
-                  'Te': 127.6, 'I': 126.90447, 'Xe': 131.293, 'Cs': 132.9054519,
-                  'Ba': 137.327, 'La': 138.90547, 'Ce': 140.116,
-                  'Pr': 140.90465, 'Nd': 144.242, 'Pm': 146.9151, 'Sm': 150.36,
-                  'Eu': 151.964, 'Gd': 157.25, 'Tb': 158.92535, 'Dy': 162.5,
-                  'Ho': 164.93032, 'Er': 167.259, 'Tm': 168.93421, 'Yb': 173.04,
-                  'Lu': 174.967, 'Hf': 178.49, 'Ta': 180.9479, 'W': 183.84,
-                  'Re': 186.207, 'Os': 190.23, 'Ir': 192.217, 'Pt': 195.084,
-                  'Au': 196.966569, 'Hg': 200.59, 'Tl': 204.3833, 'Pb': 207.2,
-                  'Bi': 208.9804, 'Po': 208.9824, 'At': 209.9871,
-                  'Rn': 222.0176, 'Fr': 223.0197, 'Ra': 226.0254,
-                  'Ac': 227.0278, 'Th': 232.03806, 'Pa': 231.03588,
-                  'U': 238.02891, 'Np': 237.0482, 'Pu': 244.0642,
-                  'Am': 243.0614, 'Cm': 247.0703, 'Bk': 247.0703,
-                  'Cf': 251.0796, 'Es': 252.0829, 'Fm': 257.0951,
-                  'Md': 258.0951, 'No': 259.1009, 'Lr': 262, 'Rf': 267,
-                  'Db': 268, 'Sg': 271, 'Bh': 270, 'Hs': 269, 'Mt': 278,
-                  'Ds': 281, 'Rg': 281, 'Cn': 285, 'Nh': 284, 'Fl': 289,
-                  'Mc': 289, 'Lv': 292, 'Ts': 294, 'Og': 294, 'ZERO': 0}
+MM_of_Elements = {
+    "H": 1.00794,
+    "He": 4.002602,
+    "Li": 6.941,
+    "Be": 9.012182,
+    "B": 10.811,
+    "C": 12.0107,
+    "N": 14.0067,
+    "O": 15.9994,
+    "F": 18.9984032,
+    "Ne": 20.1797,
+    "Na": 22.98976928,
+    "Mg": 24.305,
+    "Al": 26.9815386,
+    "Si": 28.0855,
+    "P": 30.973762,
+    "S": 32.065,
+    "Cl": 35.453,
+    "Ar": 39.948,
+    "K": 39.0983,
+    "Ca": 40.078,
+    "Sc": 44.955912,
+    "Ti": 47.867,
+    "V": 50.9415,
+    "Cr": 51.9961,
+    "Mn": 54.938045,
+    "Fe": 55.845,
+    "Co": 58.933195,
+    "Ni": 58.6934,
+    "Cu": 63.546,
+    "Zn": 65.409,
+    "Ga": 69.723,
+    "Ge": 72.64,
+    "As": 74.9216,
+    "Se": 78.96,
+    "Br": 79.904,
+    "Kr": 83.798,
+    "Rb": 85.4678,
+    "Sr": 87.62,
+    "Y": 88.90585,
+    "Zr": 91.224,
+    "Nb": 92.90638,
+    "Mo": 95.94,
+    "Tc": 98.9063,
+    "Ru": 101.07,
+    "Rh": 102.9055,
+    "Pd": 106.42,
+    "Ag": 107.8682,
+    "Cd": 112.411,
+    "In": 114.818,
+    "Sn": 118.71,
+    "Sb": 121.760,
+    "Te": 127.6,
+    "I": 126.90447,
+    "Xe": 131.293,
+    "Cs": 132.9054519,
+    "Ba": 137.327,
+    "La": 138.90547,
+    "Ce": 140.116,
+    "Pr": 140.90465,
+    "Nd": 144.242,
+    "Pm": 146.9151,
+    "Sm": 150.36,
+    "Eu": 151.964,
+    "Gd": 157.25,
+    "Tb": 158.92535,
+    "Dy": 162.5,
+    "Ho": 164.93032,
+    "Er": 167.259,
+    "Tm": 168.93421,
+    "Yb": 173.04,
+    "Lu": 174.967,
+    "Hf": 178.49,
+    "Ta": 180.9479,
+    "W": 183.84,
+    "Re": 186.207,
+    "Os": 190.23,
+    "Ir": 192.217,
+    "Pt": 195.084,
+    "Au": 196.966569,
+    "Hg": 200.59,
+    "Tl": 204.3833,
+    "Pb": 207.2,
+    "Bi": 208.9804,
+    "Po": 208.9824,
+    "At": 209.9871,
+    "Rn": 222.0176,
+    "Fr": 223.0197,
+    "Ra": 226.0254,
+    "Ac": 227.0278,
+    "Th": 232.03806,
+    "Pa": 231.03588,
+    "U": 238.02891,
+    "Np": 237.0482,
+    "Pu": 244.0642,
+    "Am": 243.0614,
+    "Cm": 247.0703,
+    "Bk": 247.0703,
+    "Cf": 251.0796,
+    "Es": 252.0829,
+    "Fm": 257.0951,
+    "Md": 258.0951,
+    "No": 259.1009,
+    "Lr": 262,
+    "Rf": 267,
+    "Db": 268,
+    "Sg": 271,
+    "Bh": 270,
+    "Hs": 269,
+    "Mt": 278,
+    "Ds": 281,
+    "Rg": 281,
+    "Cn": 285,
+    "Nh": 284,
+    "Fl": 289,
+    "Mc": 289,
+    "Lv": 292,
+    "Ts": 294,
+    "Og": 294,
+    "ZERO": 0,
+}
 
 SECTION_SORTER = {
     "atoms": {
@@ -63,7 +151,7 @@ SECTION_SORTER = {
         "desired_cols": None,
         "out_kw": None,
         "ff_header": ["epsilon", "sigma"],
-        "topo_header": ["mol-id", "type", "charge", "x", "y", "z"]
+        "topo_header": ["mol-id", "type", "charge", "x", "y", "z"],
     },
     "bonds": {
         "in_kw": "Stretch",
@@ -73,7 +161,7 @@ SECTION_SORTER = {
         "desired_cols": 4,
         "out_kw": ["Bond Coeffs", "Bonds"],
         "ff_header": ["k", "r0"],
-        "topo_header": ["type", "atom1", "atom2"]
+        "topo_header": ["type", "atom1", "atom2"],
     },
     "angles": {
         "in_kw": "Bending",
@@ -83,19 +171,17 @@ SECTION_SORTER = {
         "desired_cols": 5,
         "out_kw": ["Angle Coeffs", "Angles"],
         "ff_header": ["k", "theta0"],
-        "topo_header": ["type", "atom1", "atom2", "atom3"]
+        "topo_header": ["type", "atom1", "atom2", "atom3"],
     },
     "dihedrals": {
         "in_kw": "proper Torsion",
-        "in_header": [
-            "atom1", "atom2", "atom3", "atom4", "v1", "v2", "v3", "v4"
-        ],
+        "in_header": ["atom1", "atom2", "atom3", "atom4", "v1", "v2", "v3", "v4"],
         "sec_number": 7,
         "desired_split": 1,
         "desired_cols": 8,
         "out_kw": ["Dihedral Coeffs", "Dihedrals"],
         "ff_header": ["v1", "v2", "v3", "v4"],
-        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"]
+        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"],
     },
     "impropers": {
         "in_kw": "improper Torsion",
@@ -105,7 +191,7 @@ SECTION_SORTER = {
         "desired_cols": 5,
         "out_kw": ["Improper Coeffs", "Impropers"],
         "ff_header": ["v1", "v2", "v3", "v4"],
-        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"]
+        "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"],
     },
 }
 
@@ -148,7 +234,7 @@ ALIAS = {
     "acetonitrile": "acn",
     "acn": "acn",
     "water": "water",
-    "h2o": "water"
+    "h2o": "water",
 }
 
 # From PubChem
@@ -167,14 +253,14 @@ MOLAR_MASS = {
     "triglyme": 178.23,
     "tetraglyme": 222.28,
     "acn": 41.05,
-    "water": 18.01528
+    "water": 18.01528,
 }
 
 # from Sigma-Aldrich
 DENSITY = {
     "ec": 1.321,
     "pc": 1.204,
-    "dec": 	0.975,
+    "dec": 0.975,
     "dmc": 1.069,
     "emc": 1.006,
     "fec": 1.454,  # from qm-ht.com
@@ -186,7 +272,7 @@ DENSITY = {
     "triglyme": 0.986,
     "tetraglyme": 1.009,
     "acn": 0.786,
-    "water": 0.99707
+    "water": 0.99707,
 }
 
 
@@ -196,10 +282,10 @@ def atom_vec(atom1, atom2, dimension):
     """
     vec = [0, 0, 0]
     for i in range(3):
-        diff = atom1.position[i]-atom2.position[i]
-        if diff > dimension[i]/2:
+        diff = atom1.position[i] - atom2.position[i]
+        if diff > dimension[i] / 2:
             vec[i] = diff - dimension[i]
-        elif diff < - dimension[i]/2:
+        elif diff < -dimension[i] / 2:
             vec[i] = diff + dimension[i]
         else:
             vec[i] = diff
@@ -212,10 +298,10 @@ def position_vec(pos1, pos2, dimension):
     """
     vec = [0, 0, 0]
     for i in range(3):
-        diff = pos1[i]-pos2[i]
-        if diff > dimension[i]/2:
+        diff = pos1[i] - pos2[i]
+        if diff > dimension[i] / 2:
             vec[i] = diff - dimension[i]
-        elif diff < - dimension[i]/2:
+        elif diff < -dimension[i] / 2:
             vec[i] = diff + dimension[i]
         else:
             vec[i] = diff
@@ -250,17 +336,12 @@ def ff_parser(ff_dir, xyz_dir):
     Return:
         str: The output LAMMPS data string.
     """
-    with open(xyz_dir, 'r') as f_xyz:
-        molecule = pd.read_table(
-            f_xyz,
-            skiprows=2,
-            delim_whitespace=True,
-            names=['atom', 'x', 'y', 'z']
-        )
+    with open(xyz_dir, "r") as f_xyz:
+        molecule = pd.read_table(f_xyz, skiprows=2, delim_whitespace=True, names=["atom", "x", "y", "z"])
         coordinates = molecule[["x", "y", "z"]]
         lo = coordinates.min().min() - 0.5
         hi = coordinates.max().max() + 0.5
-    with open(ff_dir, 'r') as f:
+    with open(ff_dir, "r") as f:
         lines_org = f.read()
         lines = lines_org.split("\n\n")
         atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
@@ -269,53 +350,36 @@ def ff_parser(ff_dir, xyz_dir):
             StringIO(atoms),
             names=SECTION_SORTER.get("atoms").get("in_header"),
             delim_whitespace=True,
-            usecols=[0, 4, 5, 6]
+            usecols=[0, 4, 5, 6],
         )
-        dfs["atoms"] = pd.concat(
-            [dfs["atoms"], coordinates],
-            axis=1
-        )
+        dfs["atoms"] = pd.concat([dfs["atoms"], coordinates], axis=1)
         dfs["atoms"].index += 1
         dfs["atoms"].index.name = "type"
         dfs["atoms"] = dfs["atoms"].reset_index()
         dfs["atoms"].index += 1
-        types = dfs["atoms"].copy().reset_index().set_index('atom')['type']
+        types = dfs["atoms"].copy().reset_index().set_index("atom")["type"]
         replace_dict = {
             "atom1": dict(types),
             "atom2": dict(types),
             "atom3": dict(types),
-            "atom4": dict(types)
+            "atom4": dict(types),
         }
         counts = dict()
         counts["atoms"] = len(dfs["atoms"].index)
         mass_list = list()
         for index, row in dfs["atoms"].iterrows():
-            mass_list.append(
-                MM_of_Elements.get(re.split(r'(\d+)', row['atom'])[0])
-            )
+            mass_list.append(MM_of_Elements.get(re.split(r"(\d+)", row["atom"])[0]))
         mass_df = pd.DataFrame(mass_list)
         mass_df.index += 1
-        mass_string = mass_df.to_string(
-            header=False,
-            index_names=False,
-            float_format="{:.3f}".format
-        )
+        mass_string = mass_df.to_string(header=False, index_names=False, float_format="{:.3f}".format)
         masses = ["Masses", mass_string]
         ff = ["Pair Coeffs"]
         dfs["atoms"]["mol-id"] = 1
-        atom_ff_string = dfs["atoms"][
-            SECTION_SORTER["atoms"]["ff_header"]
-        ].to_string(
-            header=False,
-            index_names=False
-        )
+        atom_ff_string = dfs["atoms"][SECTION_SORTER["atoms"]["ff_header"]].to_string(header=False, index_names=False)
         ff.append(atom_ff_string)
         topo = ["Atoms"]
-        atom_topo_string = dfs["atoms"][
-            SECTION_SORTER["atoms"]["topo_header"]
-        ].to_string(
-            header=False,
-            index_names=False
+        atom_topo_string = dfs["atoms"][SECTION_SORTER["atoms"]["topo_header"]].to_string(
+            header=False, index_names=False
         )
         topo.append(atom_topo_string)
         for section in list(SECTION_SORTER.keys())[1:]:
@@ -324,7 +388,7 @@ def ff_parser(ff_dir, xyz_dir):
                     SECTION_SORTER[section]["sec_number"],
                     SECTION_SORTER[section]["desired_split"],
                     SECTION_SORTER[section]["desired_cols"],
-                    SECTION_SORTER[section]["in_header"]
+                    SECTION_SORTER[section]["in_header"],
                 )
                 section_str = lines[a].split("\n", b)[b]
                 dfs[section] = pd.read_csv(
@@ -343,19 +407,13 @@ def ff_parser(ff_dir, xyz_dir):
                     dfs[section]["v1"] = 0.0
                     dfs[section]["v3"] = 0.0
                     dfs[section]["v4"] = 0.0
-                ff_string = dfs[section][
-                    SECTION_SORTER[section]["ff_header"]
-                ].to_string(
-                    header=False,
-                    index_names=False
+                ff_string = dfs[section][SECTION_SORTER[section]["ff_header"]].to_string(
+                    header=False, index_names=False
                 )
                 ff.append(SECTION_SORTER[section]["out_kw"][0])
                 ff.append(ff_string)
-                topo_string = dfs[section][
-                    SECTION_SORTER[section]["topo_header"]
-                ].to_string(
-                    header=False,
-                    index_names=False
+                topo_string = dfs[section][SECTION_SORTER[section]["topo_header"]].to_string(
+                    header=False, index_names=False
                 )
                 topo.append(SECTION_SORTER[section]["out_kw"][1])
                 topo.append(topo_string)
@@ -363,27 +421,19 @@ def ff_parser(ff_dir, xyz_dir):
         max_stats = len(str(max(list(counts.values()))))
         stats_template = "{:>%d}  {}" % max_stats
         count_lines = [stats_template.format(v, k) for k, v in counts.items()]
-        type_lines = [
-            stats_template.format(v, k[:-1] + " types")
-            for k, v in counts.items()
-        ]
+        type_lines = [stats_template.format(v, k[:-1] + " types") for k, v in counts.items()]
         stats = "\n".join(count_lines + [""] + type_lines)
         header = [
             f"LAMMPS data file created by mdgo (by {__author__})\n"
             "# OPLS force field: harmonic, harmonic, opls, opls",
             stats,
-            BOX.format(lo, hi)
+            BOX.format(lo, hi),
         ]
         data_string = "\n\n".join(header + masses + ff + topo) + "\n"
         return data_string
 
 
-def concentration_matcher(concentration,
-                          salt,
-                          solvents,
-                          solv_ratio,
-                          num_salt=100,
-                          mode="v"):
+def concentration_matcher(concentration, salt, solvents, solv_ratio, num_salt=100, mode="v"):
     """
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
@@ -445,10 +495,8 @@ def concentration_matcher(concentration,
         n_salt = 1 / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
-        volume = (
-                (1 + salt_molar_volume * n_salt) / n_salt * num_salt
-        ) / 6.022e23
-        return n_all, volume**(1/3)*1e8
+        volume = ((1 + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        return n_all, volume ** (1 / 3) * 1e8
     elif mode.lower().startswith("w"):
         for i in range(n):
             n_solvent.append(solv_ratio[i] / solv_mass[i])
@@ -456,34 +504,27 @@ def concentration_matcher(concentration,
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
-        volume = (
-                (v_solv + salt_molar_volume * n_salt) / n_salt * num_salt
-        ) / 6.022e23
-        return n_all, volume**(1/3)*1e8
+        volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        return n_all, volume ** (1 / 3) * 1e8
     else:
         mode = input("Volume or weight ratio? (w or v): ")
-        return concentration_matcher(concentration,
-                                     salt_molar_volume,
-                                     solvents,
-                                     solv_ratio,
-                                     num_salt=num_salt,
-                                     mode=mode)
+        return concentration_matcher(
+            concentration,
+            salt_molar_volume,
+            solvents,
+            solv_ratio,
+            num_salt=num_salt,
+            mode=mode,
+        )
 
 
-def sdf_to_pdb(
-        sdf_file,
-        pdb_file,
-        write_title=True,
-        remark4=True,
-        credit=True,
-        pubchem=True
-):
+def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, pubchem=True):
     """
     Convert SDF file to PDB file.
     """
 
     # parse sdf file file
-    with open(sdf_file, 'r') as inp:
+    with open(sdf_file, "r") as inp:
         sdf = inp.readlines()
         sdf = map(str.strip, sdf)
     if pubchem:
@@ -499,7 +540,7 @@ def sdf_to_pdb(
     orders = list()
     for i, line in enumerate(sdf):
         if i == 0:
-            title += line.strip() + ' '
+            title += line.strip() + " "
             continue
         elif i in [1, 2]:
             continue
@@ -508,27 +549,27 @@ def sdf_to_pdb(
             atoms = int(line[0])
             bonds = int(line[1])
             continue
-        elif line.startswith('M  END'):
+        elif line.startswith("M  END"):
             break
         elif i in list(range(4, 4 + atoms)):
             line = line.split()
             newline = {
-                'ATOM': 'HETATM',
-                'serial': int(i-3),
-                'name': str(line[3]),
-                'resName': 'UNK',
-                'resSeq': 900,
-                'x': float(line[0]),
-                'y': float(line[1]),
-                'z': float(line[2]),
-                'occupancy': 1.00,
-                'tempFactor': 0.00,
-                'altLoc': str(''),
-                'chainID': str(''),
-                'iCode': str(''),
-                'element': str(line[3]),
-                'charge': str(''),
-                'segment': str('')
+                "ATOM": "HETATM",
+                "serial": int(i - 3),
+                "name": str(line[3]),
+                "resName": "UNK",
+                "resSeq": 900,
+                "x": float(line[0]),
+                "y": float(line[1]),
+                "z": float(line[2]),
+                "occupancy": 1.00,
+                "tempFactor": 0.00,
+                "altLoc": str(""),
+                "chainID": str(""),
+                "iCode": str(""),
+                "element": str(line[3]),
+                "charge": str(""),
+                "segment": str(""),
             }
             pdb_atoms.append(newline)
         elif i in list(range(4 + atoms, 4 + atoms + bonds)):
@@ -545,45 +586,39 @@ def sdf_to_pdb(
             continue
 
     # write pdb file
-    with open(pdb_file, 'wt') as outp:
+    with open(pdb_file, "wt") as outp:
         if write_title:
             outp.write("TITLE     {:70s}\n".format(title))
         if remark4:
-            outp.write(
-                "REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n"
-            )
+            outp.write("REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n")
         if credit:
-            outp.write(
-                "REMARK 888\n"
-                "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n"
-            )
+            outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
         for n in range(atoms):
             line = pdb_atoms[n].copy()
-            if len(line['name']) == 3:
-                line['name'] = ' ' + line['name']
+            if len(line["name"]) == 3:
+                line["name"] = " " + line["name"]
             # format pdb
             formatted_line = (
-                (
-                    "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
-                    "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
-                    "{:<4s}{:>2s}{:<2s}"
-                ).format(
-                    line['ATOM'],
-                    line['serial'],
-                    line['name'],
-                    line['altLoc'],
-                    line['resName'],
-                    line['chainID'],
-                    str(line['resSeq']),
-                    line['iCode'],
-                    line['x'],
-                    line['y'],
-                    line['z'],
-                    line['occupancy'],
-                    line['tempFactor'],
-                    line['segment'],
-                    line['element'],
-                    line['charge'])
+                "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
+                "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
+                "{:<4s}{:>2s}{:<2s}"
+            ).format(
+                line["ATOM"],
+                line["serial"],
+                line["name"],
+                line["altLoc"],
+                line["resName"],
+                line["chainID"],
+                str(line["resSeq"]),
+                line["iCode"],
+                line["x"],
+                line["y"],
+                line["z"],
+                line["occupancy"],
+                line["tempFactor"],
+                line["segment"],
+                line["element"],
+                line["charge"],
             )
             # write
             outp.write(formatted_line + "\n")
@@ -601,11 +636,7 @@ def sdf_to_pdb(
         for i in range(1, len(bond_lines)):
             bond_lines[i][1:] = sorted(bond_lines[i][1:])
         for i in range(1, len(bond_lines)):
-            outp.write(
-                'CONECT'
-                + ''.join("{:>5d}".format(num) for num in bond_lines[i])
-                + "\n"
-            )
+            outp.write("CONECT" + "".join("{:>5d}".format(num) for num in bond_lines[i]) + "\n")
         outp.write("END\n")  # final 'END'
 
 
@@ -621,7 +652,7 @@ if __name__ == "__main__":
                                           num_salt=166,
                                           mode="w")
     print(mols)
-    print(box_len)    
+    print(box_len)
     """
     sdf_to_pdb(
         "/Users/th/Downloads/test_mdgo/EC_7303.sdf",

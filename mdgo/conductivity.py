@@ -45,7 +45,7 @@ def msd_fft(r):
 
 
 def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
-    """ Calculates the conductivity "mean square displacement" given
+    """Calculates the conductivity "mean square displacement" given
     an MDAnalysis universe (u) and a selection of atoms or molecules (sel)
 
     Args:
@@ -68,7 +68,7 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
         for cation in cations.atoms:
             qr_temp += cation.position * cation_charge
         qr.append(qr_temp)
-    msd = (msd_fft(np.array(qr)))
+    msd = msd_fft(np.array(qr))
     return msd
 
 
@@ -77,16 +77,15 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
     A2cm = 1e-8
     ps2s = 1e-12
     e2c = 1.60217662e-19
-    convert = e2c*e2c/ps2s/A2cm*1000  # mS/cm
+    convert = e2c * e2c / ps2s / A2cm * 1000  # mS/cm
     kb = 1.38064852e-23
     T = 298.15
 
     # Calculate conductivity of mof
-    slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err = (
-        stats.linregress(time_array[start:end], cond_array[start:end])
+    slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err = stats.linregress(
+        time_array[start:end], cond_array[start:end]
     )
-    cond_einstein_mof = slope_cond_avg/6/kb/T/v*convert
-    error_mof = std_err/6/kb/T/v*convert
+    cond_einstein_mof = slope_cond_avg / 6 / kb / T / v * convert
+    error_mof = std_err / 6 / kb / T / v * convert
 
-    print("GK Conductivity of " + name + ": " + str(cond_einstein_mof)
-          + " ± " + str(error_mof) + " mS/cm")
+    print("GK Conductivity of " + name + ": " + str(cond_einstein_mof) + " ± " + str(error_mof) + " mS/cm")

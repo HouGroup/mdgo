@@ -33,7 +33,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException,
-    WebDriverException
+    WebDriverException,
 )
 from string import Template
 from urllib.parse import quote
@@ -51,14 +51,8 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 MAESTRO = "$SCHRODINGER/maestro -console -nosplash"
-FFLD = (
-    "$SCHRODINGER/utilities/ffld_server -imae {} "
-    "-version 14 -print_parameters -out_file {}"
-)
-MolecularWeight = (
-    "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/"
-    "cid/{}/property/MolecularWeight/txt"
-)
+FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} " "-version 14 -print_parameters -out_file {}"
+MolecularWeight = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" "cid/{}/property/MolecularWeight/txt"
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(MODULE_DIR, "data")
 DATA_MODELS = {
@@ -67,7 +61,7 @@ DATA_MODELS = {
         "spce": "water_spce.lmp",
         "tip3pew": "water_tip3p_ew.lmp",
         "tip4p2005": "water_tip4p_2005.lmp",
-        "tip4pew": "water_tip4p_ew.lmp"
+        "tip4pew": "water_tip4p_ew.lmp",
     },
     "ion": {
         "aq": ["default"],
@@ -75,13 +69,9 @@ DATA_MODELS = {
         "jj": ["default"],
         "jensen_jorgensen": ["default"],
         "jc": ["spce", "tip3p", "tip4pew"],
-        "joung_cheatham": ["spce", "tip3p", "tip4pew"]
+        "joung_cheatham": ["spce", "tip3p", "tip4pew"],
     },
-    "alias": {
-        "aq": "aqvist",
-        "jj": "jensen_jorgensen",
-        "jc": "joung_cheatham"
-    }
+    "alias": {"aq": "aqvist", "jj": "jensen_jorgensen", "jc": "joung_cheatham"},
 }
 
 
@@ -108,33 +98,28 @@ class FFcrawler:
         >>> lpg.data_from_pdb("/path/to/pdb")
     """
 
-    def __init__(
-            self,
-            write_dir,
-            chromedriver_dir=None,
-            headless=True,
-            xyz=False,
-            gromacs=False
-    ):
+    def __init__(self, write_dir, chromedriver_dir=None, headless=True, xyz=False, gromacs=False):
         """Base constructor."""
         self.write_dir = write_dir
         self.xyz = xyz
         self.gromacs = gromacs
-        self.preferences = {"download.default_directory": write_dir,
-                            "safebrowsing.enabled": "false",
-                            "profile.managed_default_content_settings.images":
-                                2}
+        self.preferences = {
+            "download.default_directory": write_dir,
+            "safebrowsing.enabled": "false",
+            "profile.managed_default_content_settings.images": 2,
+        }
         self.options = webdriver.ChromeOptions()
-        self.options.add_argument('user-agent="Mozilla/5.0 '
-                                  '(Macintosh; Intel Mac OS X 10_14_6) '
-                                  'AppleWebKit/537.36 (KHTML, like Gecko) '
-                                  'Chrome/88.0.4324.146 Safari/537.36"')
+        self.options.add_argument(
+            'user-agent="Mozilla/5.0 '
+            "(Macintosh; Intel Mac OS X 10_14_6) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            'Chrome/88.0.4324.146 Safari/537.36"'
+        )
         self.options.add_argument("--window-size=1920,1080")
         if headless:
-            self.options.add_argument('--headless')
+            self.options.add_argument("--headless")
         self.options.add_experimental_option("prefs", self.preferences)
-        self.options.add_experimental_option('excludeSwitches',
-                                             ['enable-automation'])
+        self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
         if chromedriver_dir is None:
             self.web = webdriver.Chrome(options=self.options)
         else:
@@ -161,15 +146,12 @@ class FFcrawler:
         upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
         try:
             upload.send_keys(pdb_dir)
-            submit = self.web.find_element_by_xpath(
-                '/html/body/div[2]/div/div[2]/form/button[1]')
+            submit = self.web.find_element_by_xpath("/html/body/div[2]/div/div[2]/form/button[1]")
             submit.click()
             pdb_filename = os.path.basename(pdb_dir)
             self.download_data(os.path.splitext(pdb_filename)[0] + ".lmp")
         except TimeoutException:
-            print(
-                "Timeout! Web server no response for 10s, file download failed!"
-            )
+            print("Timeout! Web server no response for 10s, file download failed!")
         except WebDriverException as e:
             print(e)
         finally:
@@ -189,15 +171,12 @@ class FFcrawler:
         time.sleep(1)
         smile = self.web.find_element_by_xpath('//*[@id="smiles"]')
         smile.send_keys(smiles_code)
-        submit = self.web.find_element_by_xpath(
-            '/html/body/div[2]/div/div[2]/form/button[1]')
+        submit = self.web.find_element_by_xpath("/html/body/div[2]/div/div[2]/form/button[1]")
         submit.click()
         try:
-            self.download_data(smiles_code + '.lmp')
+            self.download_data(smiles_code + ".lmp")
         except TimeoutException:
-            print(
-                "Timeout! Web server no response for 10s, file download failed!"
-            )
+            print("Timeout! Web server no response for 10s, file download failed!")
         finally:
             self.quit()
 
@@ -209,64 +188,45 @@ class FFcrawler:
             lmp_name (str): Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
-        self.wait.until(
-            EC.presence_of_element_located((By.NAME, 'go'))
-        )
-        data_lmp = self.web.find_element_by_xpath(
-            "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
-        )
+        self.wait.until(EC.presence_of_element_located((By.NAME, "go")))
+        data_lmp = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]")
         data_lmp.click()
         print("Force field file downloaded.")
         time.sleep(1)
         lmp_file = max(
-            [self.write_dir + "/" + f for f
-             in os.listdir(self.write_dir)
-             if os.path.splitext(f)[1] == ".lmp"],
-            key=os.path.getctime)
+            [self.write_dir + "/" + f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"],
+            key=os.path.getctime,
+        )
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = mass_to_name(data_obj.masses)
-            coords = data_obj.atoms[['type', 'x', 'y', 'z']]
+            coords = data_obj.atoms[["type", "x", "y", "z"]]
             lines = list()
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
-                line = element_id_dict.get(int(r['type'])) + ' ' + ' '.join(
-                    str(r[loc]) for loc in ["x", "y", "z"])
+                line = element_id_dict.get(int(r["type"])) + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
                 lines.append(line)
 
-            with open(os.path.join(self.write_dir, lmp_name + ".xyz"),
-                      "w") as xyz_file:
+            with open(os.path.join(self.write_dir, lmp_name + ".xyz"), "w") as xyz_file:
                 xyz_file.write("\n".join(lines))
             print(".xyz file saved.")
         if self.gromacs:
-            data_gro = self.web.find_element_by_xpath(
-                "/html/body/div[2]/div[2]/div[1]/div/div[8]/form/input[1]"
-            )
-            data_itp = self.web.find_element_by_xpath(
-                "/html/body/div[2]/div[2]/div[1]/div/div[9]/form/input[1]"
-            )
+            data_gro = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[8]/form/input[1]")
+            data_itp = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[9]/form/input[1]")
             data_gro.click()
             data_itp.click()
             time.sleep(1)
             gro_file = max(
-                [self.write_dir + "/" + f for f
-                 in os.listdir(self.write_dir)
-                 if os.path.splitext(f)[1] == ".gro"],
-                key=os.path.getctime)
+                [self.write_dir + "/" + f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".gro"],
+                key=os.path.getctime,
+            )
             itp_file = max(
-                [self.write_dir + "/" + f for f
-                 in os.listdir(self.write_dir)
-                 if os.path.splitext(f)[1] == ".itp"],
-                key=os.path.getctime)
-            shutil.move(
-                gro_file,
-                os.path.join(self.write_dir, lmp_name[:-4] + ".gro")
+                [self.write_dir + "/" + f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".itp"],
+                key=os.path.getctime,
             )
-            shutil.move(
-                itp_file,
-                os.path.join(self.write_dir, lmp_name[:-4] + ".itp")
-            )
+            shutil.move(gro_file, os.path.join(self.write_dir, lmp_name[:-4] + ".gro"))
+            shutil.move(itp_file, os.path.join(self.write_dir, lmp_name[:-4] + ".itp"))
         shutil.move(lmp_file, os.path.join(self.write_dir, lmp_name))
         print("Force field file saved.")
 
@@ -312,25 +272,17 @@ class MaestroRunner:
         >>> mr.get_ff()
     """
 
-    template_assignbond = os.path.join(
-        MODULE_DIR,
-        "templates",
-        "mae_cmd_assignbond.txt"
-    )
+    template_assignbond = os.path.join(MODULE_DIR, "templates", "mae_cmd_assignbond.txt")
 
-    template_noassignbond = os.path.join(
-        MODULE_DIR,
-        "templates",
-        "mae_cmd_noassignbond.txt"
-    )
+    template_noassignbond = os.path.join(MODULE_DIR, "templates", "mae_cmd_noassignbond.txt")
 
     def __init__(
-            self,
-            structure_dir,
-            working_dir,
-            out="lmp",
-            cmd_template=None,
-            assign_bond=False
+        self,
+        structure_dir,
+        working_dir,
+        out="lmp",
+        cmd_template=None,
+        assign_bond=False,
     ):
         """Base constructor."""
         self.structure = structure_dir
@@ -358,21 +310,17 @@ class MaestroRunner:
     def get_mae(self):
         """Write a Maestro command script and execute it to generate a
         maestro file containing all the info needed."""
-        with open(self.cmd, 'w') as f:
+        with open(self.cmd, "w") as f:
             cmd_template = Template(self.cmd_template)
-            cmd_script = cmd_template.substitute(
-                file=self.structure,
-                mae=self.mae,
-                xyz=self.xyz
-            )
+            cmd_script = cmd_template.substitute(file=self.structure, mae=self.mae, xyz=self.xyz)
             f.write(cmd_script)
         try:
             p = subprocess.Popen(
-                f'{MAESTRO} -c {self.cmd}',
+                f"{MAESTRO} -c {self.cmd}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                preexec_fn=os.setsid
+                preexec_fn=os.setsid,
             )
 
             counter = 0
@@ -380,43 +328,30 @@ class MaestroRunner:
                 time.sleep(1)
                 counter += 1
                 if counter > 30:
-                    raise TimeoutError(
-                        "Failed to generate Maestro file in 30 secs!"
-                    )
+                    raise TimeoutError("Failed to generate Maestro file in 30 secs!")
             print("Maestro file generated.")
 
         except subprocess.CalledProcessError as e:
-            raise ValueError(
-                "Maestro failed with errorcode {}  and stderr: {}".format(
-                    e.returncode, e.stderr
-                )
-            )
+            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr))
         finally:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
     def get_ff(self):
-        """Read the Maestro file and save the force field as LAMMPS data file.
-        """
+        """Read the Maestro file and save the force field as LAMMPS data file."""
         try:
-            p = subprocess.run(
+            subprocess.run(
                 FFLD.format(self.mae + ".mae", self.ff),
                 check=True,
                 shell=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError(
-                "Maestro failed with errorcode {} and stderr: {}".format(
-                    e.returncode, e.stderr
-                )
-            )
+            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
         print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
-                with open(
-                        os.path.join(self.work, self.name + "." + self.out), 'w'
-                ) as f:
+                with open(os.path.join(self.work, self.name + "." + self.out), "w") as f:
                     f.write(ff_parser(self.ff, self.xyz))
                 print("LAMMPS data file generated.")
             else:
@@ -443,11 +378,11 @@ class PubChemRunner:
     """
 
     def __init__(
-            self,
-            write_dir,
-            chromedriver_dir,
-            api=True,
-            headless=False,
+        self,
+        write_dir,
+        chromedriver_dir,
+        api=True,
+        headless=False,
     ):
         """Base constructor."""
         self.write_dir = write_dir
@@ -456,21 +391,20 @@ class PubChemRunner:
             self.preferences = {
                 "download.default_directory": write_dir,
                 "safebrowsing.enabled": "false",
-                "profile.managed_default_content_settings.images": 2
+                "profile.managed_default_content_settings.images": 2,
             }
             self.options = webdriver.ChromeOptions()
             self.options.add_argument(
                 'user-agent="Mozilla/5.0 '
-                '(Macintosh; Intel Mac OS X 10_14_6) '
-                'AppleWebKit/537.36 (KHTML, like Gecko) '
+                "(Macintosh; Intel Mac OS X 10_14_6) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
                 'Chrome/88.0.4324.146 Safari/537.36"'
             )
             self.options.add_argument("--window-size=1920,1080")
             if headless:
-                self.options.add_argument('--headless')
+                self.options.add_argument("--headless")
             self.options.add_experimental_option("prefs", self.preferences)
-            self.options.add_experimental_option('excludeSwitches',
-                                                 ['enable-automation'])
+            self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
             self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
             self.wait = WebDriverWait(self.web, 10)
             self.web.get("https://pubchem.ncbi.nlm.nih.gov/")
@@ -481,7 +415,7 @@ class PubChemRunner:
         if not self.api:
             self.web.quit()
 
-    def obtain_entry(self, search_text, name, output_format='sdf'):
+    def obtain_entry(self, search_text, name, output_format="sdf"):
         """
         Search the PubChem database with a text entry and save the
         structure in desired format.
@@ -493,34 +427,16 @@ class PubChemRunner:
                 Default to sdf.
         """
         if self.api:
-            return self._obtain_entry_api(
-                search_text,
-                name,
-                output_format=output_format
-            )
+            return self._obtain_entry_api(search_text, name, output_format=output_format)
         else:
-            return self._obtain_entry_web(
-                search_text,
-                name,
-                output_format=output_format
-            )
+            return self._obtain_entry_web(search_text, name, output_format=output_format)
 
     def smiles_to_pdb(self, smiles):
-        convertor_url = 'https://cactus.nci.nih.gov/translate/'
-        input_xpath = (
-            '/html/body/div/div[2]/div[1]/form/'
-            'table[1]/tbody/tr[2]/td[1]/input[1]'
-        )
-        pdb_xpath = (
-            '/html/body/div/div[2]/div[1]/form/'
-            'table[1]/tbody/tr[2]/td[2]/div/input[4]'
-        )
-        translate_xpath = (
-            '/html/body/div/div[2]/div[1]/form/table[2]/tbody/tr/td/input[2]'
-        )
-        download_xpath = (
-            '/html/body/center/b/a'
-        )
+        convertor_url = "https://cactus.nci.nih.gov/translate/"
+        input_xpath = "/html/body/div/div[2]/div[1]/form/" "table[1]/tbody/tr[2]/td[1]/input[1]"
+        pdb_xpath = "/html/body/div/div[2]/div[1]/form/" "table[1]/tbody/tr[2]/td[2]/div/input[4]"
+        translate_xpath = "/html/body/div/div[2]/div[1]/form/table[2]/tbody/tr/td/input[2]"
+        download_xpath = "/html/body/center/b/a"
         self.web.get(convertor_url)
         self.web.find_element_by_xpath(input_xpath).clear()
         self.web.find_element_by_xpath(input_xpath).send_keys(smiles)
@@ -530,8 +446,7 @@ class PubChemRunner:
         self.web.find_element_by_xpath(download_xpath).click()
         print("Waiting for downloads.", end="")
         time.sleep(1)
-        while any([filename.endswith(".crdownload") for filename in
-                   os.listdir(self.write_dir)]):
+        while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
             time.sleep(1)
             print(".", end="")
         print("\nStructure file saved.")
@@ -544,31 +459,21 @@ class PubChemRunner:
             url = "https://pubchem.ncbi.nlm.nih.gov/#query=" + query
             self.web.get(url)
             time.sleep(1)
-            best_xpath = (
-                '//*[@id="featured-results"]/div/div[2]'
-                '/div/div[1]/div[2]/div[1]/a/span/span'
-            )
+            best_xpath = '//*[@id="featured-results"]/div/div[2]' "/div/div[1]/div[2]/div[1]/a/span/span"
             relevant_xpath = (
                 '//*[@id="collection-results-container"]'
-                '/div/div/div[2]/ul/li[1]/div/div/div[1]'
-                '/div[2]/div[1]/a/span/span'
+                "/div/div/div[2]/ul/li[1]/div/div/div[1]"
+                "/div[2]/div[1]/a/span/span"
             )
             if EC.presence_of_element_located((By.XPATH, best_xpath)):
                 match = self.web.find_element_by_xpath(best_xpath)
             else:
                 match = self.web.find_element_by_xpath(relevant_xpath)
             match.click()
-            density_locator = '//*[@id="Density"]/div[2]/div[1]/p'
-            cid_locator = (
-                '//*[@id="main-content"]/div/div/div[1]/'
-                'div[3]/div/table/tbody/tr[1]/td'
-            )
-            smiles_locator = (
-                '//*[@id="Canonical-SMILES"]/div[2]/div[1]/p'
-            )
-            self.wait.until(
-                EC.presence_of_element_located((By.XPATH, cid_locator))
-            )
+            # density_locator = '//*[@id="Density"]/div[2]/div[1]/p'
+            cid_locator = '//*[@id="main-content"]/div/div/div[1]/' "div[3]/div/table/tbody/tr[1]/td"
+            smiles_locator = '//*[@id="Canonical-SMILES"]/div[2]/div[1]/p'
+            self.wait.until(EC.presence_of_element_located((By.XPATH, cid_locator)))
             cid = self.web.find_element_by_xpath(cid_locator).text
             smiles = self.web.find_element_by_xpath(smiles_locator).text
             print("Best match found, PubChem ID:", cid)
@@ -578,22 +483,18 @@ class PubChemRunner:
                 self.smiles_to_pdb(smiles)
             else:
                 self.web.get(
-                    f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/'
-                    f'{cid}/record/{output_format.upper()}/?record_type=3d&'
+                    f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/CID/"
+                    f"{cid}/record/{output_format.upper()}/?record_type=3d&"
                     f'response_type=save&response_basename={name + "_" + cid}'
                 )
                 print("Waiting for downloads.", end="")
                 time.sleep(1)
-                while any([filename.endswith(".crdownload") for filename in
-                           os.listdir(self.write_dir)]):
+                while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
                     time.sleep(1)
                     print(".", end="")
                 print("\nStructure file saved.")
         except TimeoutException:
-            print(
-                "Timeout! Web server no response for 10s, "
-                "file download failed!"
-            )
+            print("Timeout! Web server no response for 10s, " "file download failed!")
         except NoSuchElementException:
             print(
                 "The download link was not correctly generated, "
@@ -606,7 +507,7 @@ class PubChemRunner:
 
     def _obtain_entry_api(self, search_text, name, output_format):
         cid = None
-        cids = pcp.get_cids(search_text, 'name', record_type='3d')
+        cids = pcp.get_cids(search_text, "name", record_type="3d")
         if len(cids) == 0:
             print("No exact match found, please try the web search")
         else:
@@ -615,38 +516,24 @@ class PubChemRunner:
                 compound = pcp.Compound.from_cid(int(cid))
                 print("SMILES code:", compound.canonical_smiles)
             elif output_format.lower() == "pdb":
-                sdf_file = os.path.join(
-                    self.write_dir,
-                    name + '_' + cid + '.sdf'
-                )
-                pdb_file = os.path.join(
-                    self.write_dir,
-                    name + '_' + cid + '.pdb'
-                )
-                pcp.download(
-                    "SDF",
-                    sdf_file,
-                    cid,
-                    record_type='3d',
-                    overwrite=True
-                )
+                sdf_file = os.path.join(self.write_dir, name + "_" + cid + ".sdf")
+                pdb_file = os.path.join(self.write_dir, name + "_" + cid + ".pdb")
+                pcp.download("SDF", sdf_file, cid, record_type="3d", overwrite=True)
                 sdf_to_pdb(sdf_file, pdb_file)
             else:
                 pcp.download(
                     output_format.upper(),
-                    os.path.join(
-                        self.write_dir,
-                        name + '_' + cid + '.' + output_format.lower()
-                    ),
+                    os.path.join(self.write_dir, name + "_" + cid + "." + output_format.lower()),
                     cid,
-                    record_type='3d',
-                    overwrite=True
+                    record_type="3d",
+                    overwrite=True,
                 )
         return cid
 
 
 class Aqueous:
-    """A class for retreiving water and ion force field parameters.
+    """
+    A class for retreiving water and ion force field parameters.
 
     Examples:
         Retreive SPC/E water model:
@@ -660,20 +547,11 @@ class Aqueous:
     @staticmethod
     def get_water(model="spce"):
         data_path = DATA_DIR
-        signature = "".join(re.split('[\W|_]+', model)).lower()
+        signature = "".join(re.split(r"[\W|_]+", model)).lower()
         if signature in DATA_MODELS.get("water").keys():
-            return LammpsData.from_file(
-                os.path.join(
-                    data_path,
-                    "water",
-                    DATA_MODELS.get("water").get(signature)
-                )
-            )
+            return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS.get("water").get(signature)))
         else:
-            print(
-                "Water model not found. Please specify a customized data "
-                "path or try another water model.\n"
-            )
+            print("Water model not found. Please specify a customized data " "path or try another water model.\n")
             return None
 
     @staticmethod
@@ -689,34 +567,18 @@ class Aqueous:
                 ion_model = DATA_MODELS.get("ion").get(key)
                 if water in ion_model:
                     if water == "default":
-                        file_path = os.path.join(
-                            data_path, "ion", key, ion_type + ".lmp"
-                        )
+                        file_path = os.path.join(data_path, "ion", key, ion_type + ".lmp")
                     else:
-                        file_path = os.path.join(
-                            data_path,
-                            "ion",
-                            key,
-                            water,
-                            ion_type + ".lmp"
-                        )
+                        file_path = os.path.join(data_path, "ion", key, water, ion_type + ".lmp")
                     if os.path.exists(file_path):
                         return LammpsData.from_file(file_path)
                     else:
-                        print(
-                            "Ion not found. Please try another ion.\n"
-                        )
+                        print("Ion not found. Please try another ion.\n")
                         return None
                 else:
-                    print(
-                        "Water model not found. Please "
-                        "try another water model.\n"
-                    )
+                    print("Water model not found. Please " "try another water model.\n")
                     return None
-        print(
-            "Ion model not found. Please "
-            "try another ion model.\n"
-        )
+        print("Ion model not found. Please " "try another ion model.\n")
         return None
 
 
@@ -734,7 +596,7 @@ if __name__ == "__main__":
     short_name = "EC"
     cid = pcr.obtain_entry(long_name, short_name, "sdf")
 
-    
+
     LPG = FFcrawler(
         "/Users/th/Downloads/test_selenium",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
@@ -761,7 +623,7 @@ if __name__ == "__main__":
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
-    
+
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_pc/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
@@ -775,7 +637,7 @@ if __name__ == "__main__":
         "/Users/th/Downloads/test_pc")
     MR.get_mae()
     MR.get_ff()
-    
+
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_mdgo/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
@@ -785,12 +647,12 @@ if __name__ == "__main__":
     short_name = "EMC"
     cid = pcr.obtain_entry(long_name, short_name, "pdb")
     """
-    #lmp_data = Aqueous().get_ion(model="aq", ion="Na+")
-    #print(lmp_data.get_string())
+    # lmp_data = Aqueous().get_ion(model="aq", ion="Na+")
+    # print(lmp_data.get_string())
     pcr = PubChemRunner(
         "/Users/th/Downloads/test_mdgo/",
         "/Users/th/Downloads/package/chromedriver/chromedriver",
-        api=True
+        api=True,
     )
     long_name = "Ethyl Methyl Carbonate"
     short_name = "EMC"

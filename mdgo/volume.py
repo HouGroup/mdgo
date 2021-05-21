@@ -14,10 +14,7 @@ import math
 import sys
 import os
 import argparse
-try:
-    from pymatgen.core.structure import Molecule
-except ImportError:
-    from pymatgen import Molecule
+from pymatgen.core import Molecule
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902
@@ -360,5 +357,3 @@ if __name__ == "__main__":
     print(molecular_volume(lipf6, "lipf6"), "cm^3/mol")
     print(molecular_volume(pf6, "pf6"), "cm^3/mol")
     """
-
-
