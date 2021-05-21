@@ -44,6 +44,8 @@ import shutil
 import signal
 import subprocess
 
+from typing import Optional
+
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
 __maintainer__ = "Tingzheng Hou"
@@ -545,7 +547,17 @@ class Aqueous:
     """
 
     @staticmethod
-    def get_water(model="spce"):
+    def get_water(model: str = "spce") -> Optional[LammpsData]:
+        """
+        Retrieve water model parameters.
+
+        Args:
+            model: Water model to use. Valid choices are "spc", "spce",
+                "tip3pew", "tip4p2005", and "tip4pew". (Default: "spce")
+        Returns:
+            LammpsData: Force field parameters for the chosen water model.
+                If you specify an invalid water model, None is returned.
+        """
         data_path = DATA_DIR
         signature = "".join(re.split(r"[\W|_]+", model)).lower()
         if signature in DATA_MODELS.get("water").keys():
@@ -555,7 +567,22 @@ class Aqueous:
             return None
 
     @staticmethod
-    def get_ion(model="jensen_jorgensen", water="default", ion="li+"):
+    def get_ion(model: str = "jensen_jorgensen", water: str = "default", ion: str = "li+") -> Optional[LammpsData]:
+        """
+        Retrieve force field parameters for an ion in water.
+
+        Args:
+            model: Force field to use. Valid choices are "aqvist" (or "aq"),
+                "jensen_jorgensen" (or "jj"), ""joung_cheatham" (or "jc").
+            water: Water model to use. For the jensen_jorgensen and aqvist
+                models, the only choice is 'default'. For the joung_cheatham
+                model, valid choices are "spce", "tip3p", and "tip4pew".
+            ion: Formula of the ion (e.g., "Li+").
+        Returns:
+            LammpsData: Force field parameters for the chosen water model.
+                If the desired combination of force field and water model
+                for the given ion is not available, None is returned.
+        """
         data_path = DATA_DIR
         alias = DATA_MODELS.get("alias")
         signature = model.lower()
