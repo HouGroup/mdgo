@@ -15,7 +15,9 @@ set the folder of the packmol executable to the PATH environment variable.
 
 import subprocess
 import os
+import tempfile
 from typing import Optional, List
+from subprocess import PIPE, Popen
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -92,7 +94,7 @@ class PackmolWrapper:
         """Run packmol and write out the packed structure."""
         try:
             p = subprocess.run(
-                "packmol < {}".format(self.input),
+                "packmol < '{}'".format(self.input),
                 check=True,
                 shell=True,
                 stdout=subprocess.PIPE,
