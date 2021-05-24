@@ -290,7 +290,7 @@ def print_occupied_volume(matrix, res, name):
     return v * 0.6022
 
 
-def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi"):
+def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi") -> float:
     """
     Estimate the molar volume in cm^3/mol
 

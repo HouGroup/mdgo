@@ -44,7 +44,7 @@ import shutil
 import signal
 import subprocess
 
-from typing import Optional
+from typing import Optional, Final
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -52,12 +52,12 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MAESTRO = "$SCHRODINGER/maestro -console -nosplash"
-FFLD = "$SCHRODINGER/utilities/ffld_server -imae {} " "-version 14 -print_parameters -out_file {}"
-MolecularWeight = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" "cid/{}/property/MolecularWeight/txt"
-MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(MODULE_DIR, "data")
-DATA_MODELS = {
+MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
+FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} " "-version 14 -print_parameters -out_file {}"
+MolecularWeight: Final[str] = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" "cid/{}/property/MolecularWeight/txt"
+MODULE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR: Final[str] = os.path.join(MODULE_DIR, "data")
+DATA_MODELS: Final[dict] = {
     "water": {
         "spc": "water_spc.lmp",
         "spce": "water_spce.lmp",
@@ -560,8 +560,8 @@ class Aqueous:
         """
         data_path = DATA_DIR
         signature = "".join(re.split(r"[\W|_]+", model)).lower()
-        if signature in DATA_MODELS.get("water").keys():
-            return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS.get("water").get(signature)))
+        if DATA_MODELS["water"].get(signature):
+            return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS["water"].get(signature)))
         else:
             print("Water model not found. Please specify a customized data " "path or try another water model.\n")
             return None
@@ -584,14 +584,14 @@ class Aqueous:
                 for the given ion is not available, None is returned.
         """
         data_path = DATA_DIR
-        alias = DATA_MODELS.get("alias")
+        alias = DATA_MODELS.get("alias", {})
         signature = model.lower()
         if signature in alias:
             signature = alias.get(model)
         ion_type = ion.capitalize()
-        for key in DATA_MODELS.get("ion").keys():
+        for key in DATA_MODELS["ion"].keys():
             if key.startswith(signature):
-                ion_model = DATA_MODELS.get("ion").get(key)
+                ion_model = DATA_MODELS["ion"].get(key)
                 if water in ion_model:
                     if water == "default":
                         file_path = os.path.join(data_path, "ion", key, ion_type + ".lmp")

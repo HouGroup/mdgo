@@ -8,9 +8,8 @@ import os
 import re
 import pandas as pd
 import math
-import numbers
 import sys
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Final
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule
@@ -21,7 +20,7 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MM_of_Elements = {
+MM_of_Elements: Final[dict[str, float]] = {
     "H": 1.00794,
     "He": 4.002602,
     "Li": 6.941,
@@ -143,7 +142,7 @@ MM_of_Elements = {
     "ZERO": 0,
 }
 
-SECTION_SORTER = {
+SECTION_SORTER: Final[dict[str, dict]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -196,13 +195,13 @@ SECTION_SORTER = {
     },
 }
 
-BOX = """{0:6f} {1:6f} xlo xhi
+BOX: Final[str] = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[dict[str, Union[float,int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
-ALIAS = {
+ALIAS: Final[dict[str, str]] = {
     "ethylene carbonate": "ec",
     "ec": "ec",
     "propylene carbonate": "pc",
@@ -239,7 +238,7 @@ ALIAS = {
 }
 
 # From PubChem
-MOLAR_MASS = {
+MOLAR_MASS: Final[dict[str, float]] = {
     "ec": 88.06,
     "pc": 102.09,
     "dec": 118.13,
@@ -258,7 +257,7 @@ MOLAR_MASS = {
 }
 
 # from Sigma-Aldrich
-DENSITY = {
+DENSITY: Final[dict[str, float]] = {
     "ec": 1.321,
     "pc": 1.204,
     "dec": 0.975,
@@ -486,22 +485,23 @@ def concentration_matcher(
     if n != len(solvents):
         raise ValueError("solvents and solv_ratio must be the same length!")
 
-    if isinstance(salt, numbers.Number):
+    if isinstance(salt, float) or isinstance(salt, int):
         salt_molar_volume = salt
-    elif type(salt) is Molecule:
-        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)
-    elif salt.lower() in MOLAR_VOLUME:
-        salt_molar_volume = MOLAR_VOLUME.get(salt.lower())
-    else:
-        if not os.path.exists(salt):
-            print("\nError: Input file '{}' not found.\n".format(salt))
-            sys.exit(1)
-        name = os.path.splitext(os.path.split(salt)[-1])[0]
-        ext = os.path.splitext(os.path.split(salt)[-1])[1]
-        if not ext == ".xyz":
-            print("Error: Wrong file format, please use a .xyz file.\n")
-            sys.exit(1)
-        salt_molar_volume = molecular_volume(salt, name)
+    elif isinstance(salt, Molecule):
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)  
+    elif isinstance(salt, str):
+        if MOLAR_VOLUME.get(salt.lower()):
+            salt_molar_volume = MOLAR_VOLUME.get(salt.lower(), 0)
+        else:
+            if not os.path.exists(salt):
+                print("\nError: Input file '{}' not found.\n".format(salt))
+                sys.exit(1)
+            name = os.path.splitext(os.path.split(salt)[-1])[0]
+            ext = os.path.splitext(os.path.split(salt)[-1])[1]
+            if not ext == ".xyz":
+                print("Error: Wrong file format, please use a .xyz file.\n")
+                sys.exit(1)
+            salt_molar_volume = molecular_volume(salt, name)
     solv_mass = list()
     solv_density = list()
     for solv in solvents:
