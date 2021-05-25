@@ -2,10 +2,11 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import MDAnalysis
+from MDAnalysis import transformations
 from pymatgen.io.lammps.data import LammpsData
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
@@ -23,6 +24,7 @@ from mdgo.coordination import (
 )
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.util import resnames, mass_to_el
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -48,34 +50,40 @@ class MdRun:
         cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
-    def __init__(self, data_dir, wrapped_dir, unwrapped_dir, nvt_start,
+    def __init__(self, data_dir, unwrapped_dir, nvt_start,
                  time_step, name, select_dict, cation_charge=1, anion_charge=-1,
-                 cond=True):
+                 temperature=298.5, cond=True):
         """
         Base constructor.
 
 
         """
 
-        self.wrapped_run = MDAnalysis.Universe(data_dir,
-                                               wrapped_dir,
-                                               format="LAMMPS")
-        self.unwrapped_run = MDAnalysis.Universe(data_dir,
-                                                 unwrapped_dir,
+        self.unwrapped_run = MDAnalysis.Universe(str(data_dir),
+                                                 str(unwrapped_dir),
                                                  format="LAMMPS")
+        self.wrapped_run = MdRun.transform_run(self.unwrapped_run, 'wrap')
         self.nvt_start = nvt_start
         self.time_step = time_step
+        self.temp = temperature
         self.name = name
         self.data = LammpsData.from_file(data_dir)
         self.element_id_dict = mass_to_name(self.data.masses)
         self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.cation_name = None
+        self.anion_name = None
+        self.cations = self.unwrapped_run.select_atoms(self.select_dict["cation"])
+        self.anion_center = self.unwrapped_run.select_atoms(self.select_dict["anion"])
+        self.anions = self.anion_center.residues.atoms
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
-        self.num_li = len(
-            self.wrapped_run.select_atoms(self.select_dict.get("cation"))
-        )
+        self.num_li = \
+            len(self.wrapped_run.select_atoms(self.select_dict["cation"]))
+        self.electrolyte_names = None
+        self.electrolytes = None  # TODO: extract electrolyte and anion_center from select_dict
+        self.num_cation = len(self.cations)
         if cond:
             self.cond_array = self.get_cond_array()
         else:
