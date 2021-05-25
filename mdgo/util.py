@@ -195,11 +195,13 @@ SECTION_SORTER: Final[dict[str, dict]] = {
     },
 }
 
-BOX: Final[str] = """{0:6f} {1:6f} xlo xhi
+BOX: Final[
+    str
+] = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME: Final[dict[str, Union[float,int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[dict[str, Union[float, int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
 ALIAS: Final[dict[str, str]] = {
     "ethylene carbonate": "ec",
@@ -447,7 +449,7 @@ def concentration_matcher(
     solvent density, solvent ratio and total number of salt.
 
     Args:
-        concentration: Salt concentration.
+        concentration: Salt concentration in mol/L.
         salt: Four types of input are accepted:
               1. The salt name in string ('lipf6' or 'litfsi')
               2. Salt molar volume in as a float/int (cm^3/mol)
@@ -488,7 +490,7 @@ def concentration_matcher(
     if isinstance(salt, float) or isinstance(salt, int):
         salt_molar_volume = salt
     elif isinstance(salt, Molecule):
-        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)  
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)
     elif isinstance(salt, str):
         if MOLAR_VOLUME.get(salt.lower()):
             salt_molar_volume = MOLAR_VOLUME.get(salt.lower(), 0)
