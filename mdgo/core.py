@@ -99,14 +99,69 @@ class MdRun:
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
-        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022*1e23)
+        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+
+    @classmethod
+    def auto_constructor(cls, data_dir, unwrapped_dir, nvt_start,
+                         time_step, name, residue_mass_dict, cation_name,
+                         anion_name, anion_central_atom, electrolyte_names,
+                         cation_charge=1, anion_charge=-1, temperature=298.5,
+                         cond=True):
+
+        empty_select_dict = {"cation": "", "anion": ""}
+        run = MdRun(data_dir, unwrapped_dir, nvt_start, time_step,
+                    name, empty_select_dict, cation_charge=cation_charge,
+                    anion_charge=anion_charge, temperature=temperature,
+                    cond=cond)
+        select_dict = {"cation": f"resname {cation_name}",
+                       "anion": f"resname {anion_name} and "
+                                f"name {anion_central_atom}"}
+        electrolyte_selections = {name: f"resname {name}"
+                                  for name in electrolyte_names}
+        run.select_dict = {**select_dict, **electrolyte_selections}
+        run.name_residues(residue_mass_dict)
+        run.cations = run.unwrapped_run.select_atoms(f"resname {cation_name}")
+        run.anions = run.unwrapped_run.select_atoms(f"resname {anion_name}")
+        run.cond_array = run.get_cond_array()
+        run.anion_center = \
+            run.unwrapped_run.select_atoms(f"resname {anion_name} and "
+                                           f"name {anion_central_atom}")
+        run.electrolyte_names = electrolyte_names
+        run.electrolytes = {elyte: run.unwrapped_run.select_atoms(f'resname {elyte}')
+                            for elyte in electrolyte_names}
+        run.wrapped_run = run.transform_run(run.unwrapped_run, 'wrap')
+        return run
+
+    def get_cation_molarity(self):
+        A3_2_L3 = 1e-27
+        mol_cations = len(self.cations.residues) / 6.02214e23
+        liters = self.nvt_v * A3_2_L3
+        return round(mol_cations / liters, 2)
+
+    @staticmethod
+    def transform_run(universe, transformation):
+        wrapped_run = universe.copy()
+        all_atoms = wrapped_run.atoms
+        assert transformation in ["wrap", "unwrap"]
+        if transformation == "wrap":
+            transform = transformations.wrap(all_atoms)
+        elif transformation == "unwrap":
+            transform = transformations.unwrap(all_atoms)
+        wrapped_run.trajectory.add_transformations(transform)
+        return wrapped_run
+
+    def name_residues(self, residue_mass_dict):
+        atom_names = mass_to_el(self.unwrapped_run.atoms.masses)
+        self.unwrapped_run.add_TopologyAttr('name', values=atom_names)
+        residue_names = resnames(self.unwrapped_run, residue_mass_dict)
+        self.unwrapped_run.add_TopologyAttr('resname', values=residue_names)
 
     def get_init_dimension(self):
         """
         Returns the initial box dimension.
         """
-        return self.wrapped_run.trajectory[0].dimensions
+        return self.wrapped_run.dimensions
 
     def get_equilibrium_dimension(self, npt_range, period=200):
         """
@@ -315,10 +370,8 @@ class MdRun:
                                                  return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
-        item_name = (
-                "Num of " + species + " within "
-                + str(distance) + " " + "\u212B"
-        )
+        item_name = "Num of " + species + " within " + str(distance) + " " \
+                    + "\u212B"
         item_list = []
         percent_list = []
         for i in range(len(combined)):
