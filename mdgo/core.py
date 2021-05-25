@@ -23,6 +23,10 @@ from mdgo.coordination import (
 )
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.util import resnames, mass_to_el
+from mdgo.rdf import RdfMemoizer
+from mdgo.shell_functions import get_counts, get_pair_type, count_dicts, \
+    get_radial_shell
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -631,6 +635,10 @@ class MdRun:
         return np.mean(means)
 
 
+    def get_ion_pairing(self, timestep, raw_counts=False):
+        """
+        This function can only be used in a universe with names.
+
 class MdJob:
     """
     A core class for MD results analysis.
@@ -643,6 +651,21 @@ class MdJob:
     def from_dict(cls):
         return cls("name")
 
-    @classmethod
-    def from_recipe(cls):
-        return cls("name")
+        Args:
+            timestep:
+            raw_counts:
+
+        Returns:
+
+        """
+        self.unwrapped_run.trajectory[timestep]
+        pairs = [get_pair_type(self.unwrapped_run, cation, self.cations, self.anions)
+                 for cation in self.cations]
+        counts = {pair_type: pairs.count(pair_type) for pair_type in pairs}
+        total_cations = len(self.cations)
+        counts_normed = {pair_type: round(count / total_cations, 3)
+                         for pair_type, count, in counts.items()}
+        if raw_counts:
+            return counts
+        else:
+            return counts_normed
