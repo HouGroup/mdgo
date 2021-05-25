@@ -79,7 +79,7 @@ def calc_neigh_corr(nvt_run, species_dict, selection_dict, time_step, run_start,
     return times, acf_avg
 
 
-def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time):
+def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, time_step):
     acf_avg_norm = dict()
     popt = dict()
     pcov = dict()
@@ -102,8 +102,8 @@ def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time):
     for i, kw in enumerate(species_list):
         plt.plot(times, acf_avg_norm[kw], label=kw, color=colors[i])
         plt.plot(
-            np.linspace(0, cutoff_time * 10, cutoff_time),
-            exponential_func(np.linspace(0, cutoff_time * 10, cutoff_time), *popt[kw]),
+            np.linspace(0, cutoff_time * time_step, cutoff_time),
+            exponential_func(np.linspace(0, cutoff_time * time_step, cutoff_time), *popt[kw]),
             line_styles[i],
             color="k",
             label=kw + " Fit",
@@ -113,7 +113,7 @@ def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time):
     plt.legend()
     plt.ylabel("Neighbor Autocorrelation Function")
     plt.ylim(0, 1)
-    plt.xlim(0, cutoff_time * 10)
+    plt.xlim(0, cutoff_time * time_step)
     plt.show()
 
     return tau

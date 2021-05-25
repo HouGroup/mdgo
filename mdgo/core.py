@@ -490,8 +490,7 @@ class MdRun:
             run_end,
         )
 
-    @staticmethod
-    def get_residence_time(species_list, times, acf_avg_dict, cutoff_time):
+    def get_residence_time(self, species_list, times, acf_avg_dict, cutoff_time):
         """Calculates the residence time of selected species around cation
 
         Args:
@@ -502,7 +501,7 @@ class MdRun:
 
         Returns the residence time of each species.
         """
-        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time)
+        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
 
     def get_neighbor_trj(self, run_start, run_end, li_atom, species, distance):
         """Calculates the distance of cation-neighbor as a function of time
