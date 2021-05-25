@@ -661,6 +661,18 @@ class MdRun:
                               timestep, rdf_range, fresh_rdf)
         return values, bins
 
+class MdJob:
+    """
+    A core class for MD results analysis.
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    @classmethod
+    def from_dict(cls):
+        return cls("name")
+
     @classmethod
     def from_recipe(cls):
         return cls("name")
