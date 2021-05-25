@@ -634,22 +634,9 @@ class MdRun:
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
 
-
     def get_ion_pairing(self, timestep, raw_counts=False):
         """
         This function can only be used in a universe with names.
-
-class MdJob:
-    """
-    A core class for MD results analysis.
-    """
-
-    def __init__(self, name):
-        self.name = name
-
-    @classmethod
-    def from_dict(cls):
-        return cls("name")
 
         Args:
             timestep:
@@ -669,3 +656,19 @@ class MdJob:
             return counts
         else:
             return counts_normed
+
+class MdJob:
+    """
+    A core class for MD results analysis.
+    """
+
+    def __init__(self, name):
+        self.name = name
+
+    @classmethod
+    def from_dict(cls):
+        return cls("name")
+
+    @classmethod
+    def from_recipe(cls):
+        return cls("name")
