@@ -23,10 +23,8 @@ from mdgo.coordination import (
 )
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
-from mdgo.util import resnames, mass_to_el
 from mdgo.rdf import RdfMemoizer
-from mdgo.shell_functions import get_counts, get_pair_type, count_dicts, \
-    get_radial_shell
+
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -67,6 +65,7 @@ class MdRun:
         self.unwrapped_run = MDAnalysis.Universe(data_dir,
                                                  unwrapped_dir,
                                                  format="LAMMPS")
+        self.rdf_memoizer = RdfMemoizer(self.wrapped_run)
         self.nvt_start = nvt_start
         self.time_step = time_step
         self.name = name
