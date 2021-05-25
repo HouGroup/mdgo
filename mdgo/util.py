@@ -442,6 +442,7 @@ def concentration_matcher(
     solv_ratio: List[float],
     num_salt: int = 100,
     mode: str = "v",
+    radii_type: str = "Bondi",
 ) -> Tuple[List, float]:
     """
     Estimate the number of molecules of each species in a box,
@@ -474,6 +475,11 @@ def concentration_matcher(
         num_salt: The number of salt in the box.
         mode: Weight mode (Wweight/weight/W/w/W./w.) or volume mode
             (Volume/volume/V/v/V./v.) for interpreting the ratio of solvents.
+        radii_type: "Bondi", "Lange", or "pymatgen". Bondi and Lange vdW radii
+            are compiled in this package for H, B, C, N, O, F, Si, P, S, Cl, Br,
+            and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
+            which are available for most elements and reflect the latest values in
+            the CRC handbook.
 
     Returns:
         (list, float):
@@ -490,7 +496,7 @@ def concentration_matcher(
     if isinstance(salt, float) or isinstance(salt, int):
         salt_molar_volume = salt
     elif isinstance(salt, Molecule):
-        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula, radii_type=radii_type)
     elif isinstance(salt, str):
         if MOLAR_VOLUME.get(salt.lower()):
             salt_molar_volume = MOLAR_VOLUME.get(salt.lower(), 0)
@@ -503,7 +509,7 @@ def concentration_matcher(
             if not ext == ".xyz":
                 print("Error: Wrong file format, please use a .xyz file.\n")
                 sys.exit(1)
-            salt_molar_volume = molecular_volume(salt, name)
+            salt_molar_volume = molecular_volume(salt, name, radii_type=radii_type)
     solv_mass = list()
     solv_density = list()
     for solv in solvents:
