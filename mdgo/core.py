@@ -23,6 +23,8 @@ from mdgo.coordination import (
 )
 from mdgo.msd import total_msd, partial_msd, special_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.rdf import RdfMemoizer
+
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -63,6 +65,7 @@ class MdRun:
         self.unwrapped_run = MDAnalysis.Universe(data_dir,
                                                  unwrapped_dir,
                                                  format="LAMMPS")
+        self.rdf_memoizer = RdfMemoizer(self.wrapped_run)
         self.nvt_start = nvt_start
         self.time_step = time_step
         self.name = name
@@ -630,6 +633,32 @@ class MdRun:
             means.append(np.nanmean(distance_matrix))
         return np.mean(means)
 
+    def get_rdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                     rdf_range=[1, 10], fresh_rdf=False):
+        """
+        This initial implementation must rely on atom types, in the future this should be
+        changed to allow more sophisticated atom grouping in the rdfs.
+
+        Args:
+            neighbor_atom_type:
+            central_atom_type:
+            timestep:
+            rdf_range:
+            fresh_rdf:
+
+        Returns:
+
+        """
+        values, bins = self.rdf_memoizer.rdf_data(central_atom_type, neighbor_atom_type,
+                                                  timestep, rdf_range, fresh_rdf)
+        return values, bins
+
+    def get_cdf_data(self, central_atom_type, neighbor_atom_type, timestep,
+                     rdf_range=[1, 10], fresh_rdf=False):
+        values, bins = self.rdf_memoizer. \
+            rdf_integral_data(central_atom_type, neighbor_atom_type,
+                              timestep, rdf_range, fresh_rdf)
+        return values, bins
 
 class MdJob:
     """
