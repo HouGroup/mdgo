@@ -24,7 +24,4 @@ This will implement get_counts, get_pair_type, count_dicts
 #     solvation_shell_speciation = [get_counts(get_radial_shell(self.u, cation, 3))
 #                                   for cation in self.cations]
 #     counts_by_speciation = count_dicts(solvation_shell_speciation)
-#     print('before: ', len(solvation_shell_speciation))
-#     print('after: ', len(counts_by_speciation))
-#     print('after: ', sum(counts_by_speciation.keys()))
 #     return counts_by_speciation
