@@ -43,6 +43,8 @@ class MdRun:
         time_step (int or float): LAMMPS timestep.
         name (str): Name of the MD run.
         select_dict: A dictionary of species selection.
+        cation_name: Name of cation. Default to "cation".
+        anion_name: Name of anion. Default to "anion".
         cation_charge: Charge of cation. Default to 1.
         anion_charge: Charge of anion. Default to 1.
         temperature: Temperature of the MD run. Default to 298.15.
@@ -58,6 +60,8 @@ class MdRun:
         time_step,
         name,
         select_dict,
+        cation_name="cation",
+        anion_name="anion",
         cation_charge=1,
         anion_charge=-1,
         temperature=298.5,
@@ -80,9 +84,36 @@ class MdRun:
         self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.cation_name = cation_name
+        self.anion_name = anion_name
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
-        self.num_li = len(self.wrapped_run.select_atoms(self.select_dict.get("cation")))
+        self.cations = self.wrapped_run.select_atoms(self.select_dict.get("cation"))
+        self.anion_center = self.wrapped_run.select_atoms(self.select_dict.get("anion"))
+        self.anions = self.anion_center.residues.atoms
+        self.num_cation = len(self.cations)
+
+        saved_select = list()
+        empty_select = self.wrapped_run.select_atoms("not all")
+        res_dict = {"cation": empty_select, "anion": empty_select}
+        for key, val in select_dict.items():
+            res_select = "same resid as (" + val + ")"
+            res_group = self.wrapped_run.select_atoms(res_select)
+            if key.startswith("cation"):
+                res_dict["cation"] = res_group.concatenate(res_dict.get("cation")).unique
+            elif key.startswith("anion"):
+                res_dict["anion"] = res_group.concatenate(res_dict.get("anion")).unique
+            else:
+                if res_group not in saved_select:
+                    saved_select.append(res_group)
+                    res_dict[key] = res_select
+        if res_dict.get("cation") == res_dict.get("anion"):
+            res_dict.pop("anion")
+            res_dict["salt"] = res_dict.pop("cation")
+        for key, val in res_dict.items():
+            res_group = self.wrapped_run.select_atoms(val)
+            res_group.residues.resnames = key
+
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -98,7 +129,7 @@ class MdRun:
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
-        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
+        self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     @classmethod
