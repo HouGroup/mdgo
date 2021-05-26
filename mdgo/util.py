@@ -337,7 +337,10 @@ def assign_name(u, element_id_dict):
     """
     u.add_TopologyAttr("name")
     for key, val in element_id_dict.items():
-        u.select_atoms("type {}".format(str(key))).names = val
+        atom_group = u.select_atoms("type {}".format(str(key)))
+        atom_names = atom_group.names
+        atom_names[atom_names == ""] = val
+        atom_group.names = atom_names
 
 
 def assign_resname(u, res_dict):
