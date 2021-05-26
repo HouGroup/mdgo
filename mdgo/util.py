@@ -326,6 +326,37 @@ def mass_to_name(df):
     return atoms
 
 
+def assign_name(u, element_id_dict):
+    """
+    Assgin resnames to residues in a MDAnalysis.universe object.
+
+    Args:
+        u (MDAnalysis.universe): The universe object to assign resnames to.
+        element_id_dict (dict): A dictionary of atom types, where each type is a key
+                and the corresponding values are the element names.
+    """
+    u.add_TopologyAttr("name")
+    for key, val in element_id_dict.items():
+        u.select_atoms("type {}".format(str(key))).names = val
+
+
+def assign_resname(u, res_dict):
+    """
+    Assgin resnames to residues in a MDAnalysis.universe object.
+
+    Args:
+        u (MDAnalysis.universe): The universe object to assign resnames to.
+        res_dict (dict): A dictionary of resnames, where each resname is a key
+                and the corresponding values are the selection language.
+    """
+    u.add_TopologyAttr("resname")
+    for key, val in res_dict.items():
+        res_group = u.select_atoms(val)
+        res_names = res_group.residues.resnames
+        res_names[res_names == ""] = key
+        res_group.residues.resnames = res_names
+
+
 def res_dict_from_select_dict(u, select_dict):
     """
     Infer res_dict (residue selection) from select_dict (atom selection) in a MDAnalysis.universe object.
