@@ -51,14 +51,15 @@ class MdRun:
     def __init__(
         self,
         data_dir,
-        wrapped_dir,
-        unwrapped_dir,
+        wrapped_run,
+        unwrapped_run,
         nvt_start,
         time_step,
         name,
         select_dict,
         cation_charge=1,
         anion_charge=-1,
+        temperature=298.5,
         cond=True,
     ):
         """
@@ -67,10 +68,11 @@ class MdRun:
 
         """
 
-        self.wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
-        self.unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
+        self.wrapped_run = wrapped_run
+        self.unwrapped_run = unwrapped_run
         self.nvt_start = nvt_start
         self.time_step = time_step
+        self.temp = temperature
         self.name = name
         self.data = LammpsData.from_file(data_dir)
         self.element_id_dict = mass_to_name(self.data.masses)
@@ -97,6 +99,38 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+
+    @classmethod
+    def from_full(
+        cls,
+        data_dir,
+        wrapped_dir,
+        unwrapped_dir,
+        nvt_start,
+        time_step,
+        name,
+        select_dict,
+        cation_charge=1,
+        anion_charge=-1,
+        temperature=298.5,
+        cond=True,
+    ):
+        wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
+        unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
+
+        return cls(
+            data_dir,
+            wrapped_run,
+            unwrapped_run,
+            nvt_start,
+            time_step,
+            name,
+            select_dict,
+            cation_charge=cation_charge,
+            anion_charge=anion_charge,
+            temperature=temperature,
+            cond=cond,
+        )
 
     def get_init_dimension(self):
         """
