@@ -37,14 +37,15 @@ class MdRun:
 
     Args:
         data_dir (str): Path to the data file.
-        wrapped_dir (str): Path to the wrapped dcd file.
-        unwrapped_dir (str): Path to the unwrapped dcd file.
+        wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
+        unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
         nvt_start (int): NVT start time step.
         time_step (int or float): LAMMPS timestep.
         name (str): Name of the MD run.
         select_dict: A dictionary of species selection.
         cation_charge: Charge of cation. Default to 1.
         anion_charge: Charge of anion. Default to 1.
+        temperature: Temperature of the MD run. Default to 298.15.
         cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
@@ -115,6 +116,22 @@ class MdRun:
         temperature=298.5,
         cond=True,
     ):
+        """
+        Constructor from dcd files of wrapped trajectory and unwrapped trajectory.
+
+        Args:
+            data_dir (str): Path to the data file.
+            wrapped_dir (str): Path to the wrapped dcd file.
+            unwrapped_dir (str): Path to the unwrapped dcd file.
+            nvt_start (int): NVT start time step.
+            time_step (int or float): LAMMPS timestep.
+            name (str): Name of the MD run.
+            select_dict: A dictionary of species selection.
+            cation_charge: Charge of cation. Default to 1.
+            anion_charge: Charge of anion. Default to 1.
+            temperature: Temperature of the MD run. Default to 298.15.
+            cond (bool): Whether to calculate conductivity MSD. Default to True.
+        """
         wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
         unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
 
