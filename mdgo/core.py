@@ -10,7 +10,15 @@ from pymatgen.io.lammps.data import LammpsData
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.notebook import tqdm
-from mdgo.util import mass_to_name
+from mdgo.util import (
+    mass_to_name,
+    assign_name,
+    assign_resname,
+    res_dict_from_lammpsdata,
+    res_dict_from_select_dict,
+    res_dict_from_datafile,
+    select_dict_from_resname,
+)
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
@@ -36,13 +44,18 @@ class MdRun:
     A core class for MD results analysis.
 
     Args:
-        data_dir (str): Path to the data file.
+        lammps_data (LammpsData): LammpsData object.
         wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
         unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
         nvt_start (int): NVT start time step.
         time_step (int or float): LAMMPS timestep.
         name (str): Name of the MD run.
-        select_dict: A dictionary of species selection.
+        select_dict (dict): A dictionary of atom species, where each atom species name is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested atoms.
+        res_dict (dict): A dictionary of resnames, where each resname is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested residues (ions/molecules).
         cation_name: Name of cation. Default to "cation".
         anion_name: Name of anion. Default to "anion".
         cation_charge: Charge of cation. Default to 1.
@@ -53,13 +66,14 @@ class MdRun:
 
     def __init__(
         self,
-        data_dir,
+        lammps_data,
         wrapped_run,
         unwrapped_run,
         nvt_start,
         time_step,
         name,
-        select_dict,
+        select_dict=None,
+        res_dict=None,
         cation_name="cation",
         anion_name="anion",
         cation_charge=1,
@@ -79,9 +93,20 @@ class MdRun:
         self.time_step = time_step
         self.temp = temperature
         self.name = name
-        self.data = LammpsData.from_file(data_dir)
+        self.data = lammps_data
         self.element_id_dict = mass_to_name(self.data.masses)
+        assign_name(self.wrapped_run, self.element_id_dict)
+        assign_name(self.unwrapped_run, self.element_id_dict)
         self.select_dict = select_dict
+        self.res_dict = res_dict
+        if self.select_dict is None and self.res_dict is None:
+            self.res_dict = res_dict_from_lammpsdata(self.data)
+        if self.res_dict is None:
+            self.res_dict = res_dict_from_select_dict(self.wrapped_run, self.select_dict)
+        assign_resname(self.wrapped_run, self.res_dict)
+        assign_resname(self.unwrapped_run, self.res_dict)
+        if self.select_dict is None:
+            self.select_dict = select_dict_from_resname(self.wrapped_run)
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
         self.cation_name = cation_name
@@ -92,28 +117,6 @@ class MdRun:
         self.anion_center = self.wrapped_run.select_atoms(self.select_dict.get("anion"))
         self.anions = self.anion_center.residues.atoms
         self.num_cation = len(self.cations)
-
-        saved_select = list()
-        empty_select = self.wrapped_run.select_atoms("not all")
-        res_dict = {"cation": empty_select, "anion": empty_select}
-        for key, val in select_dict.items():
-            res_select = "same resid as (" + val + ")"
-            res_group = self.wrapped_run.select_atoms(res_select)
-            if key.startswith("cation"):
-                res_dict["cation"] = res_group.concatenate(res_dict.get("cation")).unique
-            elif key.startswith("anion"):
-                res_dict["anion"] = res_group.concatenate(res_dict.get("anion")).unique
-            else:
-                if res_group not in saved_select:
-                    saved_select.append(res_group)
-                    res_dict[key] = res_select
-        if res_dict.get("cation") == res_dict.get("anion"):
-            res_dict.pop("anion")
-            res_dict["salt"] = res_dict.pop("cation")
-        for key, val in res_dict.items():
-            res_group = self.wrapped_run.select_atoms(val)
-            res_group.residues.resnames = key
-
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -133,7 +136,7 @@ class MdRun:
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     @classmethod
-    def from_full(
+    def from_output_full(
         cls,
         data_dir,
         wrapped_dir,
@@ -141,14 +144,17 @@ class MdRun:
         nvt_start,
         time_step,
         name,
-        select_dict,
+        select_dict=None,
+        res_dict=None,
+        cation_name="cation",
+        anion_name="anion",
         cation_charge=1,
         anion_charge=-1,
         temperature=298.5,
         cond=True,
     ):
         """
-        Constructor from dcd files of wrapped trajectory and unwrapped trajectory.
+        Constructor from lammps data file and trajectory dcd file.
 
         Args:
             data_dir (str): Path to the data file.
@@ -158,22 +164,31 @@ class MdRun:
             time_step (int or float): LAMMPS timestep.
             name (str): Name of the MD run.
             select_dict: A dictionary of species selection.
+            res_dict (dict): A dictionary of resnames.
+            cation_name: Name of cation. Default to "cation".
+            anion_name: Name of anion. Default to "anion".
             cation_charge: Charge of cation. Default to 1.
             anion_charge: Charge of anion. Default to 1.
             temperature: Temperature of the MD run. Default to 298.15.
             cond (bool): Whether to calculate conductivity MSD. Default to True.
         """
+        lammps_data = LammpsData.from_file(data_dir)
+        if res_dict is None:
+            res_dict = res_dict_from_datafile(data_dir)
         wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
         unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
 
         return cls(
-            data_dir,
+            lammps_data,
             wrapped_run,
             unwrapped_run,
             nvt_start,
             time_step,
             name,
-            select_dict,
+            select_dict=select_dict,
+            res_dict=res_dict,
+            cation_name=cation_name,
+            anion_name=anion_name,
             cation_charge=cation_charge,
             anion_charge=anion_charge,
             temperature=temperature,
