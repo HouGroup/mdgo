@@ -154,7 +154,7 @@ class MdRun:
         cond=True,
     ):
         """
-        Constructor from lammps data file and trajectory dcd file.
+        Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
 
         Args:
             data_dir (str): Path to the data file.
