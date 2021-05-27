@@ -26,14 +26,7 @@ def parse_command_line():
     """
     parser = argparse.ArgumentParser(usage=usage, description=__doc__)
 
-    parser.add_argument(
-        "-i",
-        "-ixyz",
-        type=str,
-        dest="ixzy",
-        default="",
-        help="Input xyz file name",
-        metavar="FILE")
+    parser.add_argument("-i", "-ixyz", type=str, dest="ixzy", default="", help="Input xyz file name", metavar="FILE")
     parser.add_argument(
         "-m",
         "-mode",
@@ -42,7 +35,8 @@ def parse_command_line():
         choices=["lig", "act"],
         default="lig",
         help="Ligand or active site volume <lig|act> (default=lig)",
-        metavar="MODE")
+        metavar="MODE",
+    )
     parser.add_argument(
         "-t",
         "-type",
@@ -51,7 +45,8 @@ def parse_command_line():
         choices=["Bondi", "Lange"],
         default="Bondi",
         help="Type of radii <Bondi|Lange> (default=Bondi)",
-        metavar="TYPE")
+        metavar="TYPE",
+    )
     parser.add_argument(
         "-r",
         "-resolution",
@@ -59,28 +54,32 @@ def parse_command_line():
         dest="res",
         default="0.1",
         help="Resolution for volume grid (default=1.0)",
-        metavar="N")
+        metavar="N",
+    )
     parser.add_argument(
         "-xsize",
         type=float,
         dest="xsize",
         default="10.0",
         help="X side length for volume grid (default=10.0)",
-        metavar="N")
+        metavar="N",
+    )
     parser.add_argument(
         "-ysize",
         type=float,
         dest="ysize",
         default="10.0",
         help="Y side length for volume grid (default=10.0)",
-        metavar="N")
+        metavar="N",
+    )
     parser.add_argument(
         "-zsize",
         type=float,
         dest="zsize",
         default="10.0",
         help="Z side length for volume grid (default=10.0)",
-        metavar="N")
+        metavar="N",
+    )
     parser.add_argument(
         "-x",
         "-xcent",
@@ -88,7 +87,8 @@ def parse_command_line():
         dest="xcent",
         default="0.0",
         help="X center for volume grid (default=0.0)",
-        metavar="X")
+        metavar="X",
+    )
     parser.add_argument(
         "-y",
         "-ycent",
@@ -96,7 +96,8 @@ def parse_command_line():
         dest="ycent",
         default="0.0",
         help="Y center for volume grid (default=0.0)",
-        metavar="Y")
+        metavar="Y",
+    )
     parser.add_argument(
         "-z",
         "-zcent",
@@ -104,7 +105,8 @@ def parse_command_line():
         dest="zcent",
         default="0.0",
         help="Z center for volume grid (default=0.0)",
-        metavar="Z")
+        metavar="Z",
+    )
 
     args = parser.parse_args()
 
@@ -164,7 +166,7 @@ def round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax):
 
 
 def dsq(a1, a2, a3, b1, b2, b3):
-    d2 = (b1 - a1)**2 + (b2 - a2)**2 + (b3 - a3)**2
+    d2 = (b1 - a1) ** 2 + (b2 - a2) ** 2 + (b3 - a3) ** 2
     return d2
 
 
@@ -206,7 +208,7 @@ def get_radii(type):
             "S": 1.80,
             "Cl": 1.75,
             "Br": 1.85,
-            "I": 1.98
+            "I": 1.98,
         }
     elif type == "Lange":  # from Lange's Handbook of Chemistry
         radii = {
@@ -221,12 +223,12 @@ def get_radii(type):
             "S": 1.85,
             "Cl": 1.81,
             "Br": 1.95,
-            "I": 2.15
+            "I": 2.15,
         }
     else:
         print("Wrong option for radii type: Choose Bondi or Lange.")
         sys.exit()
-    return (radii)
+    return radii
 
 
 def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
@@ -253,13 +255,18 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
                     if abs(a.y - (y0 + 0.5 * res + j * res)) < radius:
                         for k in range(0, zsteps):
                             if matrix[i][j][k] != 1:
-                                if abs(a.z -
-                                       (z0 + 0.5 * res + k * res)) < radius:
-                                    if dsq(a.x, a.y, a.z,
-                                           x0 + 0.5 * res + i * res,
-                                           y0 + 0.5 * res + j * res,
-                                           z0 + 0.5 * res + k * res) < (
-                                               radius * radius):
+                                if abs(a.z - (z0 + 0.5 * res + k * res)) < radius:
+                                    if (
+                                        dsq(
+                                            a.x,
+                                            a.y,
+                                            a.z,
+                                            x0 + 0.5 * res + i * res,
+                                            y0 + 0.5 * res + j * res,
+                                            z0 + 0.5 * res + k * res,
+                                        )
+                                        < (radius * radius)
+                                    ):
                                         matrix[i][j][k] = 1
                                     else:
                                         matrix[i][j][k] = 0
@@ -295,14 +302,10 @@ def molecular_volume(path, name, res=0.1, radii_type="Bondi"):
     else:
         molecule = path
     xmin, xmax, ymin, ymax, zmin, zmax = get_max_dimensions(molecule)
-    x0, x1, y0, y1, z0, z1 = round_dimensions(
-        xmin, xmax, ymin, ymax, zmin, zmax
-    )
+    x0, x1, y0, y1, z0, z1 = round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax)
     xnum, ynum, znum = get_dimensions(x0, x1, y0, y1, z0, z1, res)
     volume_matrix = make_matrix(xnum, ynum, znum)
-    volume_matrix = fill_volume_matrix(molecule, x0, x1, y0, y1, z0, z1,
-                                       res, volume_matrix,
-                                       radii_type)
+    volume_matrix = fill_volume_matrix(molecule, x0, x1, y0, y1, z0, z1, res, volume_matrix, radii_type)
     molar_vol = print_occupied_volume(volume_matrix, res, name)
     return molar_vol
 
@@ -334,7 +337,7 @@ if __name__ == "__main__":
             print_occupied_volume(volume_matrix, options.res)
         elif options.mode == "act":
             print_unoccupied_volume(volume_matrix, options.res)
-    
+
 
     ec = Molecule.from_file(
         "/Users/th/Downloads/package/packmol-17.163/EC.xyz"
