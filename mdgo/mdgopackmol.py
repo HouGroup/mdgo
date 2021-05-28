@@ -58,8 +58,8 @@ class PackmolWrapper:
         structures,
         numbers,
         box,
-        tolerance=None,
-        seed=None,
+        tolerance=2.0,
+        seed=1,
         inputfile="packmol.inp",
         outputfile="output.xyz",
     ):
@@ -70,14 +70,8 @@ class PackmolWrapper:
         self.structures = structures
         self.numbers = numbers
         self.box = box
-        if tolerance is None:
-            self.tolerance = 2.0
-        else:
-            self.tolerance = tolerance
-        if seed is None:
-            self.seed = 123
-        else:
-            self.seed = seed
+        self.tolerance = tolerance
+        self.seed = seed
 
     def run_packmol(self):
         """Run packmol and write out the packed structure."""
