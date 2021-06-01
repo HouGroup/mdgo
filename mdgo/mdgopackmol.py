@@ -84,7 +84,7 @@ class PackmolWrapper:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Packmol failed with errorcode {}" " and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Packmol failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
         else:
             with open(self.screen, "w") as out:
                 out.write(p.stdout.decode())

@@ -26,7 +26,7 @@ def total_msd(nvt_run, start, stop, select="all", msd_type="xyz", fft=True):
         return total_array
     else:
         if fft:
-            print("Warning! MDAnalysis version too low, fft not supported. " "Use conventional instead")
+            print("Warning! MDAnalysis version too low, fft not supported. Use conventional instead")
         return _total_msd(nvt_run, select, start, stop)
 
 
