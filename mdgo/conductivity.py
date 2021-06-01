@@ -12,6 +12,11 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
+"""
+Reference :
+http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
+"""
+
 
 def autocorrFFT(x):
     """
