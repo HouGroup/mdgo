@@ -49,8 +49,8 @@ class PackmolWrapper:
         structures: List[dict],
         numbers: dict[str, int],
         box: List[float],
-        tolerance: Optional[float] = None,
-        seed: Optional[int] = None,
+        tolerance: Optional[float] = 2.0,
+        seed: Optional[int] = 1,
         inputfile: str = "packmol.inp",
         outputfile: str = "output.xyz",
     ):
@@ -81,14 +81,8 @@ class PackmolWrapper:
         self.structures = structures
         self.numbers = numbers
         self.box = box
-        if tolerance is None:
-            self.tolerance = 2.0
-        else:
-            self.tolerance = tolerance
-        if seed is None:
-            self.seed = 123
-        else:
-            self.seed = seed
+        self.tolerance = tolerance
+        self.seed = seed
 
     def run_packmol(self):
         """Run packmol and write out the packed structure."""
@@ -101,7 +95,7 @@ class PackmolWrapper:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Packmol failed with errorcode {}" " and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Packmol failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
         else:
             with open(self.screen, "w") as out:
                 out.write(p.stdout.decode())

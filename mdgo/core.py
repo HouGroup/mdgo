@@ -10,7 +10,15 @@ from pymatgen.io.lammps.data import LammpsData
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.notebook import tqdm
-from mdgo.util import mass_to_name
+from mdgo.util import (
+    mass_to_name,
+    assign_name,
+    assign_resname,
+    res_dict_from_lammpsdata,
+    res_dict_from_select_dict,
+    res_dict_from_datafile,
+    select_dict_from_resname,
+)
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
@@ -36,29 +44,41 @@ class MdRun:
     A core class for MD results analysis.
 
     Args:
-        data_dir (str): Path to the data file.
-        wrapped_dir (str): Path to the wrapped dcd file.
-        unwrapped_dir (str): Path to the unwrapped dcd file.
+        lammps_data (LammpsData): LammpsData object.
+        wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
+        unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
         nvt_start (int): NVT start time step.
         time_step (int or float): LAMMPS timestep.
         name (str): Name of the MD run.
-        select_dict: A dictionary of species selection.
+        select_dict (dict): A dictionary of atom species, where each atom species name is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested atoms.
+        res_dict (dict): A dictionary of resnames, where each resname is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested residues (ions/molecules).
+        cation_name: Name of cation. Default to "cation".
+        anion_name: Name of anion. Default to "anion".
         cation_charge: Charge of cation. Default to 1.
         anion_charge: Charge of anion. Default to 1.
+        temperature: Temperature of the MD run. Default to 298.15.
         cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
     def __init__(
         self,
-        data_dir,
-        wrapped_dir,
-        unwrapped_dir,
+        lammps_data,
+        wrapped_run,
+        unwrapped_run,
         nvt_start,
         time_step,
         name,
-        select_dict,
+        select_dict=None,
+        res_dict=None,
+        cation_name="cation",
+        anion_name="anion",
         cation_charge=1,
         anion_charge=-1,
+        temperature=298.5,
         cond=True,
     ):
         """
@@ -67,19 +87,36 @@ class MdRun:
 
         """
 
-        self.wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
-        self.unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
+        self.wrapped_run = wrapped_run
+        self.unwrapped_run = unwrapped_run
         self.nvt_start = nvt_start
         self.time_step = time_step
+        self.temp = temperature
         self.name = name
-        self.data = LammpsData.from_file(data_dir)
+        self.data = lammps_data
         self.element_id_dict = mass_to_name(self.data.masses)
+        assign_name(self.wrapped_run, self.element_id_dict)
+        assign_name(self.unwrapped_run, self.element_id_dict)
         self.select_dict = select_dict
+        self.res_dict = res_dict
+        if self.select_dict is None and self.res_dict is None:
+            self.res_dict = res_dict_from_lammpsdata(self.data)
+        if self.res_dict is None:
+            self.res_dict = res_dict_from_select_dict(self.wrapped_run, self.select_dict)
+        assign_resname(self.wrapped_run, self.res_dict)
+        assign_resname(self.unwrapped_run, self.res_dict)
+        if self.select_dict is None:
+            self.select_dict = select_dict_from_resname(self.wrapped_run)
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.cation_name = cation_name
+        self.anion_name = anion_name
         self.cation_charge = cation_charge
         self.anion_charge = anion_charge
-        self.num_li = len(self.wrapped_run.select_atoms(self.select_dict.get("cation")))
+        self.cations = self.wrapped_run.select_atoms(self.select_dict.get("cation"))
+        self.anion_center = self.wrapped_run.select_atoms(self.select_dict.get("anion"))
+        self.anions = self.anion_center.residues.atoms
+        self.num_cation = len(self.cations)
         if cond:
             self.cond_array = self.get_cond_array()
         else:
@@ -95,8 +132,68 @@ class MdRun:
         gas_constant = 8.314
         temp = 298.15
         faraday_constant_2 = 96485 * 96485
-        self.c = (self.num_li / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
+        self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+
+    @classmethod
+    def from_output_full(
+        cls,
+        data_dir,
+        wrapped_dir,
+        unwrapped_dir,
+        nvt_start,
+        time_step,
+        name,
+        select_dict=None,
+        res_dict=None,
+        cation_name="cation",
+        anion_name="anion",
+        cation_charge=1,
+        anion_charge=-1,
+        temperature=298.5,
+        cond=True,
+    ):
+        """
+        Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
+
+        Args:
+            data_dir (str): Path to the data file.
+            wrapped_dir (str): Path to the wrapped dcd file.
+            unwrapped_dir (str): Path to the unwrapped dcd file.
+            nvt_start (int): NVT start time step.
+            time_step (int or float): LAMMPS timestep.
+            name (str): Name of the MD run.
+            select_dict: A dictionary of species selection.
+            res_dict (dict): A dictionary of resnames.
+            cation_name: Name of cation. Default to "cation".
+            anion_name: Name of anion. Default to "anion".
+            cation_charge: Charge of cation. Default to 1.
+            anion_charge: Charge of anion. Default to 1.
+            temperature: Temperature of the MD run. Default to 298.15.
+            cond (bool): Whether to calculate conductivity MSD. Default to True.
+        """
+        lammps_data = LammpsData.from_file(data_dir)
+        if res_dict is None:
+            res_dict = res_dict_from_datafile(data_dir)
+        wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
+        unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
+
+        return cls(
+            lammps_data,
+            wrapped_run,
+            unwrapped_run,
+            nvt_start,
+            time_step,
+            name,
+            select_dict=select_dict,
+            res_dict=res_dict,
+            cation_name=cation_name,
+            anion_name=anion_name,
+            cation_charge=cation_charge,
+            anion_charge=anion_charge,
+            temperature=temperature,
+            cond=cond,
+        )
 
     def get_init_dimension(self):
         """
@@ -490,8 +587,7 @@ class MdRun:
             run_end,
         )
 
-    @staticmethod
-    def get_residence_time(species_list, times, acf_avg_dict, cutoff_time):
+    def get_residence_time(self, species_list, times, acf_avg_dict, cutoff_time):
         """Calculates the residence time of selected species around cation
 
         Args:
@@ -502,7 +598,7 @@ class MdRun:
 
         Returns the residence time of each species.
         """
-        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time)
+        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
 
     def get_neighbor_trj(self, run_start, run_end, li_atom, species, distance):
         """Calculates the distance of cation-neighbor as a function of time

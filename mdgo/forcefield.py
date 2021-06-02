@@ -53,9 +53,9 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
-FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} " "-version 14 -print_parameters -out_file {}"
+FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
 MolecularWeight: Final[str] = (
-    "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/" "cid/{}/property/MolecularWeight/txt"
+    "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/MolecularWeight/txt"
 )
 MODULE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR: Final[str] = os.path.join(MODULE_DIR, "data")
@@ -437,8 +437,8 @@ class PubChemRunner:
 
     def smiles_to_pdb(self, smiles):
         convertor_url = "https://cactus.nci.nih.gov/translate/"
-        input_xpath = "/html/body/div/div[2]/div[1]/form/" "table[1]/tbody/tr[2]/td[1]/input[1]"
-        pdb_xpath = "/html/body/div/div[2]/div[1]/form/" "table[1]/tbody/tr[2]/td[2]/div/input[4]"
+        input_xpath = "/html/body/div/div[2]/div[1]/form/table[1]/tbody/tr[2]/td[1]/input[1]"
+        pdb_xpath = "/html/body/div/div[2]/div[1]/form/table[1]/tbody/tr[2]/td[2]/div/input[4]"
         translate_xpath = "/html/body/div/div[2]/div[1]/form/table[2]/tbody/tr/td/input[2]"
         download_xpath = "/html/body/center/b/a"
         self.web.get(convertor_url)
@@ -498,7 +498,7 @@ class PubChemRunner:
                     print(".", end="")
                 print("\nStructure file saved.")
         except TimeoutException:
-            print("Timeout! Web server no response for 10s, " "file download failed!")
+            print("Timeout! Web server no response for 10s, file download failed!")
         except NoSuchElementException:
             print(
                 "The download link was not correctly generated, "
@@ -565,7 +565,7 @@ class Aqueous:
         if DATA_MODELS["water"].get(signature):
             return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS["water"].get(signature)))
         else:
-            print("Water model not found. Please specify a customized data " "path or try another water model.\n")
+            print("Water model not found. Please specify a customized data path or try another water model.\n")
             return None
 
     @staticmethod
@@ -605,9 +605,9 @@ class Aqueous:
                         print("Ion not found. Please try another ion.\n")
                         return None
                 else:
-                    print("Water model not found. Please " "try another water model.\n")
+                    print("Water model not found. Please try another water model.\n")
                     return None
-        print("Ion model not found. Please " "try another ion model.\n")
+        print("Ion model not found. Please try another ion model.\n")
         return None
 
 
