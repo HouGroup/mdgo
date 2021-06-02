@@ -13,6 +13,7 @@
 import os
 import sys
 import sphinx_rtd_theme
+from typing import List
 
 sys.path.insert(0, os.path.abspath("../../mdgo"))
 

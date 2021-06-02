@@ -226,7 +226,7 @@ def get_radii(type):
             "Br": 1.95,
             "I": 2.15,
         }
-    elif type == 'pymatgen':
+    elif type == "pymatgen":
         radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__.keys()}
     else:
         print("Wrong option for radii type: Choose Bondi, Lange, or pymatgen")

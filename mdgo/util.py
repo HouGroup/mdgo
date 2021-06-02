@@ -667,7 +667,9 @@ def concentration_matcher(
             of this file and currently include only 'lipf6' or 'litfsi'
 
             If a Molecule or structure file is provided, mdgo will estimate
-            the molar volume according to the Bondi (VdW) radii of the atoms.
+            the molar volume according to the VdW radii of the atoms. The
+            specific radii used depend on the value of the 'radii_type' kwarg
+            (see below).
         solvents: A list of solvent molecules. A molecule could either be
             a name (e.g. "water" or "ethylene carbonate") or a dict containing
             two keys "mass" and "density" in g/mol and g/mL, respectively.
@@ -679,7 +681,7 @@ def concentration_matcher(
             two solvent, pass [0.3, 0.7] or [30, 70]. The sum of weights / volumes
             does not need to be normalized.
         num_salt: The number of salt in the box.
-        mode: Weight mode (Wweight/weight/W/w/W./w.) or volume mode
+        mode: Weight mode (Weight/weight/W/w/W./w.) or volume mode
             (Volume/volume/V/v/V./v.) for interpreting the ratio of solvents.
         radii_type: "Bondi", "Lange", or "pymatgen". Bondi and Lange vdW radii
             are compiled in this package for H, B, C, N, O, F, Si, P, S, Cl, Br,
