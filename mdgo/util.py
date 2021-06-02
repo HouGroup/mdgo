@@ -718,6 +718,9 @@ def concentration_matcher(
                 print("Error: Wrong file format, please use a .xyz file.\n")
                 sys.exit(1)
             salt_molar_volume = molecular_volume(salt, name, radii_type=radii_type)
+    else:
+        raise ValueError("Invalid salt type! Salt must be a number, string, or Molecule.")
+
     solv_mass = list()
     solv_density = list()
     for solv in solvents:
