@@ -41,6 +41,17 @@ def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict, di
 
 
 def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
+    """Returns an array of binding sites (unique on each timestep),
+    the frequency of hopping between sites, and steps when each binding site
+    exhibits the closest distance to the central atom.
+
+    Args:
+        trj (dict): A python dict of distances between central atom and selected atoms.
+        time_step (int): The time step of the simulation.
+        distance (int or float): Binding cutoff distance.
+        hopping_cutoff: (int or float): Detaching cutoff distance.
+        smooth (int): The length of the smooth filter window. Default to 51.
+    """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
         trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
