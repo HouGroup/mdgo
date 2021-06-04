@@ -97,13 +97,21 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
                 previous_site = site
     if previous_site is not None:
         steps.append(closest_step)
-    # change = len(steps) - 1
     change = (np.diff([i for i in sites if i != 0]) != 0).sum()
     frequency = change / (time_span * time_step)
     return sites, frequency, steps
 
 
-def find_in_n_out(trj, time_step, distance, hopping_cutoff, smooth=51, cool=20):
+def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
+    """Returns two arrays of time step of hopping in and hopping out, respectively.
+
+    Args:
+        trj (dict): A python dict of distances between central atom and selected atoms.
+        distance (int or float): Binding cutoff distance.
+        hopping_cutoff: (int or float): Detaching cutoff distance.
+        smooth (int): The length of the smooth filter window. Default to 51.
+        cool (int): The cool down timesteps between hopping in and hopping out.
+    """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
         trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
@@ -132,21 +140,20 @@ def find_in_n_out(trj, time_step, distance, hopping_cutoff, smooth=51, cool=20):
     last = sites[0]
     steps_in = list()
     steps_out = list()
-    in_cool = 100
-    out_cool = 100
+    in_cool = cool
+    out_cool = cool
     for i, s in enumerate(sites):
         if last == s:
             pass
         elif last == 0:
             in_cool = 0
             steps_in.append(i)
-            if out_cool < 100:
+            if out_cool < cool:
                 steps_out.pop()
-
         elif s == 0:
             out_cool = 0
             steps_out.append(i)
-            if in_cool < 100:
+            if in_cool < cool:
                 steps_in.pop()
         else:
             pass
@@ -157,18 +164,29 @@ def find_in_n_out(trj, time_step, distance, hopping_cutoff, smooth=51, cool=20):
 
 
 def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_start, run_end, checkpoints, lag=20):
-    print(checkpoints)
+    """Returns two arrays of time step of hopping in and hopping out, respectively.
+
+    Args:
+        nvt_run (MDAnalysis.Universe): An Universe object of wrapped trajectory.
+        li_atom (MDAnalysis.core.groups.Atom): the interested central atom object.
+        species_dict (dict): Dict of Cutoff distance of neighbor for each species.
+        select_dict (dict): A dictionary of selection language of atom species.
+        run_start (int): Start time step.
+        run_end (int): End time step.
+        checkpoints (numpy.array): The time step of interest to check for contiguous steps
+        lag (int): The range (+/- lag) of the contiguous steps
+    """
     coord_num = {x: [[] for _ in range(lag * 2 + 1)] for x in species_dict.keys()}
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     has = False
     for i, ts in enumerate(trj_analysis):
         log = False
-        this_j = None
+        checkpoint = None
         for j in checkpoints:
             if abs(i - j) <= lag:
                 log = True
                 has = True
-                this_j = j
+                checkpoint = j
         if log:
             for kw in species_dict.keys():
                 selection = (
@@ -181,7 +199,7 @@ def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_star
                     + ")"
                 )
                 shell = nvt_run.select_atoms(selection, periodic=True)
-                coord_num[kw][i - this_j + lag].append(len(shell))
+                coord_num[kw][i - checkpoint + lag].append(len(shell))
     if has:
         for kw in coord_num:
             np_arrays = np.array([np.array(time).mean() for time in coord_num[kw]])
