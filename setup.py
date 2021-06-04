@@ -22,6 +22,7 @@ INSTALL_REQUIRES = [
     "pubchempy",
     "MDAnalysis",
     "selenium",
+    "typing-extensions",
 ]
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
@@ -47,9 +48,6 @@ if __name__ == "__main__":
             "web": [
                 "sphinx",
                 "sphinx_rtd_theme",
-            ],
-            ':python_version < "3.8"': [
-                "typing-extensions>=3.7.4.3",
             ],
         },
         python_requires=">=3.6",
