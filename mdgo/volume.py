@@ -14,7 +14,8 @@ import math
 import sys
 import os
 import argparse
-from pymatgen.core import Molecule
+from pymatgen.core import Molecule, Element
+from typing import Union, Optional
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902
@@ -42,9 +43,9 @@ def parse_command_line():
         "-type",
         type=str,
         dest="radii_type",
-        choices=["Bondi", "Lange"],
+        choices=["Bondi", "Lange", "pymatgen"],
         default="Bondi",
-        help="Type of radii <Bondi|Lange> (default=Bondi)",
+        help="Type of radii <Bondi|Lange|pymatgen> (default=Bondi)",
         metavar="TYPE",
     )
     parser.add_argument(
@@ -225,8 +226,10 @@ def get_radii(type):
             "Br": 1.95,
             "I": 2.15,
         }
+    elif type == "pymatgen":
+        radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__.keys()}
     else:
-        print("Wrong option for radii type: Choose Bondi or Lange.")
+        print("Wrong option for radii type: Choose Bondi, Lange, or pymatgen")
         sys.exit()
     return radii
 
@@ -296,7 +299,23 @@ def print_occupied_volume(matrix, res, name):
     return v * 0.6022
 
 
-def molecular_volume(path, name, res=0.1, radii_type="Bondi"):
+def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi") -> float:
+    """
+    Estimate the molar volume in cm^3/mol
+
+    Args:
+        path: Molecule object or path to .xyz or other file that can be read
+            by Molecule.from_file()
+        name: String representing the name of the molecule, e.g. "NaCl"
+        res: Resolution of the mesh to use when estimating molar volume, in Å
+        radii_type: "Bondi", "Lange", or "pymatgen". Bondi and Lange vdW radii
+            are compiled in this package for H, B, C, N, O, F, Si, P, S, Cl, Br,
+            and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
+            which are available for most elements and reflect the latest values in
+            the CRC handbook.
+    Returns:
+        float: The molar volume in cm^3/mol.
+    """
     if isinstance(path, str):
         molecule = Molecule.from_file(path)
     else:

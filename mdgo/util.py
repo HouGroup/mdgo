@@ -9,8 +9,8 @@ import os
 import re
 import pandas as pd
 import math
-import numbers
 import sys
+from typing import List, Dict, Union, Tuple, Final
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule
@@ -22,7 +22,7 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MM_of_Elements = {
+MM_of_Elements: Final[Dict[str, float]] = {
     "H": 1.00794,
     "He": 4.002602,
     "Li": 6.941,
@@ -144,7 +144,7 @@ MM_of_Elements = {
     "ZERO": 0,
 }
 
-SECTION_SORTER = {
+SECTION_SORTER: Final[Dict[str, dict]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -197,13 +197,15 @@ SECTION_SORTER = {
     },
 }
 
-BOX = """{0:6f} {1:6f} xlo xhi
+BOX: Final[
+    str
+] = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[Dict[str, Union[float, int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
-ALIAS = {
+ALIAS: Final[Dict[str, str]] = {
     "ethylene carbonate": "ec",
     "ec": "ec",
     "propylene carbonate": "pc",
@@ -240,7 +242,7 @@ ALIAS = {
 }
 
 # From PubChem
-MOLAR_MASS = {
+MOLAR_MASS: Final[Dict[str, float]] = {
     "ec": 88.06,
     "pc": 102.09,
     "dec": 118.13,
@@ -259,7 +261,7 @@ MOLAR_MASS = {
 }
 
 # from Sigma-Aldrich
-DENSITY = {
+DENSITY: Final[Dict[str, float]] = {
     "ec": 1.321,
     "pc": 1.204,
     "dec": 0.975,
@@ -639,53 +641,86 @@ def ff_parser(ff_dir, xyz_dir):
         return data_string
 
 
-def concentration_matcher(concentration, salt, solvents, solv_ratio, num_salt=100, mode="v"):
+def concentration_matcher(
+    concentration: float,
+    salt: Union[float, int, str, Molecule],
+    solvents: List[Molecule],
+    solv_ratio: List[float],
+    num_salt: int = 100,
+    mode: str = "v",
+    radii_type: str = "Bondi",
+) -> Tuple[List, float]:
     """
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
     solvent density, solvent ratio and total number of salt.
 
     Args:
-        concentration (float): Salt concentration.
-        salt (str or int or float or Molecule):
-            Four types of input are accepted:
-              1. The salt name in string (lipf6 or litfsi)
-              2. Salt molar volume in float/int
-              3. A pymatgen molecule object of the salt structure.
-              4. The path to the salt structure xyz file, will estimate
-                 the VdW volume according to the Bondi radii of atoms.
-        solvents (list): A list of solvent molecules. A molecule could either be
-            a name (str) or a dict containing two keys "mass" and "density".
-        solv_ratio (list): A list of weight or volume ratio of solvents.
-            The sum don't need to be normalized.
-        num_salt (int): The number of salt in the box.
-        mode (str): Weight mode (Weight/weight/W/w/W./w.) or volume mode
-            (Volume/volume/V/v/V./v.).
+        concentration: Salt concentration in mol/L.
+        salt: Four types of input are accepted:
+              1. The salt name in string ('lipf6' or 'litfsi')
+              2. Salt molar volume in as a float/int (cm^3/mol)
+              3. A pymatgen Molecule object of the salt structure
+              4. The path to the salt structure xyz file
+
+            Valid names are listed in the MOLAR_VOLUME dictionary at the beginning
+            of this file and currently include only 'lipf6' or 'litfsi'
+
+            If a Molecule or structure file is provided, mdgo will estimate
+            the molar volume according to the VdW radii of the atoms. The
+            specific radii used depend on the value of the 'radii_type' kwarg
+            (see below).
+        solvents: A list of solvent molecules. A molecule could either be
+            a name (e.g. "water" or "ethylene carbonate") or a dict containing
+            two keys "mass" and "density" in g/mol and g/mL, respectively.
+
+            Valid names are listed in the ALIAS dictionary at the beginning
+            of this file.
+        solv_ratio: A list of relative weights or volumes of solvents. Must be the
+            same length as solvents. For example, for a 30% / 70% (w/w) mix of
+            two solvent, pass [0.3, 0.7] or [30, 70]. The sum of weights / volumes
+            does not need to be normalized.
+        num_salt: The number of salt in the box.
+        mode: Weight mode (Weight/weight/W/w/W./w.) or volume mode
+            (Volume/volume/V/v/V./v.) for interpreting the ratio of solvents.
+        radii_type: "Bondi", "Lange", or "pymatgen". Bondi and Lange vdW radii
+            are compiled in this package for H, B, C, N, O, F, Si, P, S, Cl, Br,
+            and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
+            which are available for most elements and reflect the latest values in
+            the CRC handbook.
 
     Returns:
         (list, float):
-            A list of molecule numbers in the box starting with the salt,
-            and the approximate box length
+            A list the number of molecules in the simulation box, starting with
+            the salt and followed by each solvent in 'solvents'. The list is followed
+            by a float of the approximate length of one side of the box in Å.
 
     """
     n_solvent = list()
     n = len(solv_ratio)
-    if isinstance(salt, numbers.Number):
+    if n != len(solvents):
+        raise ValueError("solvents and solv_ratio must be the same length!")
+
+    if isinstance(salt, float) or isinstance(salt, int):
         salt_molar_volume = salt
-    elif type(salt) is Molecule:
-        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula)
-    elif salt.lower() in MOLAR_VOLUME:
-        salt_molar_volume = MOLAR_VOLUME.get(salt.lower())
+    elif isinstance(salt, Molecule):
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula, radii_type=radii_type)
+    elif isinstance(salt, str):
+        if MOLAR_VOLUME.get(salt.lower()):
+            salt_molar_volume = MOLAR_VOLUME.get(salt.lower(), 0)
+        else:
+            if not os.path.exists(salt):
+                print("\nError: Input file '{}' not found.\n".format(salt))
+                sys.exit(1)
+            name = os.path.splitext(os.path.split(salt)[-1])[0]
+            ext = os.path.splitext(os.path.split(salt)[-1])[1]
+            if not ext == ".xyz":
+                print("Error: Wrong file format, please use a .xyz file.\n")
+                sys.exit(1)
+            salt_molar_volume = molecular_volume(salt, name, radii_type=radii_type)
     else:
-        if not os.path.exists(salt):
-            print("\nError: Input file '{}' not found.\n".format(salt))
-            sys.exit(1)
-        name = os.path.splitext(os.path.split(salt)[-1])[0]
-        ext = os.path.splitext(os.path.split(salt)[-1])[1]
-        if not ext == ".xyz":
-            print("Error: Wrong file format, please use a .xyz file.\n")
-            sys.exit(1)
-        salt_molar_volume = molecular_volume(salt, name)
+        raise ValueError("Invalid salt type! Salt must be a number, string, or Molecule.")
+
     solv_mass = list()
     solv_density = list()
     for solv in solvents:
