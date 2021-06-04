@@ -103,6 +103,116 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     return sites, frequency, steps
 
 
+def find_in_n_out(trj, time_step, distance, hopping_cutoff, smooth=51, cool=20):
+    time_span = len(list(trj.values())[0])
+    for kw in list(trj):
+        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    site_distance = [100 for _ in range(time_span)]
+    sites = [0 for _ in range(time_span)]
+    sites[0] = min(trj, key=lambda k: trj[k][0])
+    site_distance[0] = trj.get(sites[0])[0]
+    for time in range(1, time_span):
+        if sites[time - 1] == 0:
+            old_site_distance = 100
+        else:
+            old_site_distance = trj.get(sites[time - 1])[time]
+        if old_site_distance > hopping_cutoff:
+            new_site = min(trj, key=lambda k: trj[k][time])
+            new_site_distance = trj.get(new_site)[time]
+            if new_site_distance > distance:
+                site_distance[time] = 100
+            else:
+                sites[time] = new_site
+                site_distance[time] = new_site_distance
+        else:
+            sites[time] = sites[time - 1]
+            site_distance[time] = old_site_distance
+    sites = [int(i) for i in sites]
+
+    last = sites[0]
+    steps_in = list()
+    steps_out = list()
+    """
+    for i, s in enumerate(sites):
+        if last == s:
+            pass
+        elif last == 0:
+            print(i)
+            steps_in.append(i)
+        elif s == 0:
+            print(i)
+            steps_out.append(i)
+        else:
+            pass
+        last = s
+    remove_set = set()
+    for ins in steps_in:
+        for outs in steps_out:
+            if abs(ins-outs) < cool:
+                remove_set.add(ins)
+                remove_set.add(outs)
+    steps_in = [s for s in steps_in if s not in remove_set]
+    steps_out = [s for s in steps_out if s not in remove_set]
+    return steps_in, steps_out    
+
+    """
+    in_cool = 100
+    out_cool = 100
+    for i, s in enumerate(sites):
+        if last == s:
+            pass
+        elif last == 0:
+            in_cool = 0
+            steps_in.append(i)
+            if out_cool < 100:
+                steps_out.pop()
+
+        elif s == 0:
+            out_cool = 0
+            steps_out.append(i)
+            if in_cool < 100:
+                steps_in.pop()
+        else:
+            pass
+        last = s
+        in_cool += 1
+        out_cool += 1
+    return steps_in, steps_out
+
+
+def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_start, run_end, checkpoints, lag=20):
+    print(checkpoints)
+    coord_num = {x: [[] for _ in range(lag * 2 + 1)] for x in species_dict.keys()}
+    trj_analysis = nvt_run.trajectory[run_start:run_end:]
+    has = False
+    for i, ts in enumerate(trj_analysis):
+        log = False
+        this_j = None
+        for j in checkpoints:
+            if abs(i - j) <= lag:
+                log = True
+                has = True
+                this_j = j
+        if log:
+            for kw in species_dict.keys():
+                selection = (
+                    "("
+                    + select_dict[kw]
+                    + ") and (around "
+                    + str(species_dict[kw])
+                    + " index "
+                    + str(li_atom.id - 1)
+                    + ")"
+                )
+                shell = nvt_run.select_atoms(selection, periodic=True)
+                coord_num[kw][i - this_j + lag].append(len(shell))
+    if has:
+        for kw in coord_num:
+            np_arrays = np.array([np.array(time).mean() for time in coord_num[kw]])
+            coord_num[kw] = np_arrays
+    return coord_num
+
+
 def heat_map(
     nvt_run,
     li_atom,
