@@ -10,7 +10,8 @@ import re
 import pandas as pd
 import math
 import sys
-from typing import List, Dict, Union, Tuple, Final
+from typing import List, Dict, Union, Tuple
+from typing_extensions import Final
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule

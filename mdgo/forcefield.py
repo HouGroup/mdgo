@@ -44,7 +44,8 @@ import shutil
 import signal
 import subprocess
 
-from typing import Optional, Final
+from typing import Optional
+from typing_extensions import Final
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
