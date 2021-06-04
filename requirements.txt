@@ -11,3 +11,6 @@ sphinx
 sphinx_rtd_theme
 statsmodels
 tqdm
+
+[:python_version < "3.8"]
+typing-extensions>=3.7.4.3
