@@ -10,7 +10,7 @@ import re
 import pandas as pd
 import math
 import sys
-from typing import List, Dict, Union, Tuple, Final
+from typing import List, Dict, Union, Tuple
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule
@@ -22,7 +22,7 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MM_of_Elements: Final[Dict[str, float]] = {
+MM_of_Elements: Dict[str, float] = {
     "H": 1.00794,
     "He": 4.002602,
     "Li": 6.941,
@@ -144,7 +144,7 @@ MM_of_Elements: Final[Dict[str, float]] = {
     "ZERO": 0,
 }
 
-SECTION_SORTER: Final[Dict[str, dict]] = {
+SECTION_SORTER: Dict[str, dict] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -197,15 +197,13 @@ SECTION_SORTER: Final[Dict[str, dict]] = {
     },
 }
 
-BOX: Final[
-    str
-] = """{0:6f} {1:6f} xlo xhi
+BOX: str = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME: Final[Dict[str, Union[float, int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Dict[str, Union[float, int]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
-ALIAS: Final[Dict[str, str]] = {
+ALIAS: Dict[str, str] = {
     "ethylene carbonate": "ec",
     "ec": "ec",
     "propylene carbonate": "pc",
@@ -242,7 +240,7 @@ ALIAS: Final[Dict[str, str]] = {
 }
 
 # From PubChem
-MOLAR_MASS: Final[Dict[str, float]] = {
+MOLAR_MASS: Dict[str, float] = {
     "ec": 88.06,
     "pc": 102.09,
     "dec": 118.13,
@@ -261,7 +259,7 @@ MOLAR_MASS: Final[Dict[str, float]] = {
 }
 
 # from Sigma-Aldrich
-DENSITY: Final[Dict[str, float]] = {
+DENSITY: Dict[str, float] = {
     "ec": 1.321,
     "pc": 1.204,
     "dec": 0.975,
