@@ -44,7 +44,7 @@ import shutil
 import signal
 import subprocess
 
-from typing import Optional, Final
+from typing import Optional
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -52,12 +52,12 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
-MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
-FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
-MolecularWeight: Final[str] = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/MolecularWeight/txt"
-MODULE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR: Final[str] = os.path.join(MODULE_DIR, "data")
-DATA_MODELS: Final[dict] = {
+MAESTRO: str = "$SCHRODINGER/maestro -console -nosplash"
+FFLD: str = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
+MolecularWeight: str = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{}/property/MolecularWeight/txt"
+MODULE_DIR: str = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR: str = os.path.join(MODULE_DIR, "data")
+DATA_MODELS: dict = {
     "water": {
         "spc": "water_spc.lmp",
         "spce": "water_spce.lmp",
