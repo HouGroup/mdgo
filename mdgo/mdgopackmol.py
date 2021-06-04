@@ -16,7 +16,7 @@ set the folder of the packmol executable to the PATH environment variable.
 import subprocess
 import os
 import tempfile
-from typing import Optional, List
+from typing import Optional, List, Dict
 from subprocess import PIPE, Popen
 
 __author__ = "Tingzheng Hou"
@@ -47,7 +47,7 @@ class PackmolWrapper:
         self,
         path: str,
         structures: List[dict],
-        numbers: dict[str, int],
+        numbers: Dict[str, int],
         box: List[float],
         tolerance: Optional[float] = 2.0,
         seed: Optional[int] = 1,
