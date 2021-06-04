@@ -132,30 +132,6 @@ def find_in_n_out(trj, time_step, distance, hopping_cutoff, smooth=51, cool=20):
     last = sites[0]
     steps_in = list()
     steps_out = list()
-    """
-    for i, s in enumerate(sites):
-        if last == s:
-            pass
-        elif last == 0:
-            print(i)
-            steps_in.append(i)
-        elif s == 0:
-            print(i)
-            steps_out.append(i)
-        else:
-            pass
-        last = s
-    remove_set = set()
-    for ins in steps_in:
-        for outs in steps_out:
-            if abs(ins-outs) < cool:
-                remove_set.add(ins)
-                remove_set.add(outs)
-    steps_in = [s for s in steps_in if s not in remove_set]
-    steps_out = [s for s in steps_out if s not in remove_set]
-    return steps_in, steps_out    
-
-    """
     in_cool = 100
     out_cool = 100
     for i, s in enumerate(sites):
