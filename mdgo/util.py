@@ -193,7 +193,7 @@ SECTION_SORTER: Final[Dict[str, dict]] = {
         "desired_split": 1,
         "desired_cols": 5,
         "out_kw": ["Improper Coeffs", "Impropers"],
-        "ff_header": ["v1", "v2", "v3", "v4"],
+        "ff_header": ["v1", "v2", "v3"],
         "topo_header": ["type", "atom1", "atom2", "atom3", "atom4"],
     },
 }
@@ -613,9 +613,9 @@ def ff_parser(ff_dir, xyz_dir):
                 dfs[section] = dfs[section].reset_index()
                 dfs[section].index += 1
                 if section == "impropers":
-                    dfs[section]["v1"] = 0.0
-                    dfs[section]["v3"] = 0.0
-                    dfs[section]["v4"] = 0.0
+                    dfs[section]["v1"] = dfs[section]["v2"] / 2
+                    dfs[section]["v2"] = -1
+                    dfs[section]["v3"] = 2
                 ff_string = dfs[section][SECTION_SORTER[section]["ff_header"]].to_string(
                     header=False, index_names=False
                 )

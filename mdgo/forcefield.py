@@ -43,6 +43,7 @@ import re
 import shutil
 import signal
 import subprocess
+import numpy as np
 
 from typing import Optional
 from typing_extensions import Final
@@ -608,6 +609,49 @@ class Aqueous:
                     return None
         print("Ion model not found. Please try another ion model.\n")
         return None
+
+
+class ChargeWriter:
+    """
+    A class for write, overwrite, scale charges of a LammpsData object.
+
+    """
+
+    def __init__(self, data, precision=10):
+        self.data = data
+        self.precision = precision
+
+    def scale(self, factor):
+        items = dict()
+        items["box"] = self.data.box
+        items["masses"] = self.data.masses
+        atoms = self.data.atoms.copy(deep=True)
+        atoms["q"] = atoms["q"] * factor
+        assert np.around(atoms.q.sum(), decimals=self.precision) == np.around(
+            self.data.atoms.q.sum() * factor, decimals=self.precision
+        )
+        digit_count = 0
+        for q in atoms["q"]:
+            rounded = self.count_significant_figures(q)
+            if rounded > digit_count:
+                digit_count = rounded
+        print("No. of significant figures to output for charges: ", digit_count)
+        items["atoms"] = atoms
+        items["atom_style"] = self.data.atom_style
+        items["velocities"] = self.data.velocities
+        items["force_field"] = self.data.force_field
+        items["topology"] = self.data.topology
+        return LammpsData(**items)
+
+    def count_significant_figures(self, number):
+        number = repr(float(number))
+        tokens = number.split(".")
+        if len(tokens) > 2:
+            raise ValueError("Invalid number '{}' only 1 decimal allowed".format(number))
+        if len(tokens) == 2:
+            decimal_num = tokens[1][: self.precision].rstrip("0")
+            return len(decimal_num)
+        return 0
 
 
 if __name__ == "__main__":
