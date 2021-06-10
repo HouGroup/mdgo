@@ -3,7 +3,7 @@ MDAnalysis
 numpy>=1.16.0
 pandas
 pubchempy
-pymatgen
+pymatgen>=2022.0.8
 scipy
 selenium
 setuptools

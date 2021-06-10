@@ -17,7 +17,7 @@ INSTALL_REQUIRES = [
     "matplotlib",
     "scipy",
     "tqdm",
-    "pymatgen",
+    "pymatgen>=2022.0.8",
     "statsmodels",
     "pubchempy",
     "MDAnalysis",
