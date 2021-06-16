@@ -504,6 +504,7 @@ class MdRun:
             start (int): Start time step.
             stop (int): End time step.
             fft (bool): Whether to use fft to calculate msd. Default to True.
+            species (str): The select_dict key of the atom group to calculate. Default to "cation".
 
         Returns an array of MSD values for each time in the trajectory
         """
@@ -530,7 +531,7 @@ class MdRun:
         )
         return free_array, attach_array
 
-    def get_d(self, msd_array, start, stop, percentage=1, name="cation"):
+    def get_d(self, msd_array, start, stop, percentage=1, species="cation"):
         """Calculates the self-diffusion coefficient of the cation and
         the Nernst-Einstein conductivity
 
@@ -540,6 +541,7 @@ class MdRun:
             stop (int): End time step.
             percentage (int or float): The percentage of the cation.
                 Default to 1.
+            species (str): The select_dict key of the atom group to calculate. Default to "cation".
 
         Print self-diffusion coefficient in m^2/s and NE conductivity in mS/cm.
         """
@@ -551,23 +553,23 @@ class MdRun:
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
             print(
                 "Diffusivity of",
-                "%.2f" % (percentage * 100) + "% " + name + ": ",
+                "%.2f" % (percentage * 100) + "% " + species + ": ",
                 d,
                 "m^2/s",
             )
-            if name.lower() == "cation" or name.lower() == "li":
+            if species.lower() == "cation" or species.lower() == "li":
                 print(
                     "NE Conductivity of",
-                    "%.2f" % (percentage * 100) + "% " + name + ": ",
+                    "%.2f" % (percentage * 100) + "% " + species + ": ",
                     sigma,
                     "mS/cm",
                 )
         else:
             d = (msd_array[start] - msd_array[stop]) / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = d * self.d_to_sigma * s_m_to_ms_cm
-            print("Diffusivity of all " + name + ":", d, "m^2/s")
-            if name.lower() == "cation" or name.lower() == "li":
-                print("NE Conductivity of all " + name + ":", sigma, "mS/cm")
+            print("Diffusivity of all " + species + ":", d, "m^2/s")
+            if species.lower() == "cation" or species.lower() == "li":
+                print("NE Conductivity of all " + species + ":", sigma, "mS/cm")
 
     def get_neighbor_corr(self, species_dict, run_start, run_end):
         """Calculates the neighbor auto-correlation function (ACF)
@@ -672,7 +674,7 @@ class MdRun:
     def shell_evolution(
         self, species_dict, run_start, run_end, lag_step, distance, hopping_cutoff, smooth=51, cool=0, center="center"
     ):
-        """Calcualtes the
+        """Calculates the
 
         Args:
             species_dict (dict): A dict of coordination cutoff distance
@@ -684,7 +686,7 @@ class MdRun:
             hopping_cutoff: (int or float): Detaching cutoff distance.
             smooth (int): The length of the smooth filter window. Default to 51.
             cool (int): The cool down timesteps between hopping in and hopping out.
-            center (str): The name (key) of the binding site in select_dict. Default to "center".
+            center (str): The select_dict key of the binding site. Default to "center".
         """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
