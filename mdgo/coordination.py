@@ -57,8 +57,12 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
         trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites = [0 for _ in range(time_span)]
-    sites[0] = min(trj, key=lambda k: trj[k][0])
-    site_distance[0] = trj.get(sites[0])[0]
+    start_site = min(trj, key=lambda k: trj[k][0])
+    if trj.get(start_site)[0] < distance:
+        sites[0] = start_site
+        site_distance[0] = trj.get(sites[0])[0]
+    else:
+        pass
     for time in range(1, time_span):
         if sites[time - 1] == 0:
             old_site_distance = 100
@@ -80,6 +84,8 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     steps = []
     closest_step = 0
     previous_site = sites_and_distance_array[0][0]
+    if previous_site == 0:
+        closest_step = None
     for i, step in enumerate(sites_and_distance_array):
         site = step[0]
         distance = step[1]
@@ -92,10 +98,11 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
                 else:
                     pass
             else:
-                steps.append(closest_step)
+                if closest_step is not None:
+                    steps.append(closest_step)
                 closest_step = i
                 previous_site = site
-    if previous_site is not None:
+    if closest_step is not None:
         steps.append(closest_step)
     change = (np.diff([i for i in sites if i != 0]) != 0).sum()
     frequency = change / (time_span * time_step)
@@ -111,14 +118,19 @@ def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
         hopping_cutoff: (int or float): Detaching cutoff distance.
         smooth (int): The length of the smooth filter window. Default to 51.
         cool (int): The cool down timesteps between hopping in and hopping out.
+        mode (str): The mode of treating hopping event. Default to free.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
         trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites = [0 for _ in range(time_span)]
-    sites[0] = min(trj, key=lambda k: trj[k][0])
-    site_distance[0] = trj.get(sites[0])[0]
+    start_site = min(trj, key=lambda k: trj[k][0])
+    if trj.get(start_site)[0] < distance:
+        sites[0] = start_site
+        site_distance[0] = trj.get(sites[0])[0]
+    else:
+        pass
     for time in range(1, time_span):
         if sites[time - 1] == 0:
             old_site_distance = 100
@@ -156,7 +168,9 @@ def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
             if in_cool < cool:
                 steps_in.pop()
         else:
-            pass
+            if cool == 0:
+                steps_out.append(i - 1)
+                steps_in.append(i)
         last = s
         in_cool += 1
         out_cool += 1
@@ -164,7 +178,8 @@ def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
 
 
 def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_start, run_end, checkpoints, lag=20):
-    """Returns two arrays of time step of hopping in and hopping out, respectively.
+    """Returns an array of distance between the center atom and the interested atom
+    in the checkpoint +/- lag time range.
 
     Args:
         nvt_run (MDAnalysis.Universe): An Universe object of wrapped trajectory.
