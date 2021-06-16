@@ -27,6 +27,8 @@ from mdgo.coordination import (
     trajectory,
     find_nearest,
     find_nearest_free_only,
+    find_in_n_out,
+    check_contiguous_steps,
     heat_map,
     get_full_coords,
 )
@@ -666,6 +668,70 @@ class MdRun:
                 hopping_distance.append(li_mean_dists)
             freqs.append(freq)
         return np.mean(freqs), np.mean(hopping_distance)
+
+    def shell_evolution(
+        self, species_dict, run_start, run_end, lag_step, distance, hopping_cutoff, smooth=51, cool=0, center="center"
+    ):
+        nvt_run = self.wrapped_run
+        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        in_list = dict()
+        out_list = dict()
+        for k in list(species_dict):
+            in_list[k] = []
+            out_list[k] = []
+        for li in tqdm(li_atoms[::]):
+            neighbor_trj = trajectory(
+                nvt_run, li, run_start + lag_step, run_end - lag_step, center, self.select_dict, distance
+            )
+            hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
+            try:
+                if 1 in hopping_in:
+                    print("in")
+                hopping_in.remove(1)
+            except ValueError:
+                pass
+            try:
+                if 1 in hopping_out:
+                    print("out")
+                hopping_out.remove(1)
+            except ValueError:
+                pass
+            if len(hopping_in) > 0:
+                in_one = check_contiguous_steps(
+                    nvt_run,
+                    li,
+                    species_dict,
+                    self.select_dict,
+                    run_start,
+                    run_end,
+                    np.array(hopping_in) + lag_step,
+                    lag=lag_step,
+                )
+                for kw, value in in_one.items():
+                    in_list[kw].append(value)
+            if len(hopping_out) > 0:
+                out_one = check_contiguous_steps(
+                    nvt_run,
+                    li,
+                    species_dict,
+                    self.select_dict,
+                    run_start,
+                    run_end,
+                    np.array(hopping_out) + lag_step,
+                    lag=lag_step,
+                )
+                for kw, value in out_one.items():
+                    out_list[kw].append(value)
+        cn_dict = dict()
+        for k in list(species_dict):
+            k_dict = list()
+            k_dict.append(np.array(in_list[k]).shape[0])
+            k_dict.append(np.nanmean(np.array(in_list[k]), axis=0))
+            k_dict.append(np.nanstd(np.array(in_list[k]), axis=0))
+            k_dict.append(np.nanmean(np.array(out_list[k]), axis=0))
+            k_dict.append(np.nanstd(np.array(out_list[k]), axis=0))
+            cn_dict[k] = k_dict
+        return cn_dict
 
     def get_heat_map(
         self,
