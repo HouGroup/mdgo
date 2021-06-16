@@ -109,6 +109,81 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     return sites, frequency, steps
 
 
+def find_nearest_free_only(trj, time_step, distance, hopping_cutoff, smooth=51):
+    """Returns an array of binding sites (unique on each timestep),
+    the frequency of hopping between sites, and steps when each binding site
+    exhibits the closest distance to the central atom.
+
+    Args:
+        trj (dict): A python dict of distances between central atom and selected atoms.
+        time_step (int): The time step of the simulation.
+        distance (int or float): Binding cutoff distance.
+        hopping_cutoff: (int or float): Detaching cutoff distance.
+        smooth (int): The length of the smooth filter window. Default to 51.
+    """
+    time_span = len(list(trj.values())[0])
+    for kw in list(trj):
+        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    site_distance = [100 for _ in range(time_span)]
+    sites = [0 for _ in range(time_span)]
+    start_site = min(trj, key=lambda k: trj[k][0])
+    if trj.get(start_site)[0] < distance:
+        sites[0] = start_site
+        site_distance[0] = trj.get(sites[0])[0]
+    else:
+        pass
+    for time in range(1, time_span):
+        if sites[time - 1] == 0:
+            old_site_distance = 100
+        else:
+            old_site_distance = trj.get(sites[time - 1])[time]
+        if old_site_distance > hopping_cutoff:
+            new_site = min(trj, key=lambda k: trj[k][time])
+            new_site_distance = trj.get(new_site)[time]
+            if new_site_distance > distance:
+                site_distance[time] = 100
+            else:
+                sites[time] = new_site
+                site_distance[time] = new_site_distance
+        else:
+            sites[time] = sites[time - 1]
+            site_distance[time] = old_site_distance
+    sites = [int(i) for i in sites]
+    sites_and_distance_array = np.array([[sites[i], site_distance[i]] for i in range(len(sites))])
+    steps = []
+    closest_step = 0
+    previous_site = sites_and_distance_array[0][0]
+    if previous_site == 0:
+        closest_step = None
+    for i, step in enumerate(sites_and_distance_array):
+        site = step[0]
+        distance = step[1]
+        if site == 0:
+            pass
+        else:
+            if site == previous_site:
+                if distance < sites_and_distance_array[closest_step][1]:
+                    closest_step = i
+                else:
+                    pass
+            elif previous_site != 0:
+                previous_site = site
+                if distance < sites_and_distance_array[closest_step][1]:
+                    closest_step = i
+                else:
+                    pass
+            else:
+                if closest_step is not None:
+                    steps.append(closest_step)
+                closest_step = i
+                previous_site = site
+    if closest_step is not None:
+        steps.append(closest_step)
+    change = (np.diff([i for i in sites if i != 0]) != 0).sum()
+    frequency = change / (time_span * time_step)
+    return sites, frequency, steps
+
+
 def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
     """Returns two arrays of time step of hopping in and hopping out, respectively.
 
