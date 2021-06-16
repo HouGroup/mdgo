@@ -26,6 +26,7 @@ from mdgo.coordination import (
     num_of_neighbor_one_li_simple,
     trajectory,
     find_nearest,
+    find_nearest_free_only,
     heat_map,
     get_full_coords,
 )
@@ -624,7 +625,7 @@ class MdRun:
             distance,
         )
 
-    def get_hopping_freq_dist(self, run_start, run_end, species, distance, hopping_cutoff, smooth=51):
+    def get_hopping_freq_dist(self, run_start, run_end, species, distance, hopping_cutoff, smooth=51, mode="full"):
         """Calculates the cation hopping rate and hopping distance
 
         Args:
@@ -634,6 +635,7 @@ class MdRun:
             distance (int or float): Binding cutoff distance.
             hopping_cutoff: (int or float): Detaching cutoff distance.
             smooth (int): The length of the smooth filter window. Default to 51.
+            mode (str): The mode of treating hopping event. Default to full.
 
         Returns the cation average hopping rate and average hopping distance.
         """
@@ -643,11 +645,17 @@ class MdRun:
         hopping_distance = []
         for li in tqdm(li_atoms[:]):
             neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species, self.select_dict, distance)
-            sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
-
+            if mode == "full":
+                sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
+            elif mode == "free":
+                sites, freq, steps = find_nearest_free_only(
+                    neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth
+                )
+            else:
+                raise ValueError("invalid mode")
             coords = []
             for step in steps:
-                coord_li = nvt_run.trajectory[step + 1000][li.id - 1]
+                coord_li = nvt_run.trajectory[step + run_start][li.id - 1]
                 coords.append(coord_li)
             if len(coords) > 1:
                 dists = []
