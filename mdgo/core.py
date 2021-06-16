@@ -637,7 +637,7 @@ class MdRun:
             distance (int or float): Binding cutoff distance.
             hopping_cutoff: (int or float): Detaching cutoff distance.
             smooth (int): The length of the smooth filter window. Default to 51.
-            mode (str): The mode of treating hopping event. Default to full.
+            mode (str): The mode of treating hopping event. Default to "full".
 
         Returns the cation average hopping rate and average hopping distance.
         """
@@ -672,6 +672,20 @@ class MdRun:
     def shell_evolution(
         self, species_dict, run_start, run_end, lag_step, distance, hopping_cutoff, smooth=51, cool=0, center="center"
     ):
+        """Calcualtes the
+
+        Args:
+            species_dict (dict): A dict of coordination cutoff distance
+                of interested species.
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            lag_step (int): time steps to track before and after the hopping event
+            distance (int or float): Binding cutoff distance.
+            hopping_cutoff: (int or float): Detaching cutoff distance.
+            smooth (int): The length of the smooth filter window. Default to 51.
+            cool (int): The cool down timesteps between hopping in and hopping out.
+            center (str): The name (key) of the binding site in select_dict. Default to "center".
+        """
         nvt_run = self.wrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         in_list = dict()
@@ -684,18 +698,6 @@ class MdRun:
                 nvt_run, li, run_start + lag_step, run_end - lag_step, center, self.select_dict, distance
             )
             hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
-            try:
-                if 1 in hopping_in:
-                    print("in")
-                hopping_in.remove(1)
-            except ValueError:
-                pass
-            try:
-                if 1 in hopping_out:
-                    print("out")
-                hopping_out.remove(1)
-            except ValueError:
-                pass
             if len(hopping_in) > 0:
                 in_one = check_contiguous_steps(
                     nvt_run,
