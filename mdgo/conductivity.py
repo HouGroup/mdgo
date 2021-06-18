@@ -100,10 +100,9 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
     kb = 1.38064852e-23  # Boltzmann Constant, J/K
     T = 298.15  # temperature, K
 
-    slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err = stats.linregress(
-        time_array[start:end], cond_array[start:end]
-    )
-    cond_einstein_mof = slope_cond_avg / 6 / kb / T / v * convert
-    error_mof = std_err / 6 / kb / T / v * convert
+    slope, _, _, _, _ = stats.linregress(time_array[start:end], cond_array[start:end])
+    cond = slope / 6 / kb / T / v * convert
 
-    print("GK Conductivity of " + name + ": " + str(cond_einstein_mof) + " ± " + str(error_mof) + " mS/cm")
+    print("Conductivity of " + name + ": " + str(cond) + " mS/cm")
+
+    return cond
