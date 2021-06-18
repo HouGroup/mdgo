@@ -13,15 +13,17 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 """
-Reference :
+Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 and
 http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
 """
 
 
 def autocorrFFT(x):
     """
-    Calculates the position autocorrelation function using
-    the fast Fourier transform.
+    Calculates the autocorrelation function using the fast Fourier transform.
+
+    :param x: array[float], function on which to compute autocorrelation function
+    :return: acf: array[float], autocorrelation function
     """
     N = len(x)
     F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
@@ -36,6 +38,9 @@ def msd_fft(r):
     """
     Calculates mean square displacement of the array r using
     the fast Fourier transform.
+
+    :param r: array[float], atom positions over time
+    :return: msd: array[float], mean-squared displacement over time
     """
     N = len(r)
     D = np.square(r).sum(axis=1)
@@ -50,15 +55,15 @@ def msd_fft(r):
 
 
 def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
-    """Calculates the conductivity "mean square displacement" given
-    an MDAnalysis universe (u) and a selection of atoms or molecules (sel)
+    """Calculates the conductivity "mean square displacement" over time
 
-    Args:
-    u: MDAnalysis Universe
-    sel: Selection of atoms or molecules. Should be
-    a MDAnalysis AtomGroup.
-
-    Returns an array of MSD values for each time in the trajectory.
+    :param u: MDAnalysis universe
+    :param anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
+    :param cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
+    :param run_start: int, index of trajectory from which to start analysis
+    :param cation_charge: int, net charge of cation
+    :param anion_charge: int, net charge of anion
+    :return: msd: array[float], conductivity "MSD" over time
 
     Note:
         Coordinates must be unwrapped (in dcd file when creating MDAnalysis
@@ -78,6 +83,15 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
 
 
 def conductivity_calculator(time_array, cond_array, v, name, start, end):
+    """Calculates the overall conductivity of the system
+
+    :param time_array: array[float], times at which position data was collected in the simulation
+    :param cond_array: array[float], conductivity "mean squared displacement"
+    :param v: float, simulation volume (Angstroms^3)
+    :param start: int, index at which to start fitting linear regime of the MSD
+    :param end: int, index at which to end fitting linear regime of the MSD
+    :return: cond: float, overall ionic conductivity
+    """
     # Unit conversions
     A2cm = 1e-8
     ps2s = 1e-12
