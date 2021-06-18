@@ -29,9 +29,9 @@ def autocorrFFT(x):
     F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
     PSD = F * F.conjugate()
     res = np.fft.ifft(PSD)
-    res = (res[:N]).real  # now we have the autocorrelation in convention B
-    n = N * np.ones(N) - np.arange(0, N)  # divide res(m) by (N-m)
-    return res / n  # this is the autocorrelation in convention A
+    res = (res[:N]).real
+    n = N * np.ones(N) - np.arange(0, N)
+    return res / n
 
 
 def msd_fft(r):
@@ -93,14 +93,13 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
     :return: cond: float, overall ionic conductivity
     """
     # Unit conversions
-    A2cm = 1e-8
-    ps2s = 1e-12
-    e2c = 1.60217662e-19
-    convert = e2c * e2c / ps2s / A2cm * 1000  # mS/cm
-    kb = 1.38064852e-23
-    T = 298.15
+    A2cm = 1e-8  # Angstroms to cm
+    ps2s = 1e-12  # picoseconds to seconds
+    e2c = 1.60217662e-19  # elementary charge to Coulomb
+    convert = e2c * e2c / ps2s / A2cm * 1000  # final conductivity units: mS/cm
+    kb = 1.38064852e-23  # Boltzmann Constant, J/K
+    T = 298.15  # temperature, K
 
-    # Calculate conductivity of mof
     slope_cond_avg, intercept_cond_avg, r_value, p_value, std_err = stats.linregress(
         time_array[start:end], cond_array[start:end]
     )
