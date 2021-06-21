@@ -358,6 +358,54 @@ def heat_map(
     return np.array(coordinates)
 
 
+def process_evol(
+    mdrun,
+    in_list,
+    out_list,
+    species_dict,
+    run_start,
+    run_end,
+    lag_step,
+    distance,
+    hopping_cutoff,
+    smooth,
+    cool,
+    center,
+):
+    nvt_run = mdrun.wrapped_run
+    li_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
+    select_dict = mdrun.select_dict
+    for li in tqdm(li_atoms[::]):
+        neighbor_trj = trajectory(nvt_run, li, run_start + lag_step, run_end - lag_step, center, select_dict, distance)
+        hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
+        if len(hopping_in) > 0:
+            in_one = check_contiguous_steps(
+                nvt_run,
+                li,
+                species_dict,
+                select_dict,
+                run_start,
+                run_end,
+                np.array(hopping_in) + lag_step,
+                lag=lag_step,
+            )
+            for kw, value in in_one.items():
+                in_list[kw].append(value)
+        if len(hopping_out) > 0:
+            out_one = check_contiguous_steps(
+                nvt_run,
+                li,
+                species_dict,
+                select_dict,
+                run_start,
+                run_end,
+                np.array(hopping_out) + lag_step,
+                lag=lag_step,
+            )
+            for kw, value in out_one.items():
+                out_list[kw].append(value)
+
+
 def get_full_coords(coords, reflection=None, rotation=None, inversion=None, sample=None):
     coords_full = coords
     if reflection:

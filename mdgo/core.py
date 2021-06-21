@@ -27,6 +27,7 @@ from mdgo.coordination import (
     trajectory,
     find_nearest,
     find_nearest_free_only,
+    process_evol,
     find_in_n_out,
     check_contiguous_steps,
     heat_map,
@@ -672,9 +673,20 @@ class MdRun:
         return np.mean(freqs), np.mean(hopping_distance)
 
     def shell_evolution(
-        self, species_dict, run_start, run_end, lag_step, distance, hopping_cutoff, smooth=51, cool=0, center="center"
+        self,
+        species_dict,
+        run_start,
+        run_end,
+        lag_step,
+        distance,
+        hopping_cutoff,
+        smooth=51,
+        cool=0,
+        center="center",
+        duplicate_run=None,
     ):
-        """Calculates the
+        """Calculates the coordination number of species in the species_dict
+        as a function of time before and after hopping events.
 
         Args:
             species_dict (dict): A dict of coordination cutoff distance
@@ -687,53 +699,54 @@ class MdRun:
             smooth (int): The length of the smooth filter window. Default to 51.
             cool (int): The cool down timesteps between hopping in and hopping out.
             center (str): The select_dict key of the binding site. Default to "center".
+            duplicate_run (list): Default to None.
         """
-        nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         in_list = dict()
         out_list = dict()
         for k in list(species_dict):
             in_list[k] = []
             out_list[k] = []
-        for li in tqdm(li_atoms[::]):
-            neighbor_trj = trajectory(
-                nvt_run, li, run_start + lag_step, run_end - lag_step, center, self.select_dict, distance
-            )
-            hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
-            if len(hopping_in) > 0:
-                in_one = check_contiguous_steps(
-                    nvt_run,
-                    li,
+        process_evol(
+            self,
+            in_list,
+            out_list,
+            species_dict,
+            run_start,
+            run_end,
+            lag_step,
+            distance,
+            hopping_cutoff,
+            smooth,
+            cool,
+            center,
+        )
+        if duplicate_run is not None:
+            for run in duplicate_run:
+                process_evol(
+                    run,
+                    in_list,
+                    out_list,
                     species_dict,
-                    self.select_dict,
                     run_start,
                     run_end,
-                    np.array(hopping_in) + lag_step,
-                    lag=lag_step,
+                    lag_step,
+                    distance,
+                    hopping_cutoff,
+                    smooth,
+                    cool,
+                    center,
                 )
-                for kw, value in in_one.items():
-                    in_list[kw].append(value)
-            if len(hopping_out) > 0:
-                out_one = check_contiguous_steps(
-                    nvt_run,
-                    li,
-                    species_dict,
-                    self.select_dict,
-                    run_start,
-                    run_end,
-                    np.array(hopping_out) + lag_step,
-                    lag=lag_step,
-                )
-                for kw, value in out_one.items():
-                    out_list[kw].append(value)
         cn_dict = dict()
+        cn_dict["time"] = np.array([i * self.time_step - lag_step * self.time_step for i in range(lag_step * 2 + 1)])
         for k in list(species_dict):
-            k_dict = list()
-            k_dict.append(np.array(in_list[k]).shape[0])
-            k_dict.append(np.nanmean(np.array(in_list[k]), axis=0))
-            k_dict.append(np.nanstd(np.array(in_list[k]), axis=0))
-            k_dict.append(np.nanmean(np.array(out_list[k]), axis=0))
-            k_dict.append(np.nanstd(np.array(out_list[k]), axis=0))
+            if "in_count" not in cn_dict:
+                cn_dict["in_count"] = np.array(in_list[k]).shape[0]
+                cn_dict["out_count"] = np.array(out_list[k]).shape[0]
+            k_dict = dict()
+            k_dict["in_ave"] = np.nanmean(np.array(in_list[k]), axis=0)
+            k_dict["in_err"] = np.nanstd(np.array(in_list[k]), axis=0)
+            k_dict["out_ave"] = np.nanmean(np.array(out_list[k]), axis=0)
+            k_dict["out_err"] = np.nanstd(np.array(out_list[k]), axis=0)
             cn_dict[k] = k_dict
         return cn_dict
 
