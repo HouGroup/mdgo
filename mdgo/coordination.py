@@ -105,6 +105,7 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     if closest_step is not None:
         steps.append(closest_step)
     change = (np.diff([i for i in sites if i != 0]) != 0).sum()
+    assert change == len(steps) - 1 or change == len(steps) == 0
     frequency = change / (time_span * time_step)
     return sites, frequency, steps
 
@@ -153,20 +154,22 @@ def find_nearest_free_only(trj, time_step, distance, hopping_cutoff, smooth=51):
     steps = []
     closest_step = 0
     previous_site = sites_and_distance_array[0][0]
+    previous_zero = False
     if previous_site == 0:
         closest_step = None
+        previous_zero = True
     for i, step in enumerate(sites_and_distance_array):
         site = step[0]
         distance = step[1]
         if site == 0:
-            pass
+            previous_zero = True
         else:
             if site == previous_site:
                 if distance < sites_and_distance_array[closest_step][1]:
                     closest_step = i
                 else:
                     pass
-            elif previous_site != 0:
+            elif not previous_zero:
                 previous_site = site
                 if distance < sites_and_distance_array[closest_step][1]:
                     closest_step = i
@@ -179,8 +182,7 @@ def find_nearest_free_only(trj, time_step, distance, hopping_cutoff, smooth=51):
                 previous_site = site
     if closest_step is not None:
         steps.append(closest_step)
-    change = (np.diff([i for i in sites if i != 0]) != 0).sum()
-    frequency = change / (time_span * time_step)
+    frequency = (len(steps) - 1) / (time_span * time_step)
     return sites, frequency, steps
 
 
