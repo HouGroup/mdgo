@@ -12,7 +12,7 @@ To install the latest release version of mdgo:
     
 ## 1.2 Installing from source code
 
-Mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.           
+Mdgo requires numpy, pandas, matplotlib, scipy, tqdm, statsmodels, pymatgen>=2022.0.9, pubchempy, selenium, MDAnalysis (version 2.0.0-dev0 prefered) and their dependencies.           
 
 ### Getting Source Code
 
