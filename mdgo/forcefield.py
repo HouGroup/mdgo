@@ -66,6 +66,7 @@ DATA_MODELS: Final[dict] = {
         "tip3pew": "water_tip3p_ew.lmp",
         "tip4p2005": "water_tip4p_2005.lmp",
         "tip4pew": "water_tip4p_ew.lmp",
+        "tip4pfb": "water_tip4p_fb.lmp"
     },
     "ion": {
         "aq": ["default"],
@@ -74,6 +75,7 @@ DATA_MODELS: Final[dict] = {
         "jensen_jorgensen": ["default"],
         "jc": ["spce", "tip3p", "tip4pew"],
         "joung_cheatham": ["spce", "tip3p", "tip4pew"],
+        "merz": ["tip4pfb"],
     },
     "alias": {"aq": "aqvist", "jj": "jensen_jorgensen", "jc": "joung_cheatham"},
 }

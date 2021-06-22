@@ -1,0 +1,28 @@
+Cl-
+# Sengupta et al. Parameterization of Monovalent Ions for the OPC3, OPC, TIP3P-FB, and
+# TIP4P-FB Water Models. J. Chem. Information Modeling 61(2), 2021. 
+# https://pubs.acs.org/doi/10.1021/acs.jcim.0c01390
+# This set of values is optimized for reproducing ion-oxygen distance (Table 3) using
+# the TIP4P-FB water model
+# all values in 'real' units (kcal/mol and Angstrom)
+
+
+       1 atoms
+
+       1 atom types
+
+    0.0 1.0      xlo xhi
+    0.0 1.0      ylo yhi
+    0.0 1.0      zlo zhi
+
+Masses
+
+      1    35.453
+
+Pair Coeffs #lj/cut/coul/long
+
+      1    0.53486081 2.166
+
+Atoms
+
+      1    1  1  -1.0    0.50000    0.50000    0.50000
