@@ -105,6 +105,7 @@ def find_nearest(trj, time_step, distance, hopping_cutoff, smooth=51):
     if closest_step is not None:
         steps.append(closest_step)
     change = (np.diff([i for i in sites if i != 0]) != 0).sum()
+    assert change == len(steps) - 1 or change == len(steps) == 0
     frequency = change / (time_span * time_step)
     return sites, frequency, steps
 
@@ -153,20 +154,22 @@ def find_nearest_free_only(trj, time_step, distance, hopping_cutoff, smooth=51):
     steps = []
     closest_step = 0
     previous_site = sites_and_distance_array[0][0]
+    previous_zero = False
     if previous_site == 0:
         closest_step = None
+        previous_zero = True
     for i, step in enumerate(sites_and_distance_array):
         site = step[0]
         distance = step[1]
         if site == 0:
-            pass
+            previous_zero = True
         else:
             if site == previous_site:
                 if distance < sites_and_distance_array[closest_step][1]:
                     closest_step = i
                 else:
                     pass
-            elif previous_site != 0:
+            elif not previous_zero:
                 previous_site = site
                 if distance < sites_and_distance_array[closest_step][1]:
                     closest_step = i
@@ -179,8 +182,7 @@ def find_nearest_free_only(trj, time_step, distance, hopping_cutoff, smooth=51):
                 previous_site = site
     if closest_step is not None:
         steps.append(closest_step)
-    change = (np.diff([i for i in sites if i != 0]) != 0).sum()
-    frequency = change / (time_span * time_step)
+    frequency = (len(steps) - 1) / (time_span * time_step)
     return sites, frequency, steps
 
 
@@ -356,6 +358,54 @@ def heat_map(
             xyz_li = np.linalg.solve(basis_xyz, abc_li)
             coordinates.append(xyz_li)
     return np.array(coordinates)
+
+
+def process_evol(
+    mdrun,
+    in_list,
+    out_list,
+    species_dict,
+    run_start,
+    run_end,
+    lag_step,
+    distance,
+    hopping_cutoff,
+    smooth,
+    cool,
+    center,
+):
+    nvt_run = mdrun.wrapped_run
+    li_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
+    select_dict = mdrun.select_dict
+    for li in tqdm(li_atoms[::]):
+        neighbor_trj = trajectory(nvt_run, li, run_start + lag_step, run_end - lag_step, center, select_dict, distance)
+        hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
+        if len(hopping_in) > 0:
+            in_one = check_contiguous_steps(
+                nvt_run,
+                li,
+                species_dict,
+                select_dict,
+                run_start,
+                run_end,
+                np.array(hopping_in) + lag_step,
+                lag=lag_step,
+            )
+            for kw, value in in_one.items():
+                in_list[kw].append(value)
+        if len(hopping_out) > 0:
+            out_one = check_contiguous_steps(
+                nvt_run,
+                li,
+                species_dict,
+                select_dict,
+                run_start,
+                run_end,
+                np.array(hopping_out) + lag_step,
+                lag=lag_step,
+            )
+            for kw, value in out_one.items():
+                out_list[kw].append(value)
 
 
 def get_full_coords(coords, reflection=None, rotation=None, inversion=None, sample=None):

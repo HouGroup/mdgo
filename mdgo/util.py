@@ -882,6 +882,17 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
         outp.write("END\n")  # final 'END'
 
 
+def strip_zeros(items):
+    new_items = [int(i) for i in items]
+    while new_items[-1] == 0:
+        new_items.pop()
+    while new_items[0] == 0:
+        new_items.pop(0)
+    if len(new_items) == 0:
+        return None
+    return new_items
+
+
 if __name__ == "__main__":
     """
     litfsi = Molecule.from_file(
