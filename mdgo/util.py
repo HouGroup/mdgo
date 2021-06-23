@@ -722,8 +722,8 @@ def concentration_matcher(
     else:
         raise ValueError("Invalid salt type! Salt must be a number, string, or Molecule.")
 
-    solv_mass = list()
-    solv_density = list()
+    solv_mass: List[float] = list()
+    solv_density: List[float] = list()
     for solv in solvents:
         if isinstance(solv, dict):
             solv_mass.append(solv.get("mass"))
