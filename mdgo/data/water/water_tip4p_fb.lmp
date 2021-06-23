@@ -4,6 +4,9 @@ Optimized TIP4P-FB parameters for water
 # https://pubs.acs.org/doi/10.1021/jz500737m
 # real units (kcal/mol, Angstrom) 
 # Command 'fix shake' is needed.
+# LJ and couloumb cutoffs of 9 and 7 angstroms were used in the original work
+# Bond and angle coefficients of 1000 are added to keep the water molecule together
+# during e.g. energy minimization in LAMMPS when `fix shake` is not active.
 
        3 atoms
        2 bonds
@@ -29,11 +32,11 @@ Pair Coeffs #lj/cut/tip4p/long 2 1 1 1 0.10527 9.0 7.0
 
 Bond Coeffs #harmonic
 
-      1    0.0 0.9572
+      1    1000 0.9572
 
 Angle Coeffs #harmonic
 
-      1    0.0 104.52 
+      1    1000 104.52 
 
 Atoms
 
