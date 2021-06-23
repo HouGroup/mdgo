@@ -35,20 +35,20 @@ jobs:
       run: |
         mypy --version
         rm -rf .mypy_cache
-        mypy pymatgen
+        mypy mdgo
     - name: pydocstyle
       run: |
-        pydocstyle --count pymatgen
+        pydocstyle --count mdgo
     - name: pylint
       run: |
-        pylint pymatgen
+        pylint mdgo
     - name: black
       run: |
         black --version
-        black --check --diff --color pymatgen
+        black --check --diff --color mdgo
     - name: flake8
       run: |
         flake8 --version
-        flake8 --count --show-source --statistics pymatgen
+        flake8 --count --show-source --statistics mdgo
         # exit-zero treats all errors as warnings.
-        flake8 --count --exit-zero --max-complexity=20 --statistics pymatgen
+        flake8 --count --exit-zero --max-complexity=20 --statistics mdgo
