@@ -25,7 +25,7 @@ to be done
 
 ## Checklist
 
-Work-in-progress pull requests are encouraged, but please put [WIP]
+Work-in-progress pull requests are encouraged. Please put [WIP]
 in the pull request title.
 
 Before a pull request can be merged, the following items must be checked:
@@ -41,7 +41,3 @@ Before a pull request can be merged, the following items must be checked:
 - [ ] Type annotations are **highly** encouraged. Run [mypy](http://mypy-lang.org/) to type check your code.
 - [ ] Tests have been added for any new functionality or bug fixes.
 - [ ] All linting and tests pass.
-
-Note that the CI system will run all the above checks. But it will be much more efficient if you already fix most 
-errors prior to submitting the PR. It is highly recommended that you use the pre-commit hook provided in the pymatgen 
-repository. Simply `cp pre-commit .git/hooks` and a check will be run prior to allowing commits.
