@@ -300,7 +300,7 @@ class MdRun:
 
         Print conductivity in mS/cm.
         """
-        conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end)
+        conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, T=self.temp)
         return None
 
     def coord_num_array_one_species(self, species, distance, run_start, run_end):

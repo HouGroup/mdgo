@@ -84,7 +84,7 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
     return msd
 
 
-def conductivity_calculator(time_array, cond_array, v, name, start, end):
+def conductivity_calculator(time_array, cond_array, v, name, start, end, T=298.15, units='real'):
     """Calculates the overall conductivity of the system
 
     Args:
@@ -94,20 +94,28 @@ def conductivity_calculator(time_array, cond_array, v, name, start, end):
         name (str): system name
         start (int): index at which to start fitting linear regime of the MSD
         end (int): index at which to end fitting linear regime of the MSD
+        units (str): unit system (currently 'real' and 'lj' are supported)
 
     Returns the overall ionic conductivity (float)
     """
     # Unit conversions
-    A2cm = 1e-8  # Angstroms to cm
-    ps2s = 1e-12  # picoseconds to seconds
-    e2c = 1.60217662e-19  # elementary charge to Coulomb
-    convert = e2c * e2c / ps2s / A2cm * 1000  # final conductivity units: mS/cm
-    kb = 1.38064852e-23  # Boltzmann Constant, J/K
-    T = 298.15  # temperature, K
+    if units == 'real':
+        A2cm = 1e-8  # Angstroms to cm
+        ps2s = 1e-12  # picoseconds to seconds
+        e2c = 1.60217662e-19  # elementary charge to Coulomb
+        kb = 1.38064852e-23  # Boltzmann Constant, J/K
+        convert = e2c * e2c / ps2s / A2cm * 1000
+        cond_units = 'mS/cm'
+    elif units == 'lj':
+        kb = 1
+        convert = 1
+        cond_units = 'q^2/(tau sigma epsilon)'
+    else:
+        raise ValueError("units selection not supported")
 
     slope, _, _, _, _ = stats.linregress(time_array[start:end], cond_array[start:end])
     cond = slope / 6 / kb / T / v * convert
 
-    print("Conductivity of " + name + ": " + str(cond) + " mS/cm")
+    print("Conductivity of " + name + ": " + str(cond) + " " + cond_units)
 
     return cond
