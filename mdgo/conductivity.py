@@ -18,12 +18,13 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 """
 
 
-def autocorrFFT(x):
-    """
-    Calculates the autocorrelation function using the fast Fourier transform.
+def autocorr_fft(x):
+    """ Calculates the autocorrelation function using the fast Fourier transform.
 
-    :param x: array[float], function on which to compute autocorrelation function
-    :return: acf: array[float], autocorrelation function
+    Args:
+        x (numpy.array): function on which to compute autocorrelation function
+
+    Returns a numpy.array of the autocorrelation function
     """
     N = len(x)
     F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
@@ -35,17 +36,17 @@ def autocorrFFT(x):
 
 
 def msd_fft(r):
-    """
-    Calculates mean square displacement of the array r using
-    the fast Fourier transform.
+    """ Calculates mean square displacement of the array r using the fast Fourier transform.
 
-    :param r: array[float], atom positions over time
-    :return: msd: array[float], mean-squared displacement over time
+    Args:
+        r (numpy.array): atom positions over time
+
+    Returns a numpy.array containing the mean-squared displacement over time
     """
     N = len(r)
     D = np.square(r).sum(axis=1)
     D = np.append(D, 0)
-    S2 = sum([autocorrFFT(r[:, i]) for i in range(r.shape[1])])
+    S2 = sum([autocorr_fft(r[:, i]) for i in range(r.shape[1])])
     Q = 2 * D.sum()
     S1 = np.zeros(N)
     for m in range(N):
@@ -57,17 +58,18 @@ def msd_fft(r):
 def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
     """Calculates the conductivity "mean square displacement" over time
 
-    :param u: MDAnalysis universe
-    :param anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
-    :param cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
-    :param run_start: int, index of trajectory from which to start analysis
-    :param cation_charge: int, net charge of cation
-    :param anion_charge: int, net charge of anion
-    :return: msd: array[float], conductivity "MSD" over time
-
     Note:
-        Coordinates must be unwrapped (in dcd file when creating MDAnalysis
-        Universe)
+       Coordinates must be unwrapped (in dcd file when creating MDAnalysis Universe)
+
+    Args:
+        u: MDAnalysis universe
+        anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
+        cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
+        run_start (int): index of trajectory from which to start analysis
+        cation_charge (int): net charge of cation
+        anion_charge (int): net charge of anion
+
+    Returns a numpy.array containing conductivity "MSD" over time
     """
     # Current code assumes anion and cation selections are single atoms
     qr = []
@@ -85,12 +87,15 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
 def conductivity_calculator(time_array, cond_array, v, name, start, end):
     """Calculates the overall conductivity of the system
 
-    :param time_array: array[float], times at which position data was collected in the simulation
-    :param cond_array: array[float], conductivity "mean squared displacement"
-    :param v: float, simulation volume (Angstroms^3)
-    :param start: int, index at which to start fitting linear regime of the MSD
-    :param end: int, index at which to end fitting linear regime of the MSD
-    :return: cond: float, overall ionic conductivity
+    Args:
+        time_array (numpy.array): times at which position data was collected in the simulation
+        cond_array (numpy.array): conductivity "mean squared displacement"
+        v (float): simulation volume (Angstroms^3)
+        name (str): system name
+        start (int): index at which to start fitting linear regime of the MSD
+        end (int): index at which to end fitting linear regime of the MSD
+
+    Returns the overall ionic conductivity (float)
     """
     # Unit conversions
     A2cm = 1e-8  # Angstroms to cm
