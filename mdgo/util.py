@@ -669,7 +669,7 @@ def ff_parser(ff_dir, xyz_dir):
 def concentration_matcher(
     concentration: float,
     salt: Union[float, int, str, Molecule],
-    solvents: List[Molecule],
+    solvents: List[Union[str, Dict[str, Union[float, int]]]],
     solv_ratio: List[float],
     num_salt: int = 100,
     mode: str = "v",
@@ -757,7 +757,7 @@ def concentration_matcher(
             solv_density.append(DENSITY[ALIAS[solv.lower()]])
     if mode.lower().startswith("v"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] * float(solv_density[i]) / float(solv_mass[i]))
+            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])  # type: ignore
         n_salt = 1 / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
@@ -765,7 +765,7 @@ def concentration_matcher(
         return n_all, volume ** (1 / 3) * 1e8
     elif mode.lower().startswith("w"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] / float(solv_mass[i]))
+            n_solvent.append(solv_ratio[i] / solv_mass[i])  # type: ignore
         v_solv = np.divide(solv_ratio, solv_density).sum()
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
