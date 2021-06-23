@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements functions to calculate the ionic conductivity.
+"""
+
 import numpy as np
 from tqdm.notebook import tqdm
 from scipy import stats
@@ -78,6 +82,10 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
 
 
 def conductivity_calculator(time_array, cond_array, v, name, start, end):
+    """Calculates the overall conductivity of the system
+
+    Args:
+    """
     # Unit conversions
     A2cm = 1e-8
     ps2s = 1e-12

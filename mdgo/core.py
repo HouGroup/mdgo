@@ -2,6 +2,11 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements two core class MdRun and MdJob
+for molecular dynamics simulation analysis and job setup.
+"""
+
 import MDAnalysis
 import numpy as np
 import pandas as pd
@@ -517,12 +522,33 @@ class MdRun:
         return msd_array
 
     def get_msd_by_length(self, distance, run_start, run_end):
+        """
+
+        Args:
+            distance (int or float): The coordination cutoff distance.
+            run_start (int): Start time step.
+            run_end (int): End time step.
+
+        Returns:
+
+        """
         nvt_run = self.unwrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = special_msd(nvt_run, li_atoms, self.select_dict, distance, run_start, run_end)
         return free_array, attach_array
 
     def get_msd_partial(self, distance, run_start, run_end, largest=1000):
+        """
+
+        Args:
+            distance (int or float): The coordination cutoff distance.
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            largest (int): The largest time sequence to trace.
+
+        Returns:
+
+        """
         nvt_run = self.unwrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = partial_msd(
@@ -838,12 +864,27 @@ class MdJob:
     """
 
     def __init__(self, name):
+        """
+        Base constructor
+        """
         self.name = name
 
     @classmethod
     def from_dict(cls):
+        """
+        Constructor.
+
+        Returns:
+
+        """
         return cls("name")
 
     @classmethod
     def from_recipe(cls):
+        """
+        Constructor.
+
+        Returns:
+
+        """
         return cls("name")

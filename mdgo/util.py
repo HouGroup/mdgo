@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements utility functions for other modules in the package.
+"""
+
 import numpy as np
 import string
 from io import StringIO
@@ -499,6 +503,16 @@ def select_dict_from_resname(u):
 
 
 def extract_atom_from_ion(positive, residue, select_dict):
+    """
+
+    Args:
+        positive:
+        residue:
+        select_dict:
+
+    Returns:
+
+    """
     if positive:
         if len(residue.atoms.types) == 1:
             select_dict["cation"] = "type " + residue.atoms.types[0]
@@ -526,6 +540,16 @@ def extract_atom_from_ion(positive, residue, select_dict):
 
 
 def extract_atom_from_molecule(resname, residue, select_dict):
+    """
+
+    Args:
+        resname:
+        residue:
+        select_dict:
+
+    Returns:
+
+    """
     # neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
     # select_dict[resname + "-" + neg_center.name + neg_center.type] = "type " + neg_center.type
     # pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
@@ -883,6 +907,14 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
 
 
 def strip_zeros(items):
+    """
+
+    Args:
+        items:
+
+    Returns:
+
+    """
     new_items = [int(i) for i in items]
     while new_items[-1] == 0:
         new_items.pop()
