@@ -1,5 +1,7 @@
 # ![MDGO](docs/logo_mdgo.svg)
 
+![Linting](https://github.com/htz1992213/mdgo/actions/workflows/lint.yml/badge.svg)
+
 An all-in-one code base for the classical molecualr dynamics (MD) simulation setup and results analysis. 
 
 # 1. Installation
