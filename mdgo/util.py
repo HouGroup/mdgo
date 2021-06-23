@@ -722,8 +722,8 @@ def concentration_matcher(
     else:
         raise ValueError("Invalid salt type! Salt must be a number, string, or Molecule.")
 
-    solv_mass: List[float] = list()
-    solv_density: List[float] = list()
+    solv_mass = list()
+    solv_density = list()
     for solv in solvents:
         if isinstance(solv, dict):
             solv_mass.append(solv.get("mass"))
@@ -733,7 +733,7 @@ def concentration_matcher(
             solv_density.append(DENSITY[ALIAS[solv.lower()]])
     if mode.lower().startswith("v"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])
+            n_solvent.append(solv_ratio[i] * float(solv_density[i]) / float(solv_mass[i]))
         n_salt = 1 / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
@@ -741,7 +741,7 @@ def concentration_matcher(
         return n_all, volume ** (1 / 3) * 1e8
     elif mode.lower().startswith("w"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] / solv_mass[i])
+            n_solvent.append(solv_ratio[i] / float(solv_mass[i]))
         v_solv = np.divide(solv_ratio, solv_density).sum()
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
