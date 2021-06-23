@@ -28,8 +28,6 @@ from mdgo.coordination import (
     find_nearest,
     find_nearest_free_only,
     process_evol,
-    find_in_n_out,
-    check_contiguous_steps,
     heat_map,
     get_full_coords,
 )
