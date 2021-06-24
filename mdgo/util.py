@@ -762,7 +762,7 @@ def concentration_matcher(
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
-        volume = ((1 + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
     elif mode.lower().startswith("w"):
         for i in range(n):
