@@ -658,7 +658,7 @@ def ff_parser(ff_dir, xyz_dir):
         stats = "\n".join(count_lines + [""] + type_lines)
         header = [
             f"LAMMPS data file created by mdgo (by {__author__})\n"
-            "# OPLS force field: harmonic, harmonic, opls, opls",
+            "# OPLS force field: harmonic, harmonic, opls, cvff",
             stats,
             BOX.format(lo, hi),
         ]
