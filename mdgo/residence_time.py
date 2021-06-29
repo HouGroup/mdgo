@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module calculates species correlation lifetime (residence time).
+"""
+
 import re
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,8 +20,22 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 
-# Create adjacency matrix for one li
 def neighbors_one_li(nvt_run, li_atom, species, selection_dict, distance, run_start, run_end):
+    """
+    Create adjacency matrix for one li.
+
+    Args:
+        nvt_run:
+        li_atom:
+        species:
+        selection_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     bool_values = dict()
     time_count = 0
     for ts in nvt_run.trajectory[run_start:run_end:]:
@@ -37,8 +55,16 @@ def neighbors_one_li(nvt_run, li_atom, species, selection_dict, distance, run_st
     return bool_values
 
 
-# Calculate ACF
 def calc_acf(a_values):
+    """
+    Calculate auto-correlation function (ACF)
+
+    Args:
+        a_values:
+
+    Returns:
+
+    """
     acfs = []
     for atom_id, neighbors in a_values.items():
         atom_id = int(re.search(r"\d+", atom_id).group())
@@ -47,10 +73,34 @@ def calc_acf(a_values):
 
 
 def exponential_func(x, a, b, c):
+    """
+
+    Args:
+        x:
+        a:
+        b:
+        c:
+
+    Returns:
+
+    """
     return a * np.exp(-b * x) + c
 
 
 def calc_neigh_corr(nvt_run, species_dict, selection_dict, time_step, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        species_dict:
+        selection_dict:
+        time_step:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     # Set up times array
     times = []
     step = 0
@@ -80,6 +130,18 @@ def calc_neigh_corr(nvt_run, species_dict, selection_dict, time_step, run_start,
 
 
 def fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, time_step):
+    """
+
+    Args:
+        times:
+        species_list:
+        acf_avg_dict:
+        cutoff_time:
+        time_step:
+
+    Returns:
+
+    """
     acf_avg_norm = dict()
     popt = dict()
     pcov = dict()

@@ -1,3 +1,7 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 """
 Computes the volume for each ligand or active site in a file.
 
@@ -22,6 +26,11 @@ DEFAULT_VDW = 1.5  # See Ev:130902
 
 
 def parse_command_line():
+    """
+
+    Returns:
+
+    """
     usage = """
     python volume.py -xyz <input_xyz> [options]
     """
@@ -122,6 +131,14 @@ def parse_command_line():
 
 
 def get_max_dimensions(mol):
+    """
+
+    Args:
+        mol:
+
+    Returns:
+
+    """
 
     xmin = 9999
     ymin = 9999
@@ -145,17 +162,43 @@ def get_max_dimensions(mol):
     return xmin, xmax, ymin, ymax, zmin, zmax
 
 
-def set_max_dimensions(x, y, z, xsize, ysize, zsize):
-    xmin = x - (xsize / 2)
-    xmax = x + (xsize / 2)
-    ymin = y - (ysize / 2)
-    ymax = y + (ysize / 2)
-    zmin = z - (zsize / 2)
-    zmax = z + (zsize / 2)
-    return xmin, xmax, ymin, ymax, zmin, zmax
+def set_max_dimensions(x, y, z, x_size, y_size, z_size):
+    """
+
+    Args:
+        x:
+        y:
+        z:
+        x_size:
+        y_size:
+        z_size:
+
+    Returns:
+
+    """
+    x_min = x - (x_size / 2)
+    x_max = x + (x_size / 2)
+    y_min = y - (y_size / 2)
+    y_max = y + (y_size / 2)
+    z_min = z - (z_size / 2)
+    z_max = z + (z_size / 2)
+    return x_min, x_max, y_min, y_max, z_min, z_max
 
 
 def round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax):
+    """
+
+    Args:
+        xmin:
+        xmax:
+        ymin:
+        ymax:
+        zmin:
+        zmax:
+
+    Returns:
+
+    """
     buffer = 1.5  # addition to box for ligand calculations
     x0 = math.floor(xmin - buffer)
     x1 = math.ceil(xmax + buffer)
@@ -167,11 +210,38 @@ def round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax):
 
 
 def dsq(a1, a2, a3, b1, b2, b3):
+    """
+
+    Args:
+        a1:
+        a2:
+        a3:
+        b1:
+        b2:
+        b3:
+
+    Returns:
+
+    """
     d2 = (b1 - a1) ** 2 + (b2 - a2) ** 2 + (b3 - a3) ** 2
     return d2
 
 
 def get_dimensions(x0, x1, y0, y1, z0, z1, res):
+    """
+
+    Args:
+        x0:
+        x1:
+        y0:
+        y1:
+        z0:
+        z1:
+        res:
+
+    Returns:
+
+    """
     xrange = x1 - x0
     yrange = y1 - y0
     zrange = z1 - z0
@@ -183,20 +253,38 @@ def get_dimensions(x0, x1, y0, y1, z0, z1, res):
     return xsteps, ysteps, zsteps
 
 
-##################################
-def make_matrix(xnum, ynum, znum):
+def make_matrix(x_num, y_num, z_num):
+    """
 
-    matrix = [None] * xnum
-    for i in range(xnum):
-        matrix[i] = [None] * ynum
-        for j in range(ynum):
-            matrix[i][j] = [None] * znum
+    Args:
+        x_num:
+        y_num:
+        z_num:
+
+    Returns:
+
+    """
+
+    matrix = [None] * x_num
+    for i in range(x_num):
+        matrix[i] = [None] * y_num
+        for j in range(y_num):
+            matrix[i][j] = [None] * z_num
     return matrix
 
 
-def get_radii(type):
+def get_radii(radii_type):
+    """
+    Get a radii dict by type.
+
+    Args:
+        radii_type (str): The radii type. Valid types are "Bondi", "Lange", and "pymatgen".
+
+    Returns (dict): a radii dict.
+
+    """
     radii = {}
-    if type == "Bondi":
+    if radii_type == "Bondi":
         radii = {
             "H": 1.20,
             "B": 2.00,
@@ -211,7 +299,7 @@ def get_radii(type):
             "Br": 1.85,
             "I": 1.98,
         }
-    elif type == "Lange":  # from Lange's Handbook of Chemistry
+    elif radii_type == "Lange":  # from Lange's Handbook of Chemistry
         radii = {
             "H": 1.20,
             "B": 2.08,
@@ -226,7 +314,7 @@ def get_radii(type):
             "Br": 1.95,
             "I": 2.15,
         }
-    elif type == "pymatgen":
+    elif radii_type == "pymatgen":
         radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__.keys()}
     else:
         print("Wrong option for radii type: Choose Bondi, Lange, or pymatgen")
@@ -235,6 +323,23 @@ def get_radii(type):
 
 
 def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
+    """
+
+    Args:
+        mol:
+        x0:
+        x1:
+        y0:
+        y1:
+        z0:
+        z1:
+        res:
+        matrix:
+        radii_type:
+
+    Returns:
+
+    """
     sys.stdout.flush()
 
     radii = get_radii(radii_type)  # approximate heavy-atom radii
@@ -279,6 +384,16 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
 
 
 def print_occupied_volume(matrix, res, name):
+    """
+
+    Args:
+        matrix:
+        res:
+        name:
+
+    Returns:
+
+    """
 
     v = 0
     i = -1

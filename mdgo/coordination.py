@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements functions for coordination analysis.
+"""
+
 import numpy as np
 from tqdm.notebook import tqdm
 from MDAnalysis.analysis.distances import distance_array
@@ -16,6 +20,20 @@ __date__ = "Feb 9, 2021"
 
 
 def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict, distance):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        run_start:
+        run_end:
+        species:
+        selection_dict:
+        distance:
+
+    Returns:
+
+    """
     dist_values = {}
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -309,6 +327,21 @@ def heat_map(
     run_start,
     run_end,
 ):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        sites:
+        dist_to_center:
+        bind_atom_type:
+        cartesian_by_ref:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
@@ -374,6 +407,25 @@ def process_evol(
     cool,
     center,
 ):
+    """
+
+    Args:
+        mdrun:
+        in_list:
+        out_list:
+        species_dict:
+        run_start:
+        run_end:
+        lag_step:
+        distance:
+        hopping_cutoff:
+        smooth:
+        cool:
+        center:
+
+    Returns:
+
+    """
     nvt_run = mdrun.wrapped_run
     li_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
     select_dict = mdrun.select_dict
@@ -409,6 +461,18 @@ def process_evol(
 
 
 def get_full_coords(coords, reflection=None, rotation=None, inversion=None, sample=None):
+    """
+
+    Args:
+        coords:
+        reflection:
+        rotation:
+        inversion:
+        sample:
+
+    Returns:
+
+    """
     coords_full = coords
     if reflection:
         for vec in reflection:
@@ -439,6 +503,21 @@ def cluster_coordinates(
     basis_vectors=None,
     cluster_center="center",
 ):
+    """
+
+    Args:
+        nvt_run:
+        select_dict:
+        run_start:
+        run_end:
+        species:
+        distance:
+        basis_vectors:
+        cluster_center:
+
+    Returns:
+
+    """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cluster_center = nvt_run.select_atoms(select_dict.get(cluster_center), periodic=True)[0]
     selection = (
@@ -495,7 +574,24 @@ def num_of_neighbor_one_li(
     write_path=None,
     element_id_dict=None,
 ):
+    """
 
+    Args:
+        nvt_run:
+        li_atom:
+        species_dict:
+        select_dict:
+        run_start:
+        run_end:
+        write:
+        structure_code:
+        write_freq:
+        write_path:
+        element_id_dict:
+
+    Returns:
+
+    """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = dict()
@@ -550,6 +646,19 @@ def num_of_neighbor_one_li(
 
 
 def num_of_neighbor_one_li_simple(nvt_run, li_atom, species_dict, select_dict, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        species_dict:
+        select_dict:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
 
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -597,6 +706,20 @@ def num_of_neighbor_one_li_simple(nvt_run, li_atom, species_dict, select_dict, r
 
 
 def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, distance, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        species:
+        select_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
 
     time_count = 0
     emc_angle = list()
@@ -654,6 +777,20 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, 
 
 
 def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list, select_dict, distances, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        species_list:
+        select_dict:
+        distances:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cip_step = list()
@@ -730,6 +867,16 @@ def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list, sele
 
 
 def angle(a, b, c):
+    """
+
+    Args:
+        a:
+        b:
+        c:
+
+    Returns:
+
+    """
     ba = a - b
     bc = c - b
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
@@ -740,6 +887,20 @@ def angle(a, b, c):
 
 # Depth-first traversal
 def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict, distance, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        species:
+        selection_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = np.zeros((int(len(trj_analysis)), 4))
@@ -802,6 +963,17 @@ def coord_shell_array(nvt_run, func, li_atoms, species_dict, select_dict, run_st
 
 
 def write_out(li_pos, selection, element_id_dict, path):
+    """
+
+    Args:
+        li_pos:
+        selection:
+        element_id_dict:
+        path:
+
+    Returns:
+
+    """
     lines = list()
     lines.append(str(len(selection) + 1))
     lines.append("")

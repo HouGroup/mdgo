@@ -136,6 +136,10 @@ class FFcrawler:
         print("LigParGen server connected.")
 
     def quit(self):
+        """
+        Method for quiting ChromeDriver.
+
+        """
         self.web.quit()
 
     def data_from_pdb(self, pdb_dir):
@@ -418,6 +422,10 @@ class PubChemRunner:
             print("PubChem server connected.")
 
     def quit(self):
+        """
+        Method for quiting ChromeDriver.
+
+        """
         if not self.api:
             self.web.quit()
 
@@ -438,6 +446,15 @@ class PubChemRunner:
             return self._obtain_entry_web(search_text, name, output_format=output_format)
 
     def smiles_to_pdb(self, smiles):
+        """
+        Obtain pdf file based on SMILES code.
+
+        Args:
+            smiles (str): SMILES code.
+
+        Returns:
+
+        """
         convertor_url = "https://cactus.nci.nih.gov/translate/"
         input_xpath = "/html/body/div/div[2]/div[1]/form/table[1]/tbody/tr[2]/td[1]/input[1]"
         pdb_xpath = "/html/body/div/div[2]/div[1]/form/table[1]/tbody/tr[2]/td[2]/div/input[4]"
@@ -617,13 +634,26 @@ class ChargeWriter:
     """
     A class for write, overwrite, scale charges of a LammpsData object.
 
+    Args:
+        data (LammpsData): The provided LammpsData obj.
+        precision (int): Number of significant figures.
+
     """
 
     def __init__(self, data, precision=10):
+        """Base constructor."""
         self.data = data
         self.precision = precision
 
     def scale(self, factor):
+        """
+
+        Args:
+            factor:
+
+        Returns:
+
+        """
         items = dict()
         items["box"] = self.data.box
         items["masses"] = self.data.masses
@@ -646,6 +676,15 @@ class ChargeWriter:
         return LammpsData(**items)
 
     def count_significant_figures(self, number):
+        """
+        Count significant figures in a float.
+
+        Args:
+            number (int or float): The number to count.
+
+        Returns:
+
+        """
         number = repr(float(number))
         tokens = number.split(".")
         if len(tokens) > 2:

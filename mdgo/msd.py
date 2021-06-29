@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements functions for calculating meen square displacement (MSD).
+"""
+
 try:
     import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
@@ -19,6 +23,19 @@ __date__ = "Feb 9, 2021"
 
 
 def total_msd(nvt_run, start, stop, select="all", msd_type="xyz", fft=True):
+    """
+
+    Args:
+        nvt_run:
+        start:
+        stop:
+        select:
+        msd_type:
+        fft:
+
+    Returns:
+
+    """
     if mda_msd is not None:
         msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
         msd_calculator.run(start=start, stop=stop)
@@ -45,6 +62,15 @@ def _total_msd(nvt_run, select, run_start, run_end):
 
 
 def msd_states(coord_list, largest):
+    """
+
+    Args:
+        coord_list:
+        largest:
+
+    Returns:
+
+    """
     msd_dict = dict()
     for state in coord_list:
         n_frames = state.shape[0]
@@ -67,6 +93,19 @@ def msd_states(coord_list, largest):
 
 
 def states_coord_array(nvt_run, li_atom, select_dict, distance, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atom:
+        select_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     attach_list = list()
     free_list = list()
@@ -113,6 +152,20 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance, run_start, run_e
 
 
 def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atoms:
+        largest:
+        select_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     free_coords = list()
     attach_coords = list()
     for i in trange(len(li_atoms)):
@@ -129,6 +182,14 @@ def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, ru
 
 
 def msd_by_length(coord_list):
+    """
+
+    Args:
+        coord_list:
+
+    Returns:
+
+    """
     msd_dict = dict()
     for state in coord_list:
         n_frames = state.shape[0]
@@ -148,6 +209,19 @@ def msd_by_length(coord_list):
 
 
 def special_msd(nvt_run, li_atoms, select_dict, distance, run_start, run_end):
+    """
+
+    Args:
+        nvt_run:
+        li_atoms:
+        select_dict:
+        distance:
+        run_start:
+        run_end:
+
+    Returns:
+
+    """
     free_coords = list()
     attach_coords = list()
     for i in trange(len(li_atoms)):

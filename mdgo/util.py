@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements utility functions for other modules in the package.
+"""
+
 import numpy as np
 import string
 from io import StringIO
@@ -499,6 +503,16 @@ def select_dict_from_resname(u):
 
 
 def extract_atom_from_ion(positive, residue, select_dict):
+    """
+
+    Args:
+        positive:
+        residue:
+        select_dict:
+
+    Returns:
+
+    """
     if positive:
         if len(residue.atoms.types) == 1:
             select_dict["cation"] = "type " + residue.atoms.types[0]
@@ -526,6 +540,16 @@ def extract_atom_from_ion(positive, residue, select_dict):
 
 
 def extract_atom_from_molecule(resname, residue, select_dict):
+    """
+
+    Args:
+        resname:
+        residue:
+        select_dict:
+
+    Returns:
+
+    """
     # neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
     # select_dict[resname + "-" + neg_center.name + neg_center.type] = "type " + neg_center.type
     # pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
@@ -634,7 +658,7 @@ def ff_parser(ff_dir, xyz_dir):
         stats = "\n".join(count_lines + [""] + type_lines)
         header = [
             f"LAMMPS data file created by mdgo (by {__author__})\n"
-            "# OPLS force field: harmonic, harmonic, opls, opls",
+            "# OPLS force field: harmonic, harmonic, opls, cvff",
             stats,
             BOX.format(lo, hi),
         ]
@@ -645,7 +669,7 @@ def ff_parser(ff_dir, xyz_dir):
 def concentration_matcher(
     concentration: float,
     salt: Union[float, int, str, Molecule],
-    solvents: List[Molecule],
+    solvents: List[Union[str, Dict[str, Union[float, int]]]],
     solv_ratio: List[float],
     num_salt: int = 100,
     mode: str = "v",
@@ -733,15 +757,16 @@ def concentration_matcher(
             solv_density.append(DENSITY[ALIAS[solv.lower()]])
     if mode.lower().startswith("v"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])
-        n_salt = 1 / (1000 / concentration - salt_molar_volume)
+            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])  # type: ignore
+        v_solv = sum(solv_ratio)
+        n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
         n_all.insert(0, num_salt)
-        volume = ((1 + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
     elif mode.lower().startswith("w"):
         for i in range(n):
-            n_solvent.append(solv_ratio[i] / solv_mass[i])
+            n_solvent.append(solv_ratio[i] / solv_mass[i])  # type: ignore
         v_solv = np.divide(solv_ratio, solv_density).sum()
         n_salt = v_solv / (1000 / concentration - salt_molar_volume)
         n_all = [int(m / n_salt * num_salt) for m in n_solvent]
@@ -883,6 +908,14 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
 
 
 def strip_zeros(items):
+    """
+
+    Args:
+        items:
+
+    Returns:
+
+    """
     new_items = [int(i) for i in items]
     while new_items[-1] == 0:
         new_items.pop()
