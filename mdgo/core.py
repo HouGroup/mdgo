@@ -819,13 +819,13 @@ class MdRun:
                 nvt_run,
                 li,
                 sites,
-                4,
                 bind_atom_type,
                 cartesian_by_ref,
                 run_start,
                 run_end,
             )
             coord_list = np.concatenate((coord_list, coords), axis=0)
+        coord_list = coord_list[1:]
         if sym_dict:
             return get_full_coords(coord_list, **sym_dict, sample=sample)
         else:
