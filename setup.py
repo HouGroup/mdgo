@@ -50,5 +50,5 @@ if __name__ == "__main__":
                 "sphinx_rtd_theme",
             ],
         },
-        python_requires=">=3.6",
+        python_requires=">=3.7",
     )
