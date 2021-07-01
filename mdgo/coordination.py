@@ -321,7 +321,6 @@ def heat_map(
     nvt_run,
     li_atom,
     sites,
-    dist_to_center,
     bind_atom_type,
     cartesian_by_ref,
     run_start,
@@ -333,7 +332,6 @@ def heat_map(
         nvt_run:
         li_atom:
         sites:
-        dist_to_center:
         bind_atom_type:
         cartesian_by_ref:
         run_start:
@@ -349,16 +347,7 @@ def heat_map(
             pass
         else:
             center_atom = nvt_run.select_atoms("index " + str(sites[i] - 1))[0]
-            selection = (
-                "("
-                + bind_atom_type
-                + ") and "
-                + "(around "
-                + str(dist_to_center)
-                + " index "
-                + str(center_atom.id - 1)
-                + ")"
-            )
+            selection = "(" + bind_atom_type + ") and (same resid as index " + str(center_atom.id - 1) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
             distances = distance_array(ts[li_atom.id - 1], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)

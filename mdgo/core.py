@@ -785,7 +785,6 @@ class MdRun:
         bind_atom_type=None,
         sym_dict=None,
         sample=None,
-        binding_site_to_center=4,
         smooth=51,
     ):
         """Calculates the heatmap matrix of cation around a cluster/molecule
@@ -804,8 +803,6 @@ class MdRun:
                 Default to None.
             sample (int): Number of samples desired. Default to None,
                 which is no sampling.
-            binding_site_to_center (int or float): The upper limit of the distance between
-                the bind_atom_type atoms to the center atom.
             smooth (int): The length of the smooth filter window. Default to 51.
         """
         nvt_run = self.wrapped_run
@@ -822,7 +819,6 @@ class MdRun:
                 nvt_run,
                 li,
                 sites,
-                binding_site_to_center,
                 bind_atom_type,
                 cartesian_by_ref,
                 run_start,
