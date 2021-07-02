@@ -32,7 +32,7 @@ if on_rtd:
 if __name__ == "__main__":
     setup(
         name="mdgo",
-        version="0.1.0",
+        version="0.2.0",
         description="A codebase for MD simulation setup and results analysis.",
         long_description=readme,
         long_description_content_type="text/markdown",
