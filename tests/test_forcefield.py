@@ -21,7 +21,7 @@ class FFcrawlerTest(unittest.TestCase):
             self.assertEqual(
                 out.getvalue(),
                 "LigParGen server connected.\n"
-                "Structure info uploaded. Rendering force field..."
+                "Structure info uploaded. Rendering force field...\n"
                 "Force field file downloaded.\n"
                 "Force field file saved.\n",
             )
