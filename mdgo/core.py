@@ -49,26 +49,6 @@ __date__ = "Feb 9, 2021"
 class MdRun:
     """
     A core class for MD results analysis.
-
-    Args:
-        lammps_data (LammpsData): LammpsData object.
-        wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
-        unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
-        nvt_start (int): NVT start time step.
-        time_step (int or float): LAMMPS timestep.
-        name (str): Name of the MD run.
-        select_dict (dict): A dictionary of atom species, where each atom species name is a key
-                and the corresponding values are the selection language. This dict is intended for
-                analyzing interested atoms.
-        res_dict (dict): A dictionary of resnames, where each resname is a key
-                and the corresponding values are the selection language. This dict is intended for
-                analyzing interested residues (ions/molecules).
-        cation_name: Name of cation. Default to "cation".
-        anion_name: Name of anion. Default to "anion".
-        cation_charge: Charge of cation. Default to 1.
-        anion_charge: Charge of anion. Default to 1.
-        temperature: Temperature of the MD run. Default to 298.15.
-        cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
     def __init__(
@@ -89,9 +69,29 @@ class MdRun:
         cond=True,
     ):
         """
-        Base constructor.
+        Base constructor. This is a low level constructor designed to work with
+         parsed data (mda.universe) or other bridging objects (CombinedData). Not
+        recommended to use directly.
 
-
+        Args:
+            lammps_data (LammpsData): LammpsData object.
+            wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
+            unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
+            nvt_start (int): NVT start time step.
+            time_step (int or float): LAMMPS timestep.
+            name (str): Name of the MD run.
+            select_dict (dict): A dictionary of atom species, where each atom species name is a key
+                    and the corresponding values are the selection language. This dict is intended for
+                    analyzing interested atoms.
+            res_dict (dict): A dictionary of resnames, where each resname is a key
+                    and the corresponding values are the selection language. This dict is intended for
+                    analyzing interested residues (ions/molecules).
+            cation_name: Name of cation. Default to "cation".
+            anion_name: Name of anion. Default to "anion".
+            cation_charge: Charge of cation. Default to 1.
+            anion_charge: Charge of anion. Default to 1.
+            temperature: Temperature of the MD run. Default to 298.15.
+            cond (bool): Whether to calculate conductivity MSD. Default to True.
         """
 
         self.wrapped_run = wrapped_run
