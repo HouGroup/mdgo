@@ -322,7 +322,7 @@ def get_radii(radii_type):
     return radii
 
 
-def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
+def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type, exclude_h=True):
     """
 
     Args:
@@ -336,6 +336,7 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
         res:
         matrix:
         radii_type:
+        exclude_h:
 
     Returns:
 
@@ -353,9 +354,10 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
     zsteps = int(zrange // res)
 
     for a in mol.sites:
-        element = a.species.elements[0]
-        if element == "H":
-            continue
+        element = str(a.species.elements[0])
+        if exclude_h:
+            if element == "H":
+                continue
         radius = radii.get(element, DEFAULT_VDW)
         for i in range(0, xsteps):
             if abs(a.x - (x0 + 0.5 * res + i * res)) < radius:
@@ -383,13 +385,14 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
     return matrix
 
 
-def print_occupied_volume(matrix, res, name):
+def print_occupied_volume(matrix, res, name, molar_volume=True):
     """
 
     Args:
         matrix:
         res:
         name:
+        molar_volume:
 
     Returns:
 
@@ -409,14 +412,24 @@ def print_occupied_volume(matrix, res, name):
                     v += 1
 
     v = v * res * res * res
-    print(name + " volume = %5.1f Å^3" % v)
-    print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
-    return v * 0.6022
+    if name is not None:
+        print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
+    if molar_volume:
+        return v * 0.60221409  # cm^3/mol
+    else:
+        return v  # Å^3
 
 
-def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi") -> float:
+def molecular_volume(
+    path: Union[str, Molecule],
+    name: Optional[str] = None,
+    res=0.1,
+    radii_type="Bondi",
+    molar_volume=True,
+    exclude_h=True,
+) -> float:
     """
-    Estimate the molar volume in cm^3/mol
+    Estimate the molar volume in cm^3/mol or volume in Å^3
 
     Args:
         path: Molecule object or path to .xyz or other file that can be read
@@ -428,8 +441,12 @@ def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0
             and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
             which are available for most elements and reflect the latest values in
             the CRC handbook.
+        molar_volume: Whether to return molar volume. If false, then return volume.
+            Default to True (molar volume).
+        exclude_h: Whether to exclude H atoms during the calculation.
+            Default to True.
     Returns:
-        float: The molar volume in cm^3/mol.
+        float: The molar volume in cm^3/mol or volume in Å^3.
     """
     if isinstance(path, str):
         molecule = Molecule.from_file(path)
@@ -439,8 +456,10 @@ def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0
     x0, x1, y0, y1, z0, z1 = round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax)
     xnum, ynum, znum = get_dimensions(x0, x1, y0, y1, z0, z1, res)
     volume_matrix = make_matrix(xnum, ynum, znum)
-    volume_matrix = fill_volume_matrix(molecule, x0, x1, y0, y1, z0, z1, res, volume_matrix, radii_type)
-    molar_vol = print_occupied_volume(volume_matrix, res, name)
+    volume_matrix = fill_volume_matrix(
+        molecule, x0, x1, y0, y1, z0, z1, res, volume_matrix, radii_type, exclude_h=exclude_h
+    )
+    molar_vol = print_occupied_volume(volume_matrix, res, name, molar_volume=molar_volume)
     return molar_vol
 
 
