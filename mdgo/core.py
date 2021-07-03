@@ -74,7 +74,7 @@ class MdRun:
         recommended to use directly.
 
         Args:
-            lammps_data (LammpsData): LammpsData object.
+            lammps_data (LammpsData or CombinedData): LammpsData object.
             wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
             unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
             nvt_start (int): NVT start time step.
