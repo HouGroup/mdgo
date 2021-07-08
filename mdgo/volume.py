@@ -239,7 +239,9 @@ def set_max_dimensions(
     x_size: Union[float, int] = 10.0,
     y_size: Union[float, int] = 10.0,
     z_size: Union[float, int] = 10.0,
-) -> Tuple[float, float, float, float, float, float]:
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
     """
     Set the max dimensions for calculating active site volume.
     Args:
@@ -358,7 +360,7 @@ def get_dimensions(
     return xsteps, ysteps, zsteps
 
 
-def make_matrix(x_num: int, y_num: int, z_num: int) -> List[List[List[Optional[int]]]]:
+def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
     """
     Make a matrix of None with specified dimensions.
     Args:
@@ -370,7 +372,7 @@ def make_matrix(x_num: int, y_num: int, z_num: int) -> List[List[List[Optional[i
         matrix
     """
 
-    matrix = [[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)]
+    matrix = np.array([[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)])
     return matrix
 
 
@@ -431,10 +433,10 @@ def fill_volume_matrix(
     z0: Union[int, float],
     z1: Union[int, float],
     res: Union[int, float],
-    matrix: List[List[List[Optional[int]]]],
+    matrix: np.ndarray,
     radii_type: str,
     exclude_h: bool = True,
-) -> List[List[List[int]]]:
+) -> np.ndarray:
     """
     This method perform the mesh point filling algorithm on a given matrix.
 
@@ -535,7 +537,7 @@ def get_unoccupied_volume(
     Returns:
         Volume
     """
-    v = np.count_nonzero(np.array(matrix) == 0) * res * res * res
+    v = np.count_nonzero(matrix == 0) * res * res * res
     if name is not None:
         print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
     if molar_volume:
@@ -596,10 +598,10 @@ def molecular_volume(
     if mode == "lig":
         print("Calculating occupied volume...")
         x_min, x_max, y_min, y_max, z_min, z_max = get_max_dimensions(molecule)
-        (x0, x1, y0, y1, z0, z1) = round_dimensions(x_min, x_max, y_min, y_max, z_min, z_max, mode)
+        x0, x1, y0, y1, z0, z1 = round_dimensions(x_min, x_max, y_min, y_max, z_min, z_max, mode)
     elif mode == "act":
         print("Calculating unoccupied volume...")
-        (x0, x1, y0, y1, z0, z1) = set_max_dimensions(x_cent, y_cent, z_cent, x_size, y_size, z_size)
+        x0, x1, y0, y1, z0, z1 = set_max_dimensions(x_cent, y_cent, z_cent, x_size, y_size, z_size)
     else:
         raise ValueError("Mode options are 'lig' and 'act'.")
     x_num, y_num, z_num = get_dimensions(x0, x1, y0, y1, z0, z1, res)
