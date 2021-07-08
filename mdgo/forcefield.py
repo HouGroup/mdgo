@@ -684,8 +684,8 @@ class ChargeWriter:
         Returns:
 
         """
-        number = repr(float(number))
-        tokens = number.split(".")
+        number_str = repr(float(number))
+        tokens = number_str.split(".")
         if len(tokens) > 2:
             raise ValueError("Invalid number '{}' only 1 decimal allowed".format(number))
         if len(tokens) == 2:
