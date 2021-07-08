@@ -22,7 +22,7 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 """
 
 
-def autocorr_fft(x):
+def autocorr_fft(x: np.ndarray) -> np.ndarray:
     """ Calculates the autocorrelation function using the fast Fourier transform.
 
     Args:
@@ -39,7 +39,7 @@ def autocorr_fft(x):
     return res / n
 
 
-def msd_fft(r):
+def msd_fft(r: np.ndarray) -> np.ndarray:
     """ Calculates mean square displacement of the array r using the fast Fourier transform.
 
     Args:
@@ -59,7 +59,17 @@ def msd_fft(r):
     return S1 - 2 * S2
 
 
-def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
+from typing import Union
+from MDAnalysis import Universe, AtomGroup
+
+def calc_cond(
+    u: Universe,
+    anions: AtomGroup,
+    cations: AtomGroup,
+    run_start: int,
+    cation_charge: Union[int, float] = 1,
+    anion_charge: Union[int, float] = -1,
+) -> np.ndarray:
     """Calculates the conductivity "mean square displacement" over time
 
     Note:
@@ -88,7 +98,16 @@ def calc_cond(u, anions, cations, run_start, cation_charge=1, anion_charge=-1):
     return msd
 
 
-def conductivity_calculator(time_array, cond_array, v, name, start, end, T=298.15, units='real'):
+def conductivity_calculator(
+    time_array: np.ndarray,
+    cond_array: np.ndarray,
+    v: Union[int, float],
+    name: str,
+    start: int,
+    end: int,
+    T: Union[int, float],
+    units: str = "real",
+) -> float:
     """Calculates the overall conductivity of the system
 
     Args:
