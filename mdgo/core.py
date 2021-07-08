@@ -11,7 +11,7 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Union, Dict, Optional
+from typing import Union, Dict, Tuple, List, Optional
 from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.analysis.distances import distance_array
@@ -265,7 +265,7 @@ class MdRun:
         )
         return cond_array
 
-    def plot_cond_array(self, start: int, end: int, *runs: MdRun, reference: bool = True) -> None:
+    def plot_cond_array(self, start: int, end: int, *runs: MdRun, reference: bool = True):
         """Plots the conductivity MSD as a function of time
 
         Args:
@@ -385,7 +385,7 @@ class MdRun:
         structure_code: int,
         write_freq: Union[int, float],
         write_path: str,
-    ) -> None:
+    ):
         """Writes out the desired solvation structure
 
         Args:
@@ -476,15 +476,15 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def rdf_integral(self, species_dict, run_start, run_end):
+    def rdf_integral(self, species_dict: Dict[str, Union[int, float]], run_start: int, run_end: int) -> pd.DataFrame:
         """Calculate the integral of the radial distribution function of
         selected species
 
         Args:
-            species_dict (dict): A dict of coordination cutoff distance
+            species_dict: A dict of coordination cutoff distance
                 of interested species.
-            run_start (int): Start time step.
-            run_end (int): End time step.
+            run_start: Start time step.
+            run_end: End time step.
 
         Returns pandas.dataframe of the species and the coordination number.
         """
@@ -502,14 +502,14 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def shell_simple(self, species, distance, run_start, run_end):
+    def shell_simple(self, species: str, distance: Union[int, float], run_start: int, run_end: int) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            species (str): The interested species.
-            distance (int or float): The coordination cutoff distance.
-            run_start (int): Start time step.
-            run_end (int): End time step.
+            species: The interested species.
+            distance: The coordination cutoff distance.
+            run_start: Start time step.
+            run_end: End time step.
 
         Returns pandas.dataframe of the solvation structure and percentage.
         """
@@ -530,14 +530,14 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def get_msd_all(self, start=None, stop=None, fft=True, species="cation"):
+    def get_msd_all(self, start: int = 0, stop: int = -1, fft: bool = True, species: str = "cation") -> np.ndarray:
         """Calculates the mean square displacement (MSD) of the cation
 
         Args:
-            start (int): Start time step.
-            stop (int): End time step.
-            fft (bool): Whether to use fft to calculate msd. Default to True.
-            species (str): The select_dict key of the atom group to calculate. Default to "cation".
+            start: Start time step.
+            stop: End time step.
+            fft: Whether to use fft to calculate msd. Default to True.
+            species: The select_dict key of the atom group to calculate. Default to "cation".
 
         Returns an array of MSD values for each time in the trajectory
         """
@@ -550,13 +550,15 @@ class MdRun:
         )
         return msd_array
 
-    def get_msd_by_length(self, distance, run_start, run_end):
+    def get_msd_by_length(
+        self, distance: Union[int, float], run_start: int, run_end: int
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
 
         Args:
-            distance (int or float): The coordination cutoff distance.
-            run_start (int): Start time step.
-            run_end (int): End time step.
+            distance: The coordination cutoff distance.
+            run_start: Start time step.
+            run_end: End time step.
 
         Returns:
 
@@ -566,7 +568,9 @@ class MdRun:
         free_array, attach_array = special_msd(nvt_run, li_atoms, self.select_dict, distance, run_start, run_end)
         return free_array, attach_array
 
-    def get_msd_partial(self, distance, run_start, run_end, largest=1000):
+    def get_msd_partial(
+        self, distance: Union[int, float], run_start: int, run_end: int, largest: int = 1000
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
 
         Args:
@@ -585,17 +589,19 @@ class MdRun:
         )
         return free_array, attach_array
 
-    def get_d(self, msd_array, start, stop, percentage=1, species="cation"):
+    def get_d(
+        self, msd_array: np.ndarray, start: int, stop: int, percentage: Union[int, float] = 1, species: str = "cation"
+    ):
         """Calculates the self-diffusion coefficient of the cation and
         the Nernst-Einstein conductivity
 
         Args:
-            msd_array (numpy.array): msd array.
-            start (int): Start time step.
-            stop (int): End time step.
-            percentage (int or float): The percentage of the cation.
+            msd_array: msd array.
+            start: Start time step.
+            stop: End time step.
+            percentage: The percentage of the cation.
                 Default to 1.
-            species (str): The select_dict key of the atom group to calculate. Default to "cation".
+            species: The select_dict key of the atom group to calculate. Default to "cation".
 
         Print self-diffusion coefficient in m^2/s and NE conductivity in mS/cm.
         """
@@ -625,15 +631,17 @@ class MdRun:
             if species.lower() == "cation" or species.lower() == "li":
                 print("NE Conductivity of all " + species + ":", sigma, "mS/cm")
 
-    def get_neighbor_corr(self, species_dict, run_start, run_end):
+    def get_neighbor_corr(
+        self, species_dict: Dict[str, Union[int, float]], run_start: int, run_end: int
+    ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """Calculates the neighbor auto-correlation function (ACF)
         of selected species around cation
 
         Args:
-            species_dict (dict): Dict of Cutoff distance of neighbor
+            species_dict: Dict of Cutoff distance of neighbor
                 for each species.
             run_start: Start time step.
-            run_end (int): End time step.
+            run_end: End time step.
 
         Returns an array of the time series and a dict of ACFs of each species.
         """
@@ -646,12 +654,14 @@ class MdRun:
             run_end,
         )
 
-    def get_residence_time(self, species_list, times, acf_avg_dict, cutoff_time):
+    def get_residence_time(
+        self, species_list: List[str], times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
+    ):
         """Calculates the residence time of selected species around cation
 
         Args:
-            species_list (list): List of species name.
-            times (np.ndarray): The time series.
+            species_list: List of species name.
+            times: The time series.
             acf_avg_dict: A dict of ACFs of each species.
             cutoff_time (int): Cutoff time for fitting the exponential decay.
 
@@ -659,16 +669,18 @@ class MdRun:
         """
         return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
 
-    def get_neighbor_trj(self, run_start, run_end, li_atom, species, distance):
+    def get_neighbor_trj(
+        self, run_start: int, run_end: int, li_atom: AtomGroup, species: str, distance: Union[int, float]
+    ) -> Dict[str, np.float64]:
         """Calculates the distance of cation-neighbor as a function of time
 
         Args:
-            run_start (int): start time step.
-            run_end (int): end time step.
-            li_atom (MDAnalysis.core.groups.Atom): the interested cation
+            run_start: start time step.
+            run_end: end time step.
+            li_atom: the interested cation
                 atom object.
-            species (str): The interested neighbor species.
-            distance (int or float): The coordination cutoff distance.
+            species: The interested neighbor species.
+            distance: The coordination cutoff distance.
 
         Returns a dict of distance arrays of cation-neighbor
         as a function of time with neighbor id as keys.
@@ -683,26 +695,37 @@ class MdRun:
             distance,
         )
 
-    def get_hopping_freq_dist(self, run_start, run_end, species, distance, hopping_cutoff, smooth=51, mode="full"):
+    def get_hopping_freq_dist(
+        self,
+        run_start: int,
+        run_end: int,
+        binding_site: str,
+        distance: Union[int, float],
+        hopping_cutoff: Union[int, float],
+        floating_ion: str = "cation",
+        smooth: int = 51,
+        mode: str = "full",
+    ) -> Tuple[np.float64, np.float64]:
         """Calculates the cation hopping rate and hopping distance
 
         Args:
-            run_start (int): Start time step.
-            run_end (int): End time step.
-            species (str): cation Binding site species.
-            distance (int or float): Binding cutoff distance.
-            hopping_cutoff: (int or float): Detaching cutoff distance.
-            smooth (int): The length of the smooth filter window. Default to 51.
-            mode (str): The mode of treating hopping event. Default to "full".
+            run_start: Start time step.
+            run_end: End time step.
+            binding_site: Floating ion binding site species.
+            distance: Binding cutoff distance.
+            hopping_cutoff: Detaching cutoff distance.
+            floating_ion: Floating ion species.
+            smooth: The length of the smooth filter window. Default to 51.
+            mode: The mode of treating hopping event. Default to "full".
 
         Returns the cation average hopping rate and average hopping distance.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_ion))
         freqs = []
         hopping_distance = []
-        for li in tqdm(li_atoms[:]):
-            neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species, self.select_dict, distance)
+        for ion in tqdm(floating_atoms[:]):
+            neighbor_trj = trajectory(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
             if mode == "full":
                 sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
             elif mode == "free":
@@ -713,46 +736,45 @@ class MdRun:
                 raise ValueError("invalid mode")
             coords = []
             for step in steps:
-                coord_li = nvt_run.trajectory[step + run_start][li.id - 1]
-                coords.append(coord_li)
+                coord_ion = nvt_run.trajectory[step + run_start][ion.id - 1]
+                coords.append(coord_ion)
             if len(coords) > 1:
                 dists = []
                 for i in range(len(coords) - 1):
                     dist = distance_array(coords[i + 1], coords[i], box=self.get_nvt_dimension())[0][0]
                     dists.append(dist)
-                li_mean_dists = np.mean(dists)
-                hopping_distance.append(li_mean_dists)
+                ion_mean_dists = np.mean(dists)
+                hopping_distance.append(ion_mean_dists)
             freqs.append(freq)
         return np.mean(freqs), np.mean(hopping_distance)
 
     def shell_evolution(
         self,
-        species_dict,
-        run_start,
-        run_end,
-        lag_step,
-        distance,
-        hopping_cutoff,
-        smooth=51,
-        cool=0,
-        center="center",
-        duplicate_run=None,
+        species_dict: Dict[str, Union[int, float]],
+        run_start: int,
+        run_end: int,
+        lag_step: int,
+        binding_cutoff: Union[int, float],
+        hopping_cutoff: Union[int, float],
+        smooth: int = 51,
+        cool: int = 0,
+        center: str = "center",
+        duplicate_run: Optional[List[MdRun]] = None,
     ):
         """Calculates the coordination number of species in the species_dict
         as a function of time before and after hopping events.
 
         Args:
-            species_dict (dict): A dict of coordination cutoff distance
-                of interested species.
-            run_start (int): Start time step.
-            run_end (int): End time step.
-            lag_step (int): time steps to track before and after the hopping event
-            distance (int or float): Binding cutoff distance.
-            hopping_cutoff: (int or float): Detaching cutoff distance.
-            smooth (int): The length of the smooth filter window. Default to 51.
-            cool (int): The cool down timesteps between hopping in and hopping out.
-            center (str): The select_dict key of the binding site. Default to "center".
-            duplicate_run (list): Default to None.
+            species_dict: A dict of coordination cutoff distance of interested species.
+            run_start: Start time step.
+            run_end: End time step.
+            lag_step: time steps to track before and after the hopping event
+            binding_cutoff: Binding cutoff distance.
+            hopping_cutoff: Detaching cutoff distance.
+            smooth: The length of the smooth filter window. Default to 51.
+            cool: The cool down timesteps between hopping in and hopping out.
+            center: The select_dict key of the binding site. Default to "center".
+            duplicate_run: Default to None.
         """
         in_list = dict()
         out_list = dict()
@@ -767,7 +789,7 @@ class MdRun:
             run_start,
             run_end,
             lag_step,
-            distance,
+            binding_cutoff,
             hopping_cutoff,
             smooth,
             cool,
@@ -783,7 +805,7 @@ class MdRun:
                     run_start,
                     run_end,
                     lag_step,
-                    distance,
+                    binding_cutoff,
                     hopping_cutoff,
                     smooth,
                     cool,
