@@ -106,16 +106,18 @@ class MdRun:
         self.element_id_dict = mass_to_name(self.data.masses)
         assign_name(self.wrapped_run, self.element_id_dict)
         assign_name(self.unwrapped_run, self.element_id_dict)
-        self.select_dict = select_dict
-        self.res_dict = res_dict
-        if self.select_dict is None and self.res_dict is None:
+        if select_dict is None and res_dict is None:
             self.res_dict = res_dict_from_lammpsdata(self.data)
-        if self.res_dict is None:
-            self.res_dict = res_dict_from_select_dict(self.wrapped_run, self.select_dict)
+        elif self.res_dict is None:
+            self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
+        else:
+            self.res_dict = res_dict
         assign_resname(self.wrapped_run, self.res_dict)
         assign_resname(self.unwrapped_run, self.res_dict)
-        if self.select_dict is None:
+        if select_dict is None:
             self.select_dict = select_dict_from_resname(self.wrapped_run)
+        else:
+            self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
         self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
         self.cation_name = cation_name
