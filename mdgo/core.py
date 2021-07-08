@@ -2,6 +2,11 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements two core class MdRun and MdJob
+for molecular dynamics simulation analysis and job setup.
+"""
+
 import MDAnalysis
 import numpy as np
 import pandas as pd
@@ -28,8 +33,6 @@ from mdgo.coordination import (
     find_nearest,
     find_nearest_free_only,
     process_evol,
-    find_in_n_out,
-    check_contiguous_steps,
     heat_map,
     get_full_coords,
 )
@@ -46,26 +49,6 @@ __date__ = "Feb 9, 2021"
 class MdRun:
     """
     A core class for MD results analysis.
-
-    Args:
-        lammps_data (LammpsData): LammpsData object.
-        wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
-        unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
-        nvt_start (int): NVT start time step.
-        time_step (int or float): LAMMPS timestep.
-        name (str): Name of the MD run.
-        select_dict (dict): A dictionary of atom species, where each atom species name is a key
-                and the corresponding values are the selection language. This dict is intended for
-                analyzing interested atoms.
-        res_dict (dict): A dictionary of resnames, where each resname is a key
-                and the corresponding values are the selection language. This dict is intended for
-                analyzing interested residues (ions/molecules).
-        cation_name: Name of cation. Default to "cation".
-        anion_name: Name of anion. Default to "anion".
-        cation_charge: Charge of cation. Default to 1.
-        anion_charge: Charge of anion. Default to 1.
-        temperature: Temperature of the MD run. Default to 298.15.
-        cond (bool): Whether to calculate conductivity MSD. Default to True.
     """
 
     def __init__(
@@ -86,9 +69,29 @@ class MdRun:
         cond=True,
     ):
         """
-        Base constructor.
+        Base constructor. This is a low level constructor designed to work with
+         parsed data (mda.universe) or other bridging objects (CombinedData). Not
+        recommended to use directly.
 
-
+        Args:
+            lammps_data (LammpsData or CombinedData): LammpsData object.
+            wrapped_run (MDAnalysis.Universe): The Universe object of wrapped trajectory.
+            unwrapped_run (MDAnalysis.Universe): The Universe object of unwrapped trajectory.
+            nvt_start (int): NVT start time step.
+            time_step (int or float): LAMMPS timestep.
+            name (str): Name of the MD run.
+            select_dict (dict): A dictionary of atom species, where each atom species name is a key
+                    and the corresponding values are the selection language. This dict is intended for
+                    analyzing interested atoms.
+            res_dict (dict): A dictionary of resnames, where each resname is a key
+                    and the corresponding values are the selection language. This dict is intended for
+                    analyzing interested residues (ions/molecules).
+            cation_name: Name of cation. Default to "cation".
+            anion_name: Name of anion. Default to "anion".
+            cation_charge: Charge of cation. Default to 1.
+            anion_charge: Charge of anion. Default to 1.
+            temperature: Temperature of the MD run. Default to 298.15.
+            cond (bool): Whether to calculate conductivity MSD. Default to True.
         """
 
         self.wrapped_run = wrapped_run
@@ -519,12 +522,33 @@ class MdRun:
         return msd_array
 
     def get_msd_by_length(self, distance, run_start, run_end):
+        """
+
+        Args:
+            distance (int or float): The coordination cutoff distance.
+            run_start (int): Start time step.
+            run_end (int): End time step.
+
+        Returns:
+
+        """
         nvt_run = self.unwrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = special_msd(nvt_run, li_atoms, self.select_dict, distance, run_start, run_end)
         return free_array, attach_array
 
     def get_msd_partial(self, distance, run_start, run_end, largest=1000):
+        """
+
+        Args:
+            distance (int or float): The coordination cutoff distance.
+            run_start (int): Start time step.
+            run_end (int): End time step.
+            largest (int): The largest time sequence to trace.
+
+        Returns:
+
+        """
         nvt_run = self.unwrapped_run
         li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
         free_array, attach_array = partial_msd(
@@ -795,13 +819,13 @@ class MdRun:
                 nvt_run,
                 li,
                 sites,
-                4,
                 bind_atom_type,
                 cartesian_by_ref,
                 run_start,
                 run_end,
             )
             coord_list = np.concatenate((coord_list, coords), axis=0)
+        coord_list = coord_list[1:]
         if sym_dict:
             return get_full_coords(coord_list, **sym_dict, sample=sample)
         else:
@@ -840,12 +864,27 @@ class MdJob:
     """
 
     def __init__(self, name):
+        """
+        Base constructor
+        """
         self.name = name
 
     @classmethod
     def from_dict(cls):
+        """
+        Constructor.
+
+        Returns:
+
+        """
         return cls("name")
 
     @classmethod
     def from_recipe(cls):
+        """
+        Constructor.
+
+        Returns:
+
+        """
         return cls("name")

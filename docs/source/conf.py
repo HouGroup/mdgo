@@ -76,6 +76,7 @@ html_theme_options = {
 }
 
 autodoc_mock_imports = [
+    "typing_extensions",
     "numpy",
     "pandas",
     "matplotlib",

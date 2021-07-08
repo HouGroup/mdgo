@@ -15,9 +15,11 @@ set the folder of the packmol executable to the PATH environment variable.
 
 import subprocess
 import os
-import tempfile
+
+# import tempfile
 from typing import Optional, List, Dict
-from subprocess import PIPE, Popen
+
+# from subprocess import PIPE, Popen
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

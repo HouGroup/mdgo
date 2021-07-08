@@ -1,3 +1,7 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
+
 """
 Computes the volume for each ligand or active site in a file.
 
@@ -10,24 +14,31 @@ the cube is defined by the -xsize, -ysize and -zsize options.
 
 """
 
-import math
 import sys
 import os
 import argparse
 from pymatgen.core import Molecule, Element
-from typing import Union, Optional
+from typing import Union, Optional, Tuple, Dict
+import numpy as np
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902
 
 
 def parse_command_line():
+    """
+
+    Returns:
+
+    """
     usage = """
     python volume.py -xyz <input_xyz> [options]
     """
     parser = argparse.ArgumentParser(usage=usage, description=__doc__)
 
-    parser.add_argument("-i", "-ixyz", type=str, dest="ixzy", default="", help="Input xyz file name", metavar="FILE")
+    parser.add_argument(
+        "-i", "-xyz", type=str, dest="ixyz", default="", help="Input xyz file name", metavar="FILE", required=True
+    )
     parser.add_argument(
         "-m",
         "-mode",
@@ -47,6 +58,73 @@ def parse_command_line():
         default="Bondi",
         help="Type of radii <Bondi|Lange|pymatgen> (default=Bondi)",
         metavar="TYPE",
+    )
+    parser.add_argument(
+        "-n",
+        "-name",
+        type=str,
+        dest="name",
+        default="",
+        help="Name of molecule",
+        metavar="NAME",
+    )
+    parser.add_argument(
+        "-v",
+        "-volume",
+        type=str,
+        dest="molar_volume",
+        choices=[
+            "yes",
+            "no",
+            "y",
+            "n",
+            "Y",
+            "N",
+            "Yes",
+            "No",
+            "1",
+            "0",
+            "t",
+            "f",
+            "T",
+            "F",
+            "true",
+            "True",
+            "false",
+            "False",
+        ],
+        default="yes",
+        help="Print volume as molar volume <yes(y/Y/Yes)|no(n/N/No)> (default=yes)",
+        metavar="YES OR NO",
+    )
+    parser.add_argument(
+        "-H",
+        "-exclude-h",
+        type=str,
+        dest="exclude_h",
+        choices=[
+            "yes",
+            "no",
+            "y",
+            "n",
+            "Y",
+            "N",
+            "Yes",
+            "No",
+            "1",
+            "0",
+            "t",
+            "f",
+            "T",
+            "F",
+            "true",
+            "True",
+            "false",
+            "False",
+        ],
+        default="yes",
+        help="Exclude volume of H <yes(y/Y/Yes)|no(n/N/No)> (default=yes)",
+        metavar="YES OR NO",
     )
     parser.add_argument(
         "-r",
@@ -121,7 +199,20 @@ def parse_command_line():
     return args
 
 
-def get_max_dimensions(mol):
+def get_max_dimensions(
+    mol: Molecule,
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
+    """
+    Calculates the dimension of a Molecule
+
+    Args:
+        mol: A Molecule object.
+
+    Returns:
+        xmin, xmax, ymin, ymax, zmin, zmax
+    """
 
     xmin = 9999
     ymin = 9999
@@ -145,33 +236,125 @@ def get_max_dimensions(mol):
     return xmin, xmax, ymin, ymax, zmin, zmax
 
 
-def set_max_dimensions(x, y, z, xsize, ysize, zsize):
-    xmin = x - (xsize / 2)
-    xmax = x + (xsize / 2)
-    ymin = y - (ysize / 2)
-    ymax = y + (ysize / 2)
-    zmin = z - (zsize / 2)
-    zmax = z + (zsize / 2)
-    return xmin, xmax, ymin, ymax, zmin, zmax
+def set_max_dimensions(
+    x: Union[float, int] = 0.0,
+    y: Union[float, int] = 0.0,
+    z: Union[float, int] = 0.0,
+    x_size: Union[float, int] = 10.0,
+    y_size: Union[float, int] = 10.0,
+    z_size: Union[float, int] = 10.0,
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
+    """
+    Set the max dimensions for calculating active site volume.
+    Args:
+        x: X center for volume grid. Default to 0.0.
+        y: Y center for volume grid. Default to 0.0.
+        z: Y center for volume grid. Default to 0.0.
+        x_size: X side length for volume grid. Default to 10.0.
+        y_size: Y side length for volume grid. Default to 10.0.
+        z_size: Z side length for volume grid. Default to 10.0.
+
+    Returns:
+        x_min, x_max, y_min, y_max, z_min, z_max
+    """
+    x_min = x - (x_size / 2)
+    x_max = x + (x_size / 2)
+    y_min = y - (y_size / 2)
+    y_max = y + (y_size / 2)
+    z_min = z - (z_size / 2)
+    z_max = z + (z_size / 2)
+    return x_min, x_max, y_min, y_max, z_min, z_max
 
 
-def round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax):
-    buffer = 1.5  # addition to box for ligand calculations
-    x0 = math.floor(xmin - buffer)
-    x1 = math.ceil(xmax + buffer)
-    y0 = math.floor(ymin - buffer)
-    y1 = math.ceil(ymax + buffer)
-    z0 = math.floor(zmin - buffer)
-    z1 = math.ceil(zmax + buffer)
+def round_dimensions(
+    x_min: Union[float, int],
+    x_max: Union[float, int],
+    y_min: Union[float, int],
+    y_max: Union[float, int],
+    z_min: Union[float, int],
+    z_max: Union[float, int],
+    mode: str = "lig",
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
+    """
+    Round dimensions to a larger box size (+ buffer).
+
+    Args:
+        x_min: x min.
+        x_max: x max.
+        y_min: y min.
+        y_max: y max.
+        z_min: z min.
+        z_max: z max.
+        mode: "lig" or "act" mode. Default to "lig".
+
+    Returns:
+        x0, x1, y0, y1, z0, z1
+    """
+    buffer = 0.0  # addition to box for ligand calculations
+    if mode == "lig":
+        buffer = 1.5
+    x0 = np.floor(x_min - buffer)
+    x1 = np.ceil(x_max + buffer)
+    y0 = np.floor(y_min - buffer)
+    y1 = np.ceil(y_max + buffer)
+    z0 = np.floor(z_min - buffer)
+    z1 = np.ceil(z_max + buffer)
     return x0, x1, y0, y1, z0, z1
 
 
-def dsq(a1, a2, a3, b1, b2, b3):
+def dsq(
+    a1: Union[float, int],
+    a2: Union[float, int],
+    a3: Union[float, int],
+    b1: Union[float, int],
+    b2: Union[float, int],
+    b3: Union[float, int],
+) -> Union[float, int]:
+    """
+    Squared distance between a and b
+
+    Args:
+        a1: x coordinate of a
+        a2: y coordinate of a
+        a3: z coordinate of a
+        b1: x coordinate of b
+        b2: y coordinate of b
+        b3: z coordinate of b
+
+    Returns:
+        squared distance
+    """
     d2 = (b1 - a1) ** 2 + (b2 - a2) ** 2 + (b3 - a3) ** 2
     return d2
 
 
-def get_dimensions(x0, x1, y0, y1, z0, z1, res):
+def get_dimensions(
+    x0: Union[float, int],
+    x1: Union[float, int],
+    y0: Union[float, int],
+    y1: Union[float, int],
+    z0: Union[float, int],
+    z1: Union[float, int],
+    res: Union[float, int] = 0.1,
+) -> Tuple[int, int, int]:
+    """
+    Mesh dimensions in unit of res.
+    Args:
+        x0: x min.
+        x1: x max.
+        y0: y min.
+        y1: y max.
+        z0: z min.
+        z1: z max.
+        res: Resolution of the mesh to use in Å
+
+    Returns:
+        xsteps, ysteps, zsteps
+    """
     xrange = x1 - x0
     yrange = y1 - y0
     zrange = z1 - z0
@@ -183,20 +366,33 @@ def get_dimensions(x0, x1, y0, y1, z0, z1, res):
     return xsteps, ysteps, zsteps
 
 
-##################################
-def make_matrix(xnum, ynum, znum):
+def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
+    """
+    Make a matrix of None with specified dimensions.
+    Args:
+        x_num: x dimension.
+        y_num: y dimension.
+        z_num: z dimension.
 
-    matrix = [None] * xnum
-    for i in range(xnum):
-        matrix[i] = [None] * ynum
-        for j in range(ynum):
-            matrix[i][j] = [None] * znum
+    Returns:
+        matrix
+    """
+
+    matrix = np.array([[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)])
     return matrix
 
 
-def get_radii(type):
-    radii = {}
-    if type == "Bondi":
+def get_radii(radii_type: str = "Bondi") -> Dict[str, float]:
+    """
+    Get a radii dict by type.
+
+    Args:
+        radii_type: The radii type. Valid types are "Bondi", "Lange", and "pymatgen". Default to "Bondi".
+
+    Returns: a radii dict.
+
+    """
+    if radii_type == "Bondi":
         radii = {
             "H": 1.20,
             "B": 2.00,
@@ -211,7 +407,7 @@ def get_radii(type):
             "Br": 1.85,
             "I": 1.98,
         }
-    elif type == "Lange":  # from Lange's Handbook of Chemistry
+    elif radii_type == "Lange":  # from Lange's Handbook of Chemistry
         radii = {
             "H": 1.20,
             "B": 2.08,
@@ -226,7 +422,7 @@ def get_radii(type):
             "Br": 1.95,
             "I": 2.15,
         }
-    elif type == "pymatgen":
+    elif radii_type == "pymatgen":
         radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__.keys()}
     else:
         print("Wrong option for radii type: Choose Bondi, Lange, or pymatgen")
@@ -234,7 +430,38 @@ def get_radii(type):
     return radii
 
 
-def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
+def fill_volume_matrix(
+    mol: Molecule,
+    x0: Union[int, float],
+    x1: Union[int, float],
+    y0: Union[int, float],
+    y1: Union[int, float],
+    z0: Union[int, float],
+    z1: Union[int, float],
+    res: Union[int, float],
+    matrix: np.ndarray,
+    radii_type: str,
+    exclude_h: bool = True,
+) -> np.ndarray:
+    """
+    This method perform the mesh point filling algorithm on a given matrix.
+
+    Args:
+        mol: The Molecule object to calculate volume.
+        x0: x min.
+        x1: x max.
+        y0: y min.
+        y1: y max.
+        z0: z min.
+        z1: z max.
+        res: Resolution of the mesh to use when estimating molar volume, in Å
+        matrix: The mesh matrix to perform mesh point filling.
+        radii_type: The radii type. Valid types are "Bondi", "Lange", and "pymatgen". Default to "Bondi".
+        exclude_h: Whether to exclude H when estimating molar volume. Default to True.
+
+    Returns:
+        The filled matrix.
+    """
     sys.stdout.flush()
 
     radii = get_radii(radii_type)  # approximate heavy-atom radii
@@ -248,9 +475,10 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
     zsteps = int(zrange // res)
 
     for a in mol.sites:
-        element = a.species.elements[0]
-        if element == "H":
-            continue
+        element = str(a.species.elements[0])
+        if exclude_h:
+            if element == "H":
+                continue
         radius = radii.get(element, DEFAULT_VDW)
         for i in range(0, xsteps):
             if abs(a.x - (x0 + 0.5 * res + i * res)) < radius:
@@ -278,33 +506,72 @@ def fill_volume_matrix(mol, x0, x1, y0, y1, z0, z1, res, matrix, radii_type):
     return matrix
 
 
-def print_occupied_volume(matrix, res, name):
-
-    v = 0
-    i = -1
-    for x in matrix:
-        i += 1
-        j = -1
-        for y in x:
-            j += 1
-            k = -1
-            for z in y:
-                k += 1
-                if matrix[i][j][k] == 1:
-                    v += 1
-
-    v = v * res * res * res
-    print(name + " volume = %5.1f Å^3" % v)
-    print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
-    return v * 0.6022
-
-
-def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0.1, radii_type="Bondi") -> float:
+def get_occupied_volume(
+    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
+) -> float:
     """
-    Estimate the molar volume in cm^3/mol
+    Get the occupied volume of the molecule in the box.
+    Args:
+        matrix: The filled mesh matrix.
+        res: Resolution of the mesh in Å.
+        name: The name of the molecule
+        molar_volume: Whether to return molar_volume, otherwise molecular volume. Default to True.
+
+    Returns:
+        Volume
+    """
+    v = np.count_nonzero(matrix) * res * res * res
+    if name is not None:
+        print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
+    if molar_volume:
+        return v * 0.60221409  # cm^3/mol
+    else:
+        return v  # Å^3
+
+
+def get_unoccupied_volume(
+    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
+) -> float:
+    """
+    Get the unoccupied volume of the molecule in the box.
+    Args:
+        matrix: The filled mesh matrix.
+        res: Resolution of the mesh in Å.
+        name: The name of the molecule
+        molar_volume: Whether to return molar_volume, otherwise molecular volume. Default to True.
+
+    Returns:
+        Volume
+    """
+    v = np.count_nonzero(matrix == 0) * res * res * res
+    if name is not None:
+        print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
+    if molar_volume:
+        return v * 0.60221409  # cm^3/mol
+    else:
+        return v  # Å^3
+
+
+def molecular_volume(
+    mol: Union[str, Molecule],
+    name: Optional[str] = None,
+    res: Union[int, float] = 0.1,
+    radii_type: str = "Bondi",
+    molar_volume: bool = True,
+    exclude_h: bool = True,
+    mode: str = "lig",
+    x_cent: Union[int, float] = 0.0,
+    y_cent: Union[int, float] = 0.0,
+    z_cent: Union[int, float] = 0.0,
+    x_size: Union[int, float] = 10.0,
+    y_size: Union[int, float] = 10.0,
+    z_size: Union[int, float] = 10.0,
+) -> float:
+    """
+    Estimate the molar volume in cm^3/mol or volume in Å^3
 
     Args:
-        path: Molecule object or path to .xyz or other file that can be read
+        mol: Molecule object or path to .xyz or other file that can be read
             by Molecule.from_file()
         name: String representing the name of the molecule, e.g. "NaCl"
         res: Resolution of the mesh to use when estimating molar volume, in Å
@@ -313,51 +580,50 @@ def molecular_volume(path: Union[str, Molecule], name: Optional[str] = "", res=0
             and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
             which are available for most elements and reflect the latest values in
             the CRC handbook.
+        molar_volume: Whether to return molar volume. If false, then return volume.
+            Default to True (molar volume).
+        exclude_h: Whether to exclude H atoms during the calculation.
+            Default to True.
+        mode: In ligand mode ("lig"), the volume of the entire structure is calculated.
+            In active site mode ("act"), the unoccupied volume within a cube is calculated.
+            Default to "lig".
+        x_cent: X center for volume grid. Default to 0.0.
+        y_cent: Y center for volume grid. Default to 0.0.
+        z_cent: Z center for volume grid. Default to 0.0.
+        x_size: X side length for volume grid. Default to 10.0.
+        y_size: Y side length for volume grid. Default to 10.0.
+        z_size: Z side length for volume grid. Default to 10.0.
+
     Returns:
-        float: The molar volume in cm^3/mol.
+        float: The molar volume in cm^3/mol or volume in Å^3.
     """
-    if isinstance(path, str):
-        molecule = Molecule.from_file(path)
+    if isinstance(mol, str):
+        molecule = Molecule.from_file(mol)
     else:
-        molecule = path
-    xmin, xmax, ymin, ymax, zmin, zmax = get_max_dimensions(molecule)
-    x0, x1, y0, y1, z0, z1 = round_dimensions(xmin, xmax, ymin, ymax, zmin, zmax)
-    xnum, ynum, znum = get_dimensions(x0, x1, y0, y1, z0, z1, res)
-    volume_matrix = make_matrix(xnum, ynum, znum)
-    volume_matrix = fill_volume_matrix(molecule, x0, x1, y0, y1, z0, z1, res, volume_matrix, radii_type)
-    molar_vol = print_occupied_volume(volume_matrix, res, name)
+        molecule = mol
+    if mode == "lig":
+        print("Calculating occupied volume...")
+        x_min, x_max, y_min, y_max, z_min, z_max = get_max_dimensions(molecule)
+        x0, x1, y0, y1, z0, z1 = round_dimensions(x_min, x_max, y_min, y_max, z_min, z_max, mode)
+    elif mode == "act":
+        print("Calculating unoccupied volume...")
+        x0, x1, y0, y1, z0, z1 = set_max_dimensions(x_cent, y_cent, z_cent, x_size, y_size, z_size)
+    else:
+        raise ValueError("Mode options are 'lig' and 'act'.")
+    x_num, y_num, z_num = get_dimensions(x0, x1, y0, y1, z0, z1, res)
+    volume_matrix = make_matrix(x_num, y_num, z_num)
+    volume_matrix = fill_volume_matrix(
+        molecule, x0, x1, y0, y1, z0, z1, res, volume_matrix, radii_type, exclude_h=exclude_h
+    )
+    if mode == "lig":
+        molar_vol = get_occupied_volume(volume_matrix, res, name, molar_volume=molar_volume)
+    else:
+        molar_vol = get_unoccupied_volume(volume_matrix, res, name, molar_volume=molar_volume)
     return molar_vol
 
 
 if __name__ == "__main__":
     """
-    options = parse_command_line()
-    if options.mode == "lig":
-        print("Calculating occupied volume...")
-    elif options.mode == "act":
-        print("Calculating unoccupied volume...")
-    print("Title, Volume(A^3)")
-
-    for st in structure.StructureReader(options.imae):
-        if options.mode == "lig":
-            (xmin, xmax, ymin, ymax, zmin, zmax) = get_max_dimensions(st)
-            (x0, x1, y0, y1, z0, z1) = round_dimensions(
-                xmin, xmax, ymin, ymax, zmin, zmax, options.mode)
-        elif options.mode == "act":
-            (x0, x1, y0, y1, z0, z1) = set_max_dimensions(
-                options.xcent, options.ycent, options.zcent, options.xsize,
-                options.ysize, options.zsize)
-        (xnum, ynum, znum) = get_dimensions(x0, x1, y0, y1, z0, z1, options.res)
-        volume_matrix = make_matrix(xnum, ynum, znum)
-        volume_matrix = fill_volume_matrix(st, x0, x1, y0, y1, z0, z1,
-                                           options.res, volume_matrix,
-                                           options.radii_type)
-        if options.mode == "lig":
-            print_occupied_volume(volume_matrix, options.res)
-        elif options.mode == "act":
-            print_unoccupied_volume(volume_matrix, options.res)
-
-
     ec = Molecule.from_file(
         "/Users/th/Downloads/package/packmol-17.163/EC.xyz"
     )
@@ -376,6 +642,18 @@ if __name__ == "__main__":
     lipf6 = Molecule.from_file(
         "/Users/th/Downloads/package/packmol-17.163/LiPF6.xyz"
     )
-    print(molecular_volume(lipf6, "lipf6"), "cm^3/mol")
-    print(molecular_volume(pf6, "pf6"), "cm^3/mol")
     """
+    options = parse_command_line()
+
+    print(
+        molecular_volume(
+            options.ixyz,
+            name=options.name if options.name != "" else None,
+            res=options.res,
+            radii_type=options.radii_type,
+            molar_volume=options.molar_volume in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
+            exclude_h=options.exclude_h in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
+            mode=options.mode,
+        ),
+        "cm^3/mol",
+    )

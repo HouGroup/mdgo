@@ -2,6 +2,10 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+This module implements functions to calculate the ionic conductivity.
+"""
+
 import numpy as np
 from tqdm.notebook import tqdm
 from scipy import stats
