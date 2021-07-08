@@ -199,7 +199,11 @@ def parse_command_line():
     return args
 
 
-def get_max_dimensions(mol: Molecule):
+def get_max_dimensions(
+    mol: Molecule,
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
     """
     Calculates the dimension of a Molecule
 
@@ -272,7 +276,9 @@ def round_dimensions(
     z_min: Union[float, int],
     z_max: Union[float, int],
     mode: str = "lig",
-) -> Tuple[int, int, int, int, int, int]:
+) -> Tuple[
+    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
+]:
     """
     Round dimensions to a larger box size (+ buffer).
 
