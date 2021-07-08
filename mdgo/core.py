@@ -11,7 +11,7 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Union, Dict, Tuple, List, Optional
+from typing import Union, Dict, Tuple, List, Optional, Any
 from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.analysis.distances import distance_array
@@ -108,7 +108,7 @@ class MdRun:
         assign_name(self.unwrapped_run, self.element_id_dict)
         if select_dict is None and res_dict is None:
             self.res_dict = res_dict_from_lammpsdata(self.data)
-        elif self.res_dict is None:
+        elif res_dict is None:
             self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
         else:
             self.res_dict = res_dict
@@ -671,7 +671,7 @@ class MdRun:
 
     def get_neighbor_trj(
         self, run_start: int, run_end: int, li_atom: AtomGroup, species: str, distance: Union[int, float]
-    ) -> Dict[str, np.float64]:
+    ) -> Dict[str, np.floating]:
         """Calculates the distance of cation-neighbor as a function of time
 
         Args:
@@ -705,7 +705,7 @@ class MdRun:
         floating_ion: str = "cation",
         smooth: int = 51,
         mode: str = "full",
-    ) -> Tuple[np.float64, np.float64]:
+    ) -> Tuple[np.floating, np.floating]:
         """Calculates the cation hopping rate and hopping distance
 
         Args:
@@ -760,7 +760,7 @@ class MdRun:
         cool: int = 0,
         center: str = "center",
         duplicate_run: Optional[List[MdRun]] = None,
-    ):
+    ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
         """Calculates the coordination number of species in the species_dict
         as a function of time before and after hopping events.
 
@@ -776,8 +776,8 @@ class MdRun:
             center: The select_dict key of the binding site. Default to "center".
             duplicate_run: Default to None.
         """
-        in_list = dict()
-        out_list = dict()
+        in_list: Dict[str, List[Any]] = dict()
+        out_list: Dict[str, List[Any]] = dict()
         for k in list(species_dict):
             in_list[k] = []
             out_list[k] = []
@@ -827,50 +827,50 @@ class MdRun:
 
     def get_heat_map(
         self,
-        run_start,
-        run_end,
-        species,
-        distance,
-        hopping_cutoff,
-        cartesian_by_ref=None,
-        bind_atom_type=None,
-        sym_dict=None,
-        sample=None,
-        smooth=51,
-    ):
-        """Calculates the heatmap matrix of cation around a cluster/molecule
+        run_start: int,
+        run_end: int,
+        cluster_center: str,
+        cluster_terminal: str,
+        binding_cutoff: Union[int, float],
+        hopping_cutoff: Union[int, float],
+        floating_ion: str = "cation",
+        cartesian_by_ref: np.ndarray = None,
+        sym_dict: Dict[str, List[np.ndarray]] = None,
+        sample: Optional[int] = None,
+        smooth: int = 51,
+    ) -> np.ndarray:
+        """Calculates the heatmap matrix of floating ion around a cluster
 
         Args:
-            run_start (int): Start time step.
-            run_end (int): End time step.
-            species (str): cation Binding site species.
-            distance (int or float): Binding cutoff distance.
-            hopping_cutoff: (int or float): Detaching cutoff distance.
-            cartesian_by_ref (np.array): Transformation matrix between cartesian
+            run_start: Start time step.
+            run_end: End time step.
+            cluster_center: The center atom species of the cluster.
+            cluster_terminal: The terminal atom species of the cluster
+                (typically the binding site for the ion).
+            binding_cutoff: Binding cutoff distance.
+            hopping_cutoff: Detaching cutoff distance.
+            floating_ion: The species of the floating ion.
+            cartesian_by_ref: Transformation matrix between cartesian
                 and reference coordinate systems. Default to None.
-            bind_atom_type (str): Selection for binding site atom.
-                Default to None.
-            sym_dict (dict): Dictionary of symmetry operation dictionary.
-                Default to None.
-            sample (int): Number of samples desired. Default to None,
-                which is no sampling.
-            smooth (int): The length of the smooth filter window. Default to 51.
+            sym_dict: Dictionary of symmetry operation dictionary. Default to None.
+            sample: Number of samples desired. Default to None, which is no sampling.
+            smooth: The length of the smooth filter window. Default to 51.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        li_atoms = nvt_run.select_atoms(self.select_dict.get(floating_ion))
         coord_list = np.array([[0, 0, 0]])
         for li in tqdm(li_atoms[:]):
-            neighbor_trj = trajectory(nvt_run, li, run_start, run_end, species, self.select_dict, distance)
-            sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
-            if bind_atom_type is None:
-                bind_atom_type = self.select_dict.get("anion")
+            neighbor_trj = trajectory(nvt_run, li, run_start, run_end, cluster_center, self.select_dict, binding_cutoff)
+            sites, freq, steps = find_nearest(
+                neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
+            )
             if cartesian_by_ref is None:
                 cartesian_by_ref = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             coords = heat_map(
                 nvt_run,
                 li,
                 sites,
-                bind_atom_type,
+                cluster_terminal,
                 cartesian_by_ref,
                 run_start,
                 run_end,
@@ -882,7 +882,9 @@ class MdRun:
         else:
             return get_full_coords(coord_list, sample=sample)
 
-    def get_cluster_distance(self, run_start, run_end, neighbor_cutoff, cluster_center="center"):
+    def get_cluster_distance(
+        self, run_start: int, run_end: int, neighbor_cutoff: Union[int, float], cluster_center: str = "center"
+    ) -> np.floating:
         """Calculates the average distance of the center of clusters/molecules
 
         Args:
