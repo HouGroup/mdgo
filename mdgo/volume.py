@@ -18,7 +18,7 @@ import sys
 import os
 import argparse
 from pymatgen.core import Molecule, Element
-from typing import Union, Optional, Tuple, List, Dict
+from typing import Union, Optional, Tuple, Dict
 import numpy as np
 
 
@@ -507,7 +507,7 @@ def fill_volume_matrix(
 
 
 def get_occupied_volume(
-    matrix: List[List[List[int]]], res: Union[int, float], name: Optional[str] = None, molar_volume=True
+    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
 ) -> float:
     """
     Get the occupied volume of the molecule in the box.
@@ -530,7 +530,7 @@ def get_occupied_volume(
 
 
 def get_unoccupied_volume(
-    matrix: List[List[List[int]]], res: Union[int, float], name: Optional[str] = None, molar_volume=True
+    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
 ) -> float:
     """
     Get the unoccupied volume of the molecule in the box.
