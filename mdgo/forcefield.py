@@ -44,6 +44,7 @@ import shutil
 import signal
 import subprocess
 import numpy as np
+from typing import Union
 
 from typing import Optional
 from typing_extensions import Final
@@ -633,17 +634,17 @@ class ChargeWriter:
     A class for write, overwrite, scale charges of a LammpsData object.
 
     Args:
-        data (LammpsData): The provided LammpsData obj.
-        precision (int): Number of significant figures.
+        data: The provided LammpsData obj.
+        precision: Number of significant figures.
 
     """
 
-    def __init__(self, data, precision=10):
+    def __init__(self, data: LammpsData, precision: int = 10):
         """Base constructor."""
         self.data = data
         self.precision = precision
 
-    def scale(self, factor):
+    def scale(self, factor: Union[int, float]) -> LammpsData:
         """
 
         Args:
@@ -673,12 +674,12 @@ class ChargeWriter:
         items["topology"] = self.data.topology
         return LammpsData(**items)
 
-    def count_significant_figures(self, number):
+    def count_significant_figures(self, number: Union[int, float]) -> int:
         """
         Count significant figures in a float.
 
         Args:
-            number (int or float): The number to count.
+            number: The number to count.
 
         Returns:
 
