@@ -104,6 +104,46 @@ def calc_cond_msd(
     return msd
 
 
+def choose_msd_fitting_region(
+        msd: np.ndarray,
+        time_array: np.ndarray,
+) -> tuple:
+    """Chooses the optimal fitting regime for a mean-squared displacement.
+    The MSD should be of the form t^(\beta), where \beta = 1 corresponds
+    to the diffusive regime; as a rule of thumb, the MSD should exhibit this
+    linear behavior for at least a decade of time. Finds the region of the
+    MSD with the \beta value closest to 1.
+
+    Note:
+       If a \beta value great than 0.9 cannot be found, returns a warning
+       that the computed conductivity may not be reliable, and that longer
+       simulations or more replicates are necessary.
+
+    Args:
+        msd (numpy.array): mean squared displacement
+        time_array (numpy.array): times at which position data was collected in the simulation
+
+    Returns at tuple with the start of the fitting regime (int), end of the
+    fitting regime (int), and the beta value of the fitting regime (float).
+    """
+    beta_best = 0  # region with greatest linearity (beta = 1)
+    # choose fitting regions to check
+    for i in np.logspace(np.log10(2), np.log10(len(time_array) / 10), 10):  # try 10 regions
+        start = int(i)
+        end = int(i * 10)  # fit over one decade
+        msd_slope = np.gradient(np.log(msd[start:end]), np.log(time_array[start:end]))
+        beta = np.mean(np.array(msd_slope))
+        # check if beta in this region is better than regions tested so far
+        if (np.abs(beta - 1) < np.abs(beta_best - 1)) or beta_best == 0:
+            beta_best = beta
+            start_final = start
+            end_final = end
+    if beta_best < 0.9:
+        print("WARNING: MSD is not sufficiently linear (beta = {})." \
+              "Consider running simulations longer.".format(beta_best))
+    return start_final, end_final, beta_best
+
+
 def conductivity_calculator(
         time_array: np.ndarray,
         cond_array: np.ndarray,

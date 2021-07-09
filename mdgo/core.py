@@ -297,8 +297,8 @@ class MdRun:
             )
         if reference:
             slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
-                    self.time_array[int(np.log(len(self.time_array)) / 2)] - time_array[5])
-            ax.loglog(self.time_array[start:end], self.time_array[start:end] * slope_guess * 2, 'k--')
+                    self.time_array[int(np.log(len(self.time_array)) / 2)] - self.time_array[5])
+            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2, 'k--')
         if self.units == 'real':
             ax.set_ylabel("MSD (A$^2$)")
             ax.set_xlabel("Time (ps)")
@@ -315,14 +315,14 @@ class MdRun:
         """Calculates the Green-Kubo (GK) conductivity
 
         Args:
-            start (int): Start time step.
-            end (int): End time step.
+            start (int): Start time step for fitting MSD.
+            end (int): End time step for fitting MSD.
 
-        Print conductivity in mS/cm.
+        Print and return conductivity.
         """
-        conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp,
-                                self.units)
-        return None
+        cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp,
+                                       self.units)
+        return cond
 
     def coord_num_array_one_species(self, species, distance, run_start, run_end):
         """Calculates the coordination number array of one species around
