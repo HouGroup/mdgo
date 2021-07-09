@@ -117,7 +117,7 @@ class MdRun:
         if self.select_dict is None:
             self.select_dict = select_dict_from_resname(self.wrapped_run)
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
-        self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.time_array = [i * self.time_step for i in range(self.nvt_steps - self.nvt_start)]
         self.cation_name = cation_name
         self.anion_name = anion_name
         self.cation_charge = cation_charge
