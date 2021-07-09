@@ -51,6 +51,26 @@ __date__ = "Feb 9, 2021"
 class MdRun:
     """
     A core class for MD results analysis.
+
+    Args:
+        lammps_data: LammpsData object.
+        wrapped_run: The Universe object of wrapped trajectory.
+        unwrapped_run: The Universe object of unwrapped trajectory.
+        nvt_start: NVT start time step.
+        time_step: LAMMPS timestep.
+        name: Name of the MD run.
+        select_dict: A dictionary of atom species, where each atom species name is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested atoms.
+        res_dict: A dictionary of resnames, where each resname is a key
+                and the corresponding values are the selection language. This dict is intended for
+                analyzing interested residues (ions/molecules).
+        cation_name: Name of cation. Default to "cation".
+        anion_name: Name of anion. Default to "anion".
+        cation_charge: Charge of cation. Default to 1.
+        anion_charge: Charge of anion. Default to 1.
+        temperature: Temperature of the MD run. Default to 298.15.
+        cond: Whether to calculate conductivity MSD. Default to True.
     """
 
     def __init__(
@@ -74,26 +94,6 @@ class MdRun:
         Base constructor. This is a low level constructor designed to work with
          parsed data (mda.universe) or other bridging objects (CombinedData). Not
         recommended to use directly.
-
-        Args:
-            lammps_data: LammpsData object.
-            wrapped_run: The Universe object of wrapped trajectory.
-            unwrapped_run: The Universe object of unwrapped trajectory.
-            nvt_start: NVT start time step.
-            time_step: LAMMPS timestep.
-            name: Name of the MD run.
-            select_dict: A dictionary of atom species, where each atom species name is a key
-                    and the corresponding values are the selection language. This dict is intended for
-                    analyzing interested atoms.
-            res_dict: A dictionary of resnames, where each resname is a key
-                    and the corresponding values are the selection language. This dict is intended for
-                    analyzing interested residues (ions/molecules).
-            cation_name: Name of cation. Default to "cation".
-            anion_name: Name of anion. Default to "anion".
-            cation_charge: Charge of cation. Default to 1.
-            anion_charge: Charge of anion. Default to 1.
-            temperature: Temperature of the MD run. Default to 298.15.
-            cond: Whether to calculate conductivity MSD. Default to True.
         """
 
         self.wrapped_run = wrapped_run
@@ -610,10 +610,10 @@ class MdRun:
         free floating atoms, attach_array includes the MSD of binded/attached atoms.
 
         Args:
-            distance (int or float): The coordination cutoff distance.
-            run_start (int): Start time step.
-            run_end (int): End time step.
-            largest (int): The largest time sequence to trace.
+            distance: The coordination cutoff distance.
+            run_start: Start time step.
+            run_end: End time step.
+            largest: The largest time sequence to trace.
             center_atom: The interested atom. Default to "cation".
 
         Returns:
@@ -699,7 +699,7 @@ class MdRun:
             species_list: List of species name.
             times: The time series.
             acf_avg_dict: A dict of ACFs of each species.
-            cutoff_time (int): Cutoff time for fitting the exponential decay.
+            cutoff_time: Cutoff time for fitting the exponential decay.
 
         Returns the residence time of each species.
         """
@@ -932,10 +932,10 @@ class MdRun:
         """Calculates the average distance of the center of clusters/molecules
 
         Args:
-            run_start (int): Start time step.
-            run_end (int): End time step.
-            neighbor_cutoff (int of float): Upper limit of first nearest neighbor.
-            cluster_center (str): species name of cluster center. Default to "center".
+            run_start: Start time step.
+            run_end: End time step.
+            neighbor_cutoff: Upper limit of first nearest neighbor.
+            cluster_center: species name of cluster center. Default to "center".
         """
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(cluster_center))
         trj = self.wrapped_run.trajectory[run_start:run_end:]
