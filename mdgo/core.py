@@ -109,6 +109,7 @@ class MdRun:
         if select_dict is None and res_dict is None:
             self.res_dict = res_dict_from_lammpsdata(self.data)
         elif res_dict is None:
+            assert isinstance(select_dict, dict)
             self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
         else:
             self.res_dict = res_dict

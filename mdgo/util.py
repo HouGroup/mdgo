@@ -14,12 +14,15 @@ import re
 import pandas as pd
 import math
 import sys
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Optional
 from typing_extensions import Final
 from mdgo.volume import molecular_volume
 
 from pymatgen.core import Molecule
 from pymatgen.io.lammps.data import CombinedData
+
+from MDAnalysis import Universe
+from MDAnalysis.core.groups import Atom
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -285,9 +288,17 @@ DENSITY: Final[Dict[str, float]] = {
 }
 
 
-def atom_vec(atom1, atom2, dimension):
+def atom_vec(atom1: Atom, atom2: Atom, dimension: np.ndarray) -> np.ndarray:
     """
     Calculate the vector of the positions from atom2 to atom1.
+
+    Args:
+        atom1: Atom obj 1.
+        atom2: Atom obj 2.
+        dimension: box dimension.
+
+    Return:
+        The obtained vector
     """
     vec = [0, 0, 0]
     for i in range(3):
@@ -301,11 +312,23 @@ def atom_vec(atom1, atom2, dimension):
     return np.array(vec)
 
 
-def position_vec(pos1, pos2, dimension):
+def position_vec(
+    pos1: Union[List[Union[int, float]], np.ndarray],
+    pos2: Union[List[Union[int, float]], np.ndarray],
+    dimension: Union[List[Union[int, float]], np.ndarray],
+) -> np.ndarray:
     """
     Calculate the vector from pos2 to pos2.
+
+    Args:
+        pos1: Array of 3d coordinates 1.
+        pos2: Array of 3d coordinates 2.
+        dimension: box dimension.
+
+    Return:
+        The obtained vector.
     """
-    vec = [0, 0, 0]
+    vec: List[Union[int, float, np.floating]] = [0, 0, 0]
     for i in range(3):
         diff = pos1[i] - pos2[i]
         if diff > dimension[i] / 2:
@@ -317,31 +340,32 @@ def position_vec(pos1, pos2, dimension):
     return np.array(vec)
 
 
-def mass_to_name(df):
+def mass_to_name(df: pd.DataFrame) -> Dict[int, str]:
     """
     Create a dict for mapping atom type id to element from the mass information.
 
     Args:
-        df (pandas.DataFrame): The masses attribute from LammpsData object
+        df: The masses attribute from LammpsData object
+
     Return:
-        dict: The element dict.
+        The element dict.
     """
     atoms = {}
     for row in df.index:
         for item in MM_of_Elements.items():
             if math.isclose(df["mass"][row], item[1], abs_tol=0.01):
-                atoms[row] = item[0]
+                atoms[int(row)] = item[0]
     return atoms
 
 
-def assign_name(u, element_id_dict):
+def assign_name(u: Universe, element_id_dict: Dict[int, str]):
     """
-    Assgin resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing names.
+    Assign resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing names.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        element_id_dict (dict): A dictionary of atom types, where each type is a key
-                and the corresponding values are the element names.
+        u: The universe object to assign resnames to.
+        element_id_dict: A dictionary of atom types, where each type is a key
+            and the corresponding values are the element names.
     """
     u.add_TopologyAttr("name")
     for key, val in element_id_dict.items():
@@ -351,14 +375,14 @@ def assign_name(u, element_id_dict):
         atom_group.names = atom_names
 
 
-def assign_resname(u, res_dict):
+def assign_resname(u: Universe, res_dict: Dict[str, str]):
     """
-    Assgin resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing resnames.
+    Assign resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing resnames.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        res_dict (dict): A dictionary of resnames, where each resname is a key
-                and the corresponding values are the selection language.
+        u: The universe object to assign resnames to.
+        res_dict: A dictionary of resnames, where each resname is a key
+            and the corresponding values are the selection language.
     """
     u.add_TopologyAttr("resname")
     for key, val in res_dict.items():
@@ -368,16 +392,17 @@ def assign_resname(u, res_dict):
         res_group.residues.resnames = res_names
 
 
-def res_dict_from_select_dict(u, select_dict):
+def res_dict_from_select_dict(u: Universe, select_dict: Dict[str, str]) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from select_dict (atom selection) in a MDAnalysis.universe object.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        select_dict (dict): A dictionary of atom species, where each atom species name is a key
+        u: The universe object to assign resnames to.
+        select_dict: A dictionary of atom species, where each atom species name is a key
                 and the corresponding values are the selection language.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     saved_select = list()
     res_dict = dict()
@@ -397,14 +422,15 @@ def res_dict_from_select_dict(u, select_dict):
     return res_dict
 
 
-def res_dict_from_datafile(filename):
+def res_dict_from_datafile(filename: str) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from a LAMMPS data file.
 
     Args:
-        filename (str): Path to the data file. The data file must be generated by a CombinedData object.
+        filename: Path to the data file. The data file must be generated by a CombinedData object.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     res_dict = dict()
     with open(filename, "r") as f:
@@ -430,17 +456,18 @@ def res_dict_from_datafile(filename):
                     res_dict[name] = "resid " + str(start) + "-" + str(end - 1)
             return res_dict
         else:
-            return None
+            raise ValueError("The LAMMPS data file should be generated by pymatgen.io.lammps.data.")
 
 
-def res_dict_from_lammpsdata(lammps_data):
+def res_dict_from_lammpsdata(lammps_data: CombinedData) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from a LAMMPS data file.
 
     Args:
-        lammps_data (CombinedData): A CombinedData object.
+        lammps_data: A CombinedData object.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     assert isinstance(lammps_data, CombinedData)
     idx = 1
