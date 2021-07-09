@@ -920,7 +920,7 @@ class MdRun:
             coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:
-            return get_full_coords(coord_list, **sym_dict, sample=sample)
+            return get_full_coords(coord_list, sample=sample, **sym_dict)
         else:
             return get_full_coords(coord_list, sample=sample)
 

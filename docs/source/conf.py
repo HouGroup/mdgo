@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx_rtd_theme",
+    "sphinx_autodoc_typehints",
 ]
 
 source_suffix = [".rst"]
@@ -74,6 +75,8 @@ html_theme_options = {
     "logo_only": True,
     "display_version": False,
 }
+
+autodoc_typehints = "description"
 
 autodoc_mock_imports = [
     "typing_extensions",
