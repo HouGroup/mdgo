@@ -630,7 +630,7 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
         dfs = dict()
         dfs["atoms"] = pd.read_csv(
             StringIO(atoms),
-            names=SECTION_SORTER.get("atoms").get("in_header"),
+            names=SECTION_SORTER.get("atoms", dict()).get("in_header"),
             delim_whitespace=True,
             usecols=[0, 4, 5, 6],
         )
@@ -847,8 +847,8 @@ def sdf_to_pdb(
 
     # parse sdf file file
     with open(sdf_file, "r") as inp:
-        sdf = inp.readlines()
-        sdf = map(str.strip, sdf)
+        sdf_lines = inp.readlines()
+        sdf = list(map(str.strip, sdf_lines))
     if pubchem:
         title = "cid_"
     else:
@@ -867,37 +867,38 @@ def sdf_to_pdb(
         elif i in [1, 2]:
             continue
         elif i == 3:
-            line = line.split()
-            atoms = int(line[0])
-            bonds = int(line[1])
+            line_split = line.split()
+            atoms = int(line_split[0])
+            bonds = int(line_split[1])
             continue
         elif line.startswith("M  END"):
             break
         elif i in list(range(4, 4 + atoms)):
-            line = line.split()
+            line_split = line.split()
             newline = {
                 "ATOM": "HETATM",
                 "serial": int(i - 3),
-                "name": str(line[3]),
+                "name": str(line_split[3]),
                 "resName": "UNK",
                 "resSeq": 900,
-                "x": float(line[0]),
-                "y": float(line[1]),
-                "z": float(line[2]),
+                "x": float(line_split[0]),
+                "y": float(line_split[1]),
+                "z": float(line_split[2]),
                 "occupancy": 1.00,
                 "tempFactor": 0.00,
                 "altLoc": str(""),
                 "chainID": str(""),
                 "iCode": str(""),
-                "element": str(line[3]),
+                "element": str(line_split[3]),
                 "charge": str(""),
                 "segment": str(""),
             }
             pdb_atoms.append(newline)
         elif i in list(range(4 + atoms, 4 + atoms + bonds)):
-            atom1 = int(line.split()[0])
-            atom2 = int(line.split()[1])
-            order = int(line.split()[2])
+            line_split = line.split()
+            atom1 = int(line_split[0])
+            atom2 = int(line_split[1])
+            order = int(line_split[2])
             atom1s.append(atom1)
             atom2s.append(atom2)
             while order > 1:
@@ -916,31 +917,31 @@ def sdf_to_pdb(
         if credit:
             outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
         for n in range(atoms):
-            line = pdb_atoms[n].copy()
-            if len(line["name"]) == 3:
-                line["name"] = " " + line["name"]
+            line_dict = pdb_atoms[n].copy()
+            if len(line_dict["name"]) == 3:
+                line_dict["name"] = " " + line_dict["name"]
             # format pdb
             formatted_line = (
                 "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
                 "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
                 "{:<4s}{:>2s}{:<2s}"
             ).format(
-                line["ATOM"],
-                line["serial"],
-                line["name"],
-                line["altLoc"],
-                line["resName"],
-                line["chainID"],
-                str(line["resSeq"]),
-                line["iCode"],
-                line["x"],
-                line["y"],
-                line["z"],
-                line["occupancy"],
-                line["tempFactor"],
-                line["segment"],
-                line["element"],
-                line["charge"],
+                line_dict["ATOM"],
+                line_dict["serial"],
+                line_dict["name"],
+                line_dict["altLoc"],
+                line_dict["resName"],
+                line_dict["chainID"],
+                str(line_dict["resSeq"]),
+                line_dict["iCode"],
+                line_dict["x"],
+                line_dict["y"],
+                line_dict["z"],
+                line_dict["occupancy"],
+                line_dict["tempFactor"],
+                line_dict["segment"],
+                line_dict["element"],
+                line_dict["charge"],
             )
             # write
             outp.write(formatted_line + "\n")
@@ -951,8 +952,8 @@ def sdf_to_pdb(
         for i, atom in enumerate(atom2s):
             bond_lines[atom].append(atom1s[i])
         for i in range(len(orders)):
-            for j, line in enumerate(bond_lines):
-                if line[0] == orders[i][0]:
+            for j, ln in enumerate(bond_lines):
+                if ln[0] == orders[i][0]:
                     bond_lines.insert(j + 1, orders[i])
                     break
         for i in range(1, len(bond_lines)):
