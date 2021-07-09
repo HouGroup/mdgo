@@ -370,12 +370,12 @@ def heat_map(
             distances = distance_array(ts[floating_atom.id - 1], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)
             vertex_atoms = bind_atoms[idx[:3]]
-            vector_li = atom_vec(floating_atom, center_atom, ts.dimensions)
+            vector_atom = atom_vec(floating_atom, center_atom, ts.dimensions)
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
             vector_c = atom_vec(vertex_atoms[2], center_atom, ts.dimensions)
             basis_abc = np.transpose([vector_a, vector_b, vector_c])
-            abc_li = np.linalg.solve(basis_abc, vector_li)
+            abc_atom = np.linalg.solve(basis_abc, vector_atom)
             unit_x = np.linalg.norm(
                 cartesian_by_ref[0, 0] * vector_a
                 + cartesian_by_ref[0, 1] * vector_b
@@ -395,8 +395,8 @@ def heat_map(
             vector_y = cartesian_by_ref[1] / unit_y
             vector_z = cartesian_by_ref[2] / unit_z
             basis_xyz = np.transpose([vector_x, vector_y, vector_z])
-            xyz_li = np.linalg.solve(basis_xyz, abc_li)
-            coordinates.append(xyz_li)
+            xyz_atom = np.linalg.solve(basis_xyz, abc_atom)
+            coordinates.append(xyz_atom)
     return np.array(coordinates)
 
 
@@ -968,8 +968,7 @@ def coord_shell_array(nvt_run, func, center_atoms, species_dict, select_dict, ru
     """
     Args:
         nvt_run: MDAnalysis Universe
-        func: One of the neighbor statistical method (num_of_neighbor_one_li,
-            num_of_neighbor_one_li_simple)
+        func: One of the neighbor statistical method (num_of_neighbor, num_of_neighbor_simple)
         center_atoms: Atom group of the center atoms.
         species_dict (dict): A dict of coordination cutoff distance
             of the interested species.
