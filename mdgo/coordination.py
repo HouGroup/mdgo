@@ -12,7 +12,7 @@ from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
-from mdgo.util import atom_vec
+from mdgo.util import atom_vec, angle
 
 from typing import Dict, List, Union
 
@@ -884,25 +884,6 @@ def num_of_neighbor_one_li_simple_extra_two(
         cn_cip[kw] = np.mean(cn_values[kw][cip_step])
         cn_agg[kw] = np.mean(cn_values[kw][agg_step])
     return cn_ssip, cn_cip, cn_agg
-
-
-def angle(a, b, c):
-    """
-
-    Args:
-        a:
-        b:
-        c:
-
-    Returns:
-
-    """
-    ba = a - b
-    bc = c - b
-    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
-    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
-    angle_in_radian = np.arccos(cosine_angle)
-    return np.degrees(angle_in_radian)
 
 
 # Depth-first traversal

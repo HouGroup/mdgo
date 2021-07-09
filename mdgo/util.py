@@ -340,6 +340,26 @@ def position_vec(
     return np.array(vec)
 
 
+def angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.floating:
+    """
+    Calculate the angle between three atoms.
+
+    Args:
+        a: Coordinates of atom A.
+        b: Coordinates of atom B.
+        c: Coordinates of atom C.
+
+    Returns:
+        The degree A-B-C.
+    """
+    ba = a - b
+    bc = c - b
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
+    angle_in_radian = np.arccos(cosine_angle)
+    return np.degrees(angle_in_radian)
+
+
 def mass_to_name(df: pd.DataFrame) -> Dict[int, str]:
     """
     Create a dict for mapping atom type id to element from the mass information.
