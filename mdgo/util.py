@@ -14,7 +14,7 @@ import re
 import pandas as pd
 import math
 import sys
-from typing import List, Dict, Union, Tuple, Optional
+from typing import List, Dict, Union, Tuple, Optional, Any
 from typing_extensions import Final
 from mdgo.volume import molecular_volume
 
@@ -152,7 +152,7 @@ MM_of_Elements: Final[Dict[str, float]] = {
     "ZERO": 0,
 }
 
-SECTION_SORTER: Final[Dict[str, dict]] = {
+SECTION_SORTER: Final[Dict[str, Dict[str, Any]]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -515,16 +515,17 @@ def res_dict_from_lammpsdata(lammps_data: CombinedData) -> Dict[str, str]:
     return res_dict
 
 
-def select_dict_from_resname(u):
+def select_dict_from_resname(u: Universe) -> Dict[str, str]:
     """
     Infer select_dict (possibly interested atom species selection) from resnames in a MDAnalysis.universe object.
 
     Args:
-        u (MDAnalysis.universe): The universe object to work with.
+        u: The universe object to work with.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of atom species.
     """
-    select_dict = dict()
+    select_dict: Dict[str, str] = dict()
     resnames = np.unique(u.residues.resnames)
     for resname in resnames:
         if resname == "":
@@ -605,16 +606,17 @@ def extract_atom_from_molecule(resname, residue, select_dict):
     select_dict[resname] = "type " + neg_center.type
 
 
-def ff_parser(ff_dir, xyz_dir):
+def ff_parser(ff_dir: str, xyz_dir: str) -> str:
     """
     A parser to convert a force field field from Maestro format
     to LAMMPS data format.
 
     Args:
-        ff_dir (str): The path to the Maestro force field file.
-        xyz_dir (str): The path to the xyz structure file.
+        ff_dir: The path to the Maestro force field file.
+        xyz_dir: The path to the xyz structure file.
+
     Return:
-        str: The output LAMMPS data string.
+        The output LAMMPS data string.
     """
     with open(xyz_dir, "r") as f_xyz:
         molecule = pd.read_table(f_xyz, skiprows=2, delim_whitespace=True, names=["atom", "x", "y", "z"])
@@ -762,10 +764,9 @@ def concentration_matcher(
             the CRC handbook.
 
     Returns:
-        (list, float):
-            A list the number of molecules in the simulation box, starting with
-            the salt and followed by each solvent in 'solvents'. The list is followed
-            by a float of the approximate length of one side of the box in Å.
+        A list of number of molecules in the simulation box, starting with
+            the salt and followed by each solvent in 'solvents'.
+        The list is followed by a float of the approximate length of one side of the box in Å.
 
     """
     n_solvent = list()
@@ -832,7 +833,14 @@ def concentration_matcher(
         )
 
 
-def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, pubchem=True):
+def sdf_to_pdb(
+    sdf_file: str,
+    pdb_file: str,
+    write_title: bool = True,
+    remark4: bool = True,
+    credit: bool = True,
+    pubchem: bool = True,
+):
     """
     Convert SDF file to PDB file.
     """
@@ -845,7 +853,7 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
         title = "cid_"
     else:
         title = ""
-    pdb_atoms = list()
+    pdb_atoms: List[Dict[str, Any]] = list()
     # create pdb list of dictionaries
     atoms = 0
     bonds = 0
@@ -954,14 +962,15 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
         outp.write("END\n")  # final 'END'
 
 
-def strip_zeros(items):
+def strip_zeros(items: Union[List[Union[str, float, int]], str]) -> Optional[List[int]]:
     """
+    Strip the trailing zeros of a sequence.
 
     Args:
-        items:
+        items: The sequence.
 
-    Returns:
-
+    Return:
+        A new list of numbers.
     """
     new_items = [int(i) for i in items]
     while new_items[-1] == 0:
