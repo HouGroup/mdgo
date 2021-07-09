@@ -67,6 +67,7 @@ class MdRun:
             anion_charge=-1,
             temperature=298.5,
             cond=True,
+            units="real",
     ):
         """
         Base constructor. This is a low level constructor designed to work with
@@ -92,6 +93,7 @@ class MdRun:
             anion_charge: Charge of anion. Default to 1.
             temperature: Temperature of the MD run. Default to 298.15.
             cond (bool): Whether to calculate conductivity MSD. Default to True.
+            units (str): unit system (currently 'real' and 'lj' are supported)
         """
 
         self.wrapped_run = wrapped_run
@@ -141,6 +143,7 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+        self.units = units
 
     @classmethod
     def from_output_full(
@@ -259,9 +262,8 @@ class MdRun:
             self,
             start: int,
             end: int,
-            *runs: MdRun,
+            *runs: 'MdRun',
             reference: bool = True,
-            units: str = "real",
     ):
         """Plots the conductivity MSD as a function of time
 
@@ -296,11 +298,11 @@ class MdRun:
         if reference:
             slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
                     self.time_array[int(np.log(len(self.time_array)) / 2)] - time_array[5])
-            ax.loglog(time_array[start:end], time_array[start:end] * slope_guess * 2, 'k--')
-        if units == 'real':
+            ax.loglog(self.time_array[start:end], self.time_array[start:end] * slope_guess * 2, 'k--')
+        if self.units == 'real':
             ax.set_ylabel("MSD (A$^2$)")
             ax.set_xlabel("Time (ps)")
-        elif units == 'lj':
+        elif self.units == 'lj':
             ax.set_ylabel("MSD ($\sigma^2$)")
             ax.set_xlabel("Time ($\\tau$)")
         else:
@@ -318,7 +320,8 @@ class MdRun:
 
         Print conductivity in mS/cm.
         """
-        conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, T=self.temp)
+        conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp,
+                                self.units)
         return None
 
     def coord_num_array_one_species(self, species, distance, run_start, run_end):
