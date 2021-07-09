@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from typing import Union, Dict, Tuple, List, Optional, Any
 from pymatgen.io.lammps.data import LammpsData, CombinedData
-from MDAnalysis import Universe, AtomGroup
+from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.notebook import tqdm
@@ -29,8 +29,8 @@ from mdgo.util import (
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
-    num_of_neighbor_one_li,
-    num_of_neighbor_one_li_simple,
+    num_of_neighbor_one,
+    num_of_neighbor_one_simple,
     trajectory,
     find_nearest,
     find_nearest_free_only,
@@ -250,7 +250,8 @@ class MdRun:
     def get_cond_array(self) -> np.ndarray:
         """Calculates the conductivity "mean square displacement".
 
-        Returns an array of MSD values for each time in the trajectory.
+        Return:
+             An array of MSD values for each time in the trajectory.
         """
         nvt_run = self.unwrapped_run
         cations = nvt_run.select_atoms(self.select_dict.get("cation"))
@@ -317,27 +318,32 @@ class MdRun:
         return cond
 
     def coord_num_array_one_species(
-        self, species: str, distance: Union[int, float], run_start: int, run_end: int
+        self,
+        species: str,
+        distance: Union[int, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
     ) -> np.ndarray:
-        """Calculates the coordination number array of one species around
-        the cation.
+        """Calculates the coordination number array of one species around the interested center atoms.
 
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The interested atom. Default to "cation".
 
-        Returns an array of the species coordination number for each time
-        in the trajectory.
+        Return:
+             An array of coordination number for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
         species_dict = {species: distance}
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one_li,
-            li_atoms,
+            num_of_neighbor_one,
+            center_atoms,
             species_dict,
             self.select_dict,
             run_start,
@@ -350,31 +356,31 @@ class MdRun:
         species_dict: Dict[str, Union[int, float]],
         run_start: int,
         run_end: int,
+        center_atom: str = "cation",
     ) -> Dict[str, np.ndarray]:
-        """Calculates the coordination number array of multiple species around
-        the cation
+        """Calculates the coordination number array of multiple species around the interested center atom.
 
         Args:
             species_dict: A dict of coordination cutoff distance
                 of the interested species.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The interested atom. Default to "cation".
 
         Returns a python dict of arrays of coordination numbers of each species
          for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one_li,
-            li_atoms,
+            num_of_neighbor_one,
+            center_atoms,
             species_dict,
             self.select_dict,
             run_start,
             run_end,
         )
-
         return num_array
 
     def get_solvation_structure(
@@ -385,6 +391,7 @@ class MdRun:
         structure_code: int,
         write_freq: Union[int, float],
         write_path: str,
+        center_atom: str = "cation",
     ):
         """Writes out the desired solvation structure
 
@@ -398,15 +405,16 @@ class MdRun:
                 and one species C.
             write_freq: Probability to write out files.
             write_path: Path to write out files.
+            center_atom: The interested atom. Default to "cation".
 
         Write out a series of solvation structures as .xyz files .
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
-        for li in tqdm(li_atoms):
-            num_of_neighbor_one_li(
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        for atom in tqdm(center_atoms):
+            num_of_neighbor_one(
                 nvt_run,
-                li,
+                atom,
                 species_dict,
                 self.select_dict,
                 run_start,
@@ -419,27 +427,33 @@ class MdRun:
             )
 
     def coord_num_array_simple(
-        self, species: str, distance: Union[int, float], run_start: int, run_end: int
+        self,
+        species: str,
+        distance: Union[int, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
     ) -> np.ndarray:
         """Calculates the solvation structure type (1 for SSIP, 2 for CIP,
-        3 for AGG) array of the cation
+        3 for AGG) array of the interested center atom (typically the cation).
 
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The interested atom. Default to "cation".
 
         Returns an array of the solvation structure type
         for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
         species_dict = {species: distance}
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one_li_simple,
-            li_atoms,
+            num_of_neighbor_one_simple,
+            center_atoms,
             species_dict,
             self.select_dict,
             run_start,
@@ -530,8 +544,14 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def get_msd_all(self, start: int = 0, stop: int = -1, fft: bool = True, species: str = "cation") -> np.ndarray:
-        """Calculates the mean square displacement (MSD) of the cation
+    def get_msd_all(
+        self,
+        start: int = 0,
+        stop: int = -1,
+        fft: bool = True,
+        species: str = "cation",
+    ) -> np.ndarray:
+        """Calculates the mean square displacement (MSD) of the interested atom species.
 
         Args:
             start: Start time step.
@@ -539,7 +559,7 @@ class MdRun:
             fft: Whether to use fft to calculate msd. Default to True.
             species: The select_dict key of the atom group to calculate. Default to "cation".
 
-        Returns an array of MSD values for each time in the trajectory
+        Returns an array of MSD values in the trajectory
         """
         msd_array = total_msd(
             self.unwrapped_run,
@@ -551,56 +571,70 @@ class MdRun:
         return msd_array
 
     def get_msd_by_length(
-        self, distance: Union[int, float], run_start: int, run_end: int
+        self,
+        distance: Union[int, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
+        Calculates the special mean square displacement (MSD) of the interested atom species.
 
         Args:
             distance: The coordination cutoff distance.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The interested atom. Default to "cation".
 
         Returns:
 
         """
         nvt_run = self.unwrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
-        free_array, attach_array = special_msd(nvt_run, li_atoms, self.select_dict, distance, run_start, run_end)
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        free_array, attach_array = special_msd(nvt_run, center_atoms, self.select_dict, distance, run_start, run_end)
         return free_array, attach_array
 
     def get_msd_partial(
-        self, distance: Union[int, float], run_start: int, run_end: int, largest: int = 1000
+        self,
+        distance: Union[int, float],
+        run_start: int,
+        run_end: int,
+        largest: int = 1000,
+        center_atom: str = "cation",
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
+        Calculates the mean square displacement (MSD) of the interested atom species
+        according to binding states. The returned free_array include the MSD of the
+        free floating atoms, attach_array includes the MSD of binded/attached atoms.
 
         Args:
             distance (int or float): The coordination cutoff distance.
             run_start (int): Start time step.
             run_end (int): End time step.
             largest (int): The largest time sequence to trace.
+            center_atom: The interested atom. Default to "cation".
 
         Returns:
-
+            Returns two arrays of MSD in the trajectory
         """
         nvt_run = self.unwrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get("cation"))
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         free_array, attach_array = partial_msd(
-            nvt_run, li_atoms, largest, self.select_dict, distance, run_start, run_end
+            nvt_run, center_atoms, largest, self.select_dict, distance, run_start, run_end
         )
         return free_array, attach_array
 
     def get_d(
         self, msd_array: np.ndarray, start: int, stop: int, percentage: Union[int, float] = 1, species: str = "cation"
     ):
-        """Calculates the self-diffusion coefficient of the cation and
-        the Nernst-Einstein conductivity
+        """Prints the self-diffusion coefficient of the species.
+        Print the Nernst-Einstein conductivity if it's the cation.
 
         Args:
             msd_array: msd array.
             start: Start time step.
             stop: End time step.
-            percentage: The percentage of the cation.
-                Default to 1.
+            percentage: The percentage of the cation. Default to 1.
             species: The select_dict key of the atom group to calculate. Default to "cation".
 
         Print self-diffusion coefficient in m^2/s and NE conductivity in mS/cm.
@@ -670,24 +704,30 @@ class MdRun:
         return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
 
     def get_neighbor_trj(
-        self, run_start: int, run_end: int, li_atom: AtomGroup, species: str, distance: Union[int, float]
+        self,
+        run_start: int,
+        run_end: int,
+        species: str,
+        distance: Union[int, float],
+        center_atom: str = "cation",
+        idx: int = 0,
     ) -> Dict[str, np.floating]:
-        """Calculates the distance of cation-neighbor as a function of time
+        """Calculates the distance of a center atom-neighbor as a function of time
 
         Args:
             run_start: start time step.
             run_end: end time step.
-            li_atom: the interested cation
-                atom object.
+            center_atom: The interested atom. Default to "cation".
             species: The interested neighbor species.
             distance: The coordination cutoff distance.
+            idx: The index of the atom in the interested atom group.
 
-        Returns a dict of distance arrays of cation-neighbor
-        as a function of time with neighbor id as keys.
+        Returns a dict of distance arrays of cation-neighbor as a function of time with neighbor id as keys.
         """
+        center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(center_atom))
         return trajectory(
             self.wrapped_run,
-            li_atom,
+            center_atoms[idx],
             run_start,
             run_end,
             species,
@@ -702,11 +742,11 @@ class MdRun:
         binding_site: str,
         distance: Union[int, float],
         hopping_cutoff: Union[int, float],
-        floating_ion: str = "cation",
+        floating_atom: str = "cation",
         smooth: int = 51,
         mode: str = "full",
     ) -> Tuple[np.floating, np.floating]:
-        """Calculates the cation hopping rate and hopping distance
+        """Calculates the cation hopping rate and hopping distance.
 
         Args:
             run_start: Start time step.
@@ -714,14 +754,14 @@ class MdRun:
             binding_site: Floating ion binding site species.
             distance: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
-            floating_ion: Floating ion species.
+            floating_atom: Floating ion species.
             smooth: The length of the smooth filter window. Default to 51.
             mode: The mode of treating hopping event. Default to "full".
 
         Returns the cation average hopping rate and average hopping distance.
         """
         nvt_run = self.wrapped_run
-        floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_ion))
+        floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         freqs = []
         hopping_distance = []
         for ion in tqdm(floating_atoms[:]):
@@ -833,7 +873,7 @@ class MdRun:
         cluster_terminal: str,
         binding_cutoff: Union[int, float],
         hopping_cutoff: Union[int, float],
-        floating_ion: str = "cation",
+        floating_atom: str = "cation",
         cartesian_by_ref: np.ndarray = None,
         sym_dict: Dict[str, List[np.ndarray]] = None,
         sample: Optional[int] = None,
@@ -849,7 +889,7 @@ class MdRun:
                 (typically the binding site for the ion).
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
-            floating_ion: The species of the floating ion.
+            floating_atom: The species of the floating ion.
             cartesian_by_ref: Transformation matrix between cartesian
                 and reference coordinate systems. Default to None.
             sym_dict: Dictionary of symmetry operation dictionary. Default to None.
@@ -857,10 +897,12 @@ class MdRun:
             smooth: The length of the smooth filter window. Default to 51.
         """
         nvt_run = self.wrapped_run
-        li_atoms = nvt_run.select_atoms(self.select_dict.get(floating_ion))
+        floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         coord_list = np.array([[0, 0, 0]])
-        for li in tqdm(li_atoms[:]):
-            neighbor_trj = trajectory(nvt_run, li, run_start, run_end, cluster_center, self.select_dict, binding_cutoff)
+        for atom in tqdm(floating_atoms[:]):
+            neighbor_trj = trajectory(
+                nvt_run, atom, run_start, run_end, cluster_center, self.select_dict, binding_cutoff
+            )
             sites, freq, steps = find_nearest(
                 neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
             )
@@ -868,7 +910,7 @@ class MdRun:
                 cartesian_by_ref = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
             coords = heat_map(
                 nvt_run,
-                li,
+                atom,
                 sites,
                 cluster_terminal,
                 cartesian_by_ref,
@@ -890,10 +932,8 @@ class MdRun:
         Args:
             run_start (int): Start time step.
             run_end (int): End time step.
-            neighbor_cutoff (int of float): Upper limit of
-                first nearest neighbor.
-            cluster_center (str): species name of cluster center.
-                Default to "center".
+            neighbor_cutoff (int of float): Upper limit of first nearest neighbor.
+            cluster_center (str): species name of cluster center. Default to "center".
         """
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(cluster_center))
         trj = self.wrapped_run.trajectory[run_start:run_end:]

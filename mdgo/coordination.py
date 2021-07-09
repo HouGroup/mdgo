@@ -550,7 +550,7 @@ def cluster_coordinates(
         return cluster
 
 
-def num_of_neighbor_one_li(
+def num_of_neighbor_one(
     nvt_run,
     li_atom,
     species_dict,
@@ -634,7 +634,7 @@ def num_of_neighbor_one_li(
     return cn_values
 
 
-def num_of_neighbor_one_li_simple(nvt_run, li_atom, species_dict, select_dict, run_start, run_end):
+def num_of_neighbor_one_li(nvt_run, li_atom, species_dict, select_dict, run_start, run_end):
     """
 
     Args:
