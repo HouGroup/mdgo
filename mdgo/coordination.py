@@ -304,12 +304,14 @@ def check_contiguous_steps(
         checkpoints: The time step of interest to check for contiguous steps
         lag: The range (+/- lag) of the contiguous steps
     """
-    coord_num = {x: [[] for _ in range(lag * 2 + 1)] for x in species_dict.keys()}
+    coord_num: Dict[str, Union[List[List[int]], np.ndarray]] = {
+        x: [[] for _ in range(lag * 2 + 1)] for x in species_dict.keys()
+    }
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     has = False
     for i, ts in enumerate(trj_analysis):
         log = False
-        checkpoint = None
+        checkpoint = -1
         for j in checkpoints:
             if abs(i - j) <= lag:
                 log = True
@@ -328,11 +330,12 @@ def check_contiguous_steps(
                 )
                 shell = nvt_run.select_atoms(selection, periodic=True)
                 coord_num[kw][i - checkpoint + lag].append(len(shell))
+    one_atom_ave = dict()
     if has:
         for kw in coord_num:
             np_arrays = np.array([np.array(time).mean() for time in coord_num[kw]])
-            coord_num[kw] = np_arrays
-    return coord_num
+            one_atom_ave[kw] = np_arrays
+    return one_atom_ave
 
 
 def heat_map(
