@@ -205,6 +205,12 @@ class MdRun:
             cond=cond,
         )
 
+    def get_time_array(self):
+        """
+        Returns the time array.
+        """
+        return self.time_array
+
     def get_init_dimension(self):
         """
         Returns the initial box dimension.
