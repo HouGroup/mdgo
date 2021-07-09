@@ -248,6 +248,7 @@ def set_max_dimensions(
 ]:
     """
     Set the max dimensions for calculating active site volume.
+
     Args:
         x: X center for volume grid. Default to 0.0.
         y: Y center for volume grid. Default to 0.0.
@@ -343,6 +344,7 @@ def get_dimensions(
 ) -> Tuple[int, int, int]:
     """
     Mesh dimensions in unit of res.
+
     Args:
         x0: x min.
         x1: x max.
@@ -369,6 +371,7 @@ def get_dimensions(
 def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
     """
     Make a matrix of None with specified dimensions.
+
     Args:
         x_num: x dimension.
         y_num: y dimension.
@@ -511,6 +514,7 @@ def get_occupied_volume(
 ) -> float:
     """
     Get the occupied volume of the molecule in the box.
+
     Args:
         matrix: The filled mesh matrix.
         res: Resolution of the mesh in Å.
@@ -534,6 +538,7 @@ def get_unoccupied_volume(
 ) -> float:
     """
     Get the unoccupied volume of the molecule in the box.
+
     Args:
         matrix: The filled mesh matrix.
         res: Resolution of the mesh in Å.

@@ -215,12 +215,13 @@ class MdRun:
     def get_equilibrium_dimension(self, npt_range: int, period: int = 200) -> np.ndarray:
         """
         Returns the equilibrium box dimension.
+
         Args:
             npt_range: The maximum timestep of the npt run.
             period: The interval of checking points for volume convergence.
 
         Returns:
-
+            The equilibrium box dimension.
         """
         ave_dx = [np.inf, np.inf - 1]
         count = 0
@@ -243,7 +244,7 @@ class MdRun:
 
     def get_nvt_dimension(self) -> np.ndarray:
         """
-        Returns the equilibrium box dimension.
+        Returns the box dimension at the last frame.
         """
         return self.wrapped_run.trajectory[-1].dimensions
 
@@ -367,8 +368,9 @@ class MdRun:
             run_end: End time step.
             center_atom: The interested atom. Default to "cation".
 
-        Returns a python dict of arrays of coordination numbers of each species
-         for each time in the trajectory.
+        Return:
+             a python dict of arrays of coordination numbers of each species
+             for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
