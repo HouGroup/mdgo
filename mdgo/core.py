@@ -219,9 +219,6 @@ class MdRun:
         Args:
             npt_range: The maximum timestep of the npt run.
             period: The interval of checking points for volume convergence.
-
-        Returns:
-            The equilibrium box dimension.
         """
         ave_dx = [np.inf, np.inf - 1]
         count = 0
@@ -307,13 +304,11 @@ class MdRun:
         fig.show()
 
     def get_conductivity(self, start: int, end: int) -> float:
-        """Calculates the Green-Kubo (GK) conductivity
+        """Calculates the Green-Kubo (GK) conductivity in mS/cm.
 
         Args:
             start: Start time step.
             end: End time step.
-
-        Print conductivity in mS/cm.
         """
         cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end)
         return cond
@@ -369,8 +364,8 @@ class MdRun:
             center_atom: The interested atom. Default to "cation".
 
         Return:
-             a python dict of arrays of coordination numbers of each species
-             for each time in the trajectory.
+             The coordination numbers of each species as a python dict of arrays
+             for each timestep in the trajectory.
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -395,7 +390,7 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out the desired solvation structure
+        """Writes out the desired solvation structure.
 
         Args:
             species_dict: A dict of coordination cutoff distance
@@ -446,8 +441,8 @@ class MdRun:
             run_end: End time step.
             center_atom: The interested atom. Default to "cation".
 
-        Returns an array of the solvation structure type
-        for each time in the trajectory.
+        Return:
+            An array of the solvation structure type for each timestep in the trajectory.
         """
         nvt_run = self.wrapped_run
         species_dict = {species: distance}
@@ -475,8 +470,8 @@ class MdRun:
             run_start: Start time step.
             run_end: End time step.
 
-        Returns a dataframe of the species coordination number
-        and corresponding percentage.
+        Return:
+             A dataframe of the species coordination number and corresponding percentage.
         """
         num_array = self.coord_num_array_one_species(species, distance, run_start, run_end)
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
@@ -502,7 +497,8 @@ class MdRun:
             run_start: Start time step.
             run_end: End time step.
 
-        Returns pandas.dataframe of the species and the coordination number.
+        Return:
+             A dataframe of the species and the coordination number.
         """
         cn_values = self.coord_num_array_multi_species(species_dict, run_start, run_end)
         item_name = "species in first solvation shell"
@@ -527,7 +523,8 @@ class MdRun:
             run_start: Start time step.
             run_end: End time step.
 
-        Returns pandas.dataframe of the solvation structure and percentage.
+        Return:
+             A dataframe of the solvation structure and percentage.
         """
         num_array = self.coord_num_array_simple(species, distance, run_start, run_end)
 
@@ -561,7 +558,8 @@ class MdRun:
             fft: Whether to use fft to calculate msd. Default to True.
             species: The select_dict key of the atom group to calculate. Default to "cation".
 
-        Returns an array of MSD values in the trajectory
+        Return:
+             An array of MSD values in the trajectory
         """
         msd_array = total_msd(
             self.unwrapped_run,
@@ -589,7 +587,7 @@ class MdRun:
             center_atom: The interested atom. Default to "cation".
 
         Returns:
-
+            Two arrays of MSD in the trajectory
         """
         nvt_run = self.unwrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -617,7 +615,7 @@ class MdRun:
             center_atom: The interested atom. Default to "cation".
 
         Returns:
-            Returns two arrays of MSD in the trajectory
+            Two arrays of MSD in the trajectory
         """
         nvt_run = self.unwrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -629,8 +627,8 @@ class MdRun:
     def get_d(
         self, msd_array: np.ndarray, start: int, stop: int, percentage: Union[int, float] = 1, species: str = "cation"
     ):
-        """Prints the self-diffusion coefficient of the species.
-        Print the Nernst-Einstein conductivity if it's the cation.
+        """Prints the self-diffusion coefficient (in m^2/s) of the species.
+        Prints the Nernst-Einstein conductivity (in mS/cm) if it's the cation.
 
         Args:
             msd_array: msd array.
@@ -638,8 +636,6 @@ class MdRun:
             stop: End time step.
             percentage: The percentage of the cation. Default to 1.
             species: The select_dict key of the atom group to calculate. Default to "cation".
-
-        Print self-diffusion coefficient in m^2/s and NE conductivity in mS/cm.
         """
         a2 = 1e-20
         ps = 1e-12
@@ -679,7 +675,8 @@ class MdRun:
             run_start: Start time step.
             run_end: End time step.
 
-        Returns an array of the time series and a dict of ACFs of each species.
+        Return:
+             An array of the time series and a dict of ACFs of each species.
         """
         return calc_neigh_corr(
             self.wrapped_run,
@@ -692,7 +689,7 @@ class MdRun:
 
     def get_residence_time(
         self, species_list: List[str], times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
-    ):
+    ) -> Dict[str, np.floating]:
         """Calculates the residence time of selected species around cation
 
         Args:
@@ -701,7 +698,8 @@ class MdRun:
             acf_avg_dict: A dict of ACFs of each species.
             cutoff_time: Cutoff time for fitting the exponential decay.
 
-        Returns the residence time of each species.
+        Return:
+             The residence time of each species in a dict.
         """
         return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
 
@@ -724,7 +722,8 @@ class MdRun:
             distance: The coordination cutoff distance.
             idx: The index of the atom in the interested atom group.
 
-        Returns a dict of distance arrays of cation-neighbor as a function of time with neighbor id as keys.
+        Return:
+             A dict of distance arrays of the center atom-neighbor as a function of time with neighbor id as keys.
         """
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(center_atom))
         return trajectory(
@@ -760,7 +759,8 @@ class MdRun:
             smooth: The length of the smooth filter window. Default to 51.
             mode: The mode of treating hopping event. Default to "full".
 
-        Returns the cation average hopping rate and average hopping distance.
+        Return:
+             The floating_atom average hopping rate and average hopping distance.
         """
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
@@ -817,6 +817,10 @@ class MdRun:
             cool: The cool down timesteps between hopping in and hopping out.
             center: The select_dict key of the binding site. Default to "center".
             duplicate_run: Default to None.
+
+        Return:
+            A dictionary containing the number of trj logged, the averaged coordination number and standard deviation
+            for each species, and the corresponding time sequence.
         """
         in_list: Dict[str, List[Any]] = dict()
         out_list: Dict[str, List[Any]] = dict()
@@ -897,6 +901,9 @@ class MdRun:
             sym_dict: Dictionary of symmetry operation dictionary. Default to None.
             sample: Number of samples desired. Default to None, which is no sampling.
             smooth: The length of the smooth filter window. Default to 51.
+
+        Return:
+            An array of coordinates.
         """
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
@@ -936,6 +943,9 @@ class MdRun:
             run_end: End time step.
             neighbor_cutoff: Upper limit of first nearest neighbor.
             cluster_center: species name of cluster center. Default to "center".
+
+        Return:
+            The averaged distance.
         """
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(cluster_center))
         trj = self.wrapped_run.trajectory[run_start:run_end:]
