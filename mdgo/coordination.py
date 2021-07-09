@@ -8,9 +8,13 @@ This module implements functions for coordination analysis.
 
 import numpy as np
 from tqdm.notebook import tqdm
+from MDAnalysis import Universe
+from MDAnalysis.core.groups import Atom
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec
+
+from typing import Dict, List, Union
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -19,12 +23,12 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 
-def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict, distance):
+def trajectory(nvt_run, center_atom, run_start, run_end, species, selection_dict, distance):
     """
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         run_start:
         run_end:
         species:
@@ -42,7 +46,13 @@ def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict, di
         return None
     for ts in trj_analysis:
         selection = (
-            "(" + selection_dict.get(species) + ") and (around " + str(distance) + " index " + str(li_atom.id - 1) + ")"
+            "("
+            + selection_dict.get(species)
+            + ") and (around "
+            + str(distance)
+            + " index "
+            + str(center_atom.id - 1)
+            + ")"
         )
         shell = nvt_run.select_atoms(selection, periodic=True)
         for atom in shell.atoms:
@@ -52,7 +62,7 @@ def trajectory(nvt_run, li_atom, run_start, run_end, species, selection_dict, di
     time_count = 0
     for ts in trj_analysis:
         for atomid in dist_values.keys():
-            dist = distance_array(ts[li_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
+            dist = distance_array(ts[center_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
             dist_values[atomid][time_count] = dist
         time_count += 1
     return dist_values
@@ -213,7 +223,6 @@ def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
         hopping_cutoff: (int or float): Detaching cutoff distance.
         smooth (int): The length of the smooth filter window. Default to 51.
         cool (int): The cool down timesteps between hopping in and hopping out.
-        mode (str): The mode of treating hopping event. Default to free.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -272,19 +281,28 @@ def find_in_n_out(trj, distance, hopping_cutoff, smooth=51, cool=20):
     return steps_in, steps_out
 
 
-def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_start, run_end, checkpoints, lag=20):
+def check_contiguous_steps(
+    nvt_run: Universe,
+    center_atom: Atom,
+    species_dict: Dict[str, Union[int, float]],
+    select_dict: Dict[str, str],
+    run_start: int,
+    run_end: int,
+    checkpoints: np.ndarray,
+    lag=20,
+):
     """Returns an array of distance between the center atom and the interested atom
     in the checkpoint +/- lag time range.
 
     Args:
-        nvt_run (MDAnalysis.Universe): An Universe object of wrapped trajectory.
-        li_atom (MDAnalysis.core.groups.Atom): the interested central atom object.
-        species_dict (dict): Dict of Cutoff distance of neighbor for each species.
-        select_dict (dict): A dictionary of selection language of atom species.
-        run_start (int): Start time step.
-        run_end (int): End time step.
-        checkpoints (numpy.array): The time step of interest to check for contiguous steps
-        lag (int): The range (+/- lag) of the contiguous steps
+        nvt_run: An Universe object of wrapped trajectory.
+        center_atom: the interested central atom object.
+        species_dict: Dict of Cutoff distance of neighbor for each species.
+        select_dict: A dictionary of selection language of atom species.
+        run_start: Start time step.
+        run_end: End time step.
+        checkpoints: The time step of interest to check for contiguous steps
+        lag: The range (+/- lag) of the contiguous steps
     """
     coord_num = {x: [[] for _ in range(lag * 2 + 1)] for x in species_dict.keys()}
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -305,7 +323,7 @@ def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_star
                     + ") and (around "
                     + str(species_dict[kw])
                     + " index "
-                    + str(li_atom.id - 1)
+                    + str(center_atom.id - 1)
                     + ")"
                 )
                 shell = nvt_run.select_atoms(selection, periodic=True)
@@ -318,21 +336,21 @@ def check_contiguous_steps(nvt_run, li_atom, species_dict, select_dict, run_star
 
 
 def heat_map(
-    nvt_run,
-    li_atom,
-    sites,
-    bind_atom_type,
-    cartesian_by_ref,
-    run_start,
-    run_end,
+    nvt_run: Universe,
+    floating_atom: Atom,
+    cluster_center_sites: List[int],
+    cluster_terminal: str,
+    cartesian_by_ref: np.ndarray,
+    run_start: int,
+    run_end: int,
 ):
     """
 
     Args:
         nvt_run:
-        li_atom:
-        sites:
-        bind_atom_type:
+        floating_atom:
+        cluster_center_sites:
+        cluster_terminal:
         cartesian_by_ref:
         run_start:
         run_end:
@@ -343,16 +361,16 @@ def heat_map(
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
-        if sites[i] == 0:
+        if cluster_center_sites[i] == 0:
             pass
         else:
-            center_atom = nvt_run.select_atoms("index " + str(sites[i] - 1))[0]
-            selection = "(" + bind_atom_type + ") and (same resid as index " + str(center_atom.id - 1) + ")"
+            center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i] - 1))[0]
+            selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.id - 1) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
-            distances = distance_array(ts[li_atom.id - 1], bind_atoms.positions, ts.dimensions)
+            distances = distance_array(ts[floating_atom.id - 1], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)
             vertex_atoms = bind_atoms[idx[:3]]
-            vector_li = atom_vec(li_atom, center_atom, ts.dimensions)
+            vector_li = atom_vec(floating_atom, center_atom, ts.dimensions)
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
             vector_c = atom_vec(vertex_atoms[2], center_atom, ts.dimensions)
@@ -416,15 +434,17 @@ def process_evol(
 
     """
     nvt_run = mdrun.wrapped_run
-    li_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
+    center_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
     select_dict = mdrun.select_dict
-    for li in tqdm(li_atoms[::]):
-        neighbor_trj = trajectory(nvt_run, li, run_start + lag_step, run_end - lag_step, center, select_dict, distance)
+    for atom in tqdm(center_atoms[::]):
+        neighbor_trj = trajectory(
+            nvt_run, atom, run_start + lag_step, run_end - lag_step, center, select_dict, distance
+        )
         hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
         if len(hopping_in) > 0:
             in_one = check_contiguous_steps(
                 nvt_run,
-                li,
+                atom,
                 species_dict,
                 select_dict,
                 run_start,
@@ -437,7 +457,7 @@ def process_evol(
         if len(hopping_out) > 0:
             out_one = check_contiguous_steps(
                 nvt_run,
-                li,
+                atom,
                 species_dict,
                 select_dict,
                 run_start,
@@ -552,7 +572,7 @@ def cluster_coordinates(
 
 def num_of_neighbor(
     nvt_run,
-    li_atom,
+    center_atom,
     species_dict,
     select_dict,
     run_start,
@@ -567,7 +587,7 @@ def num_of_neighbor(
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         species_dict:
         select_dict:
         run_start:
@@ -601,7 +621,7 @@ def num_of_neighbor(
                 + ") and (around "
                 + str(species_dict.get(kw))
                 + " index "
-                + str(li_atom.id - 1)
+                + str(center_atom.id - 1)
                 + ")"
             )
             shell = nvt_run.select_atoms(selection, periodic=True)
@@ -621,25 +641,25 @@ def num_of_neighbor(
                     + " and around "
                     + str(species_dict.get(kw))
                     + " index "
-                    + str(li_atom.id - 1)
+                    + str(center_atom.id - 1)
                     + "))"
                     for kw in species
                 )
                 selection_write = "((" + selection_write + ")and not " + select_dict.get("cation") + ")"
                 structure = nvt_run.select_atoms(selection_write, periodic=True)
-                li_pos = ts[(int(li_atom.id) - 1)]
-                path = write_path + str(li_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
+                li_pos = ts[(int(center_atom.id) - 1)]
+                path = write_path + str(center_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
                 write_out(li_pos, structure, element_id_dict, path)
         time_count += 1
     return cn_values
 
 
-def num_of_neighbor_simple(nvt_run, li_atom, species_dict, select_dict, run_start, run_end):
+def num_of_neighbor_simple(nvt_run, center_atom, species_dict, select_dict, run_start, run_end):
     """
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         species_dict:
         select_dict:
         run_start:
@@ -664,7 +684,7 @@ def num_of_neighbor_simple(nvt_run, li_atom, species_dict, select_dict, run_star
             + ") and (around "
             + str(species_dict.get(species))
             + " index "
-            + str(li_atom.id - 1)
+            + str(center_atom.id - 1)
             + ")"
         )
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -694,12 +714,12 @@ def num_of_neighbor_simple(nvt_run, li_atom, species_dict, select_dict, run_star
     return cn_values
 
 
-def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, distance, run_start, run_end):
+def num_of_neighbor_one_li_simple_extra(nvt_run, center_atom, species, select_dict, distance, run_start, run_end):
     """
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         species:
         select_dict:
         distance:
@@ -721,7 +741,13 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, 
         return None
     for ts in trj_analysis:
         selection = (
-            "(" + select_dict.get(species) + ") and (around " + str(distance) + " index " + str(li_atom.id - 1) + ")"
+            "("
+            + select_dict.get(species)
+            + ") and (around "
+            + str(distance)
+            + " index "
+            + str(center_atom.id - 1)
+            + ")"
         )
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
@@ -741,13 +767,13 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, 
             shell_species_len = len(shell_species) - 1
             if shell_species_len == 0:
                 cn_values[time_count] = 2
-                li_pos = li_atom.position
+                li_pos = center_atom.position
                 p_pos = shell.atoms[0].position
                 ec_select = (
-                    "(" + select_dict.get("EC") + ") and (around " + str(3) + " index " + str(li_atom.id - 1) + ")"
+                    "(" + select_dict.get("EC") + ") and (around " + str(3) + " index " + str(center_atom.id - 1) + ")"
                 )
                 emc_select = (
-                    "(" + select_dict.get("EMC") + ") and (around " + str(3) + " index " + str(li_atom.id - 1) + ")"
+                    "(" + select_dict.get("EMC") + ") and (around " + str(3) + " index " + str(center_atom.id - 1) + ")"
                 )
                 ec_group = nvt_run.select_atoms(ec_select, periodic=True)
                 emc_group = nvt_run.select_atoms(emc_select, periodic=True)
@@ -765,12 +791,14 @@ def num_of_neighbor_one_li_simple_extra(nvt_run, li_atom, species, select_dict, 
     return cn_values, np.array(ec_angle), np.array(emc_angle)
 
 
-def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list, select_dict, distances, run_start, run_end):
+def num_of_neighbor_one_li_simple_extra_two(
+    nvt_run, center_atom, species_list, select_dict, distances, run_start, run_end
+):
     """
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         species_list:
         select_dict:
         distances:
@@ -802,7 +830,7 @@ def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list, sele
                 + ") and (around "
                 + str(distances.get(kw))
                 + " index "
-                + str(li_atom.id - 1)
+                + str(center_atom.id - 1)
                 + ")"
             )
             shell = nvt_run.select_atoms(selection, periodic=True)
@@ -819,7 +847,7 @@ def num_of_neighbor_one_li_simple_extra_two(nvt_run, li_atom, species_list, sele
             + ") and (around "
             + str(distances.get("anion"))
             + " index "
-            + str(li_atom.id - 1)
+            + str(center_atom.id - 1)
             + ")"
         )
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -875,12 +903,12 @@ def angle(a, b, c):
 
 
 # Depth-first traversal
-def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict, distance, run_start, run_end):
+def num_of_neighbor_one_li_complex(nvt_run, center_atom, species, selection_dict, distance, run_start, run_end):
     """
 
     Args:
         nvt_run:
-        li_atom:
+        center_atom:
         species:
         selection_dict:
         distance:
@@ -894,10 +922,16 @@ def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict, di
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = np.zeros((int(len(trj_analysis)), 4))
     for ts in trj_analysis:
-        cation_list = [li_atom.id]
+        cation_list = [center_atom.id]
         anion_list = []
         shell = nvt_run.select_atoms(
-            "(" + selection_dict.get(species) + " and around " + str(distance) + " index " + str(li_atom.id - 1) + ")",
+            "("
+            + selection_dict.get(species)
+            + " and around "
+            + str(distance)
+            + " index "
+            + str(center_atom.id - 1)
+            + ")",
             periodic=True,
         )
         for anion_1 in shell.atoms:
@@ -930,24 +964,24 @@ def num_of_neighbor_one_li_complex(nvt_run, li_atom, species, selection_dict, di
                                         cn_values[time_count][3] += 1
 
 
-def coord_shell_array(nvt_run, func, li_atoms, species_dict, select_dict, run_start, run_end):
+def coord_shell_array(nvt_run, func, center_atoms, species_dict, select_dict, run_start, run_end):
     """
     Args:
         nvt_run: MDAnalysis Universe
         func: One of the neighbor statistical method (num_of_neighbor_one_li,
             num_of_neighbor_one_li_simple)
-        li_atoms: Atom group of the Li atoms.
+        center_atoms: Atom group of the center atoms.
         species_dict (dict): A dict of coordination cutoff distance
             of the interested species.
         select_dict: A dictionary of species selection.
         run_start (int): Start time step.
         run_end (int): End time step.
     """
-    num_array = func(nvt_run, li_atoms[0], species_dict, select_dict, run_start, run_end)
-    for li in tqdm(li_atoms[1::]):
-        this_li = func(nvt_run, li, species_dict, select_dict, run_start, run_end)
+    num_array = func(nvt_run, center_atoms[0], species_dict, select_dict, run_start, run_end)
+    for atom in tqdm(center_atoms[1::]):
+        this_atom = func(nvt_run, atom, species_dict, select_dict, run_start, run_end)
         for kw in num_array.keys():
-            num_array[kw] = np.concatenate((num_array.get(kw), this_li.get(kw)), axis=0)
+            num_array[kw] = np.concatenate((num_array.get(kw), this_atom.get(kw)), axis=0)
     return num_array
 
 
