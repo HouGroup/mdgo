@@ -62,7 +62,7 @@ def msd_fft(r: np.ndarray) -> np.ndarray:
 from typing import Union
 from MDAnalysis import Universe, AtomGroup
 
-def calc_cond(
+def calc_cond_msd(
     u: Universe,
     anions: AtomGroup,
     cations: AtomGroup,

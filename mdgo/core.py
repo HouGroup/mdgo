@@ -24,7 +24,7 @@ from mdgo.util import (
     res_dict_from_datafile,
     select_dict_from_resname,
 )
-from mdgo.conductivity import calc_cond, conductivity_calculator
+from mdgo.conductivity import calc_cond_msd, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
     num_of_neighbor_one_li,
@@ -245,7 +245,7 @@ class MdRun:
         nvt_run = self.unwrapped_run
         cations = nvt_run.select_atoms(self.select_dict.get("cation"))
         anions = nvt_run.select_atoms(self.select_dict.get("anion"))
-        cond_array = calc_cond(
+        cond_array = calc_cond_msd(
             nvt_run,
             anions,
             cations,
