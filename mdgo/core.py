@@ -52,21 +52,21 @@ class MdRun:
     """
 
     def __init__(
-        self,
-        lammps_data,
-        wrapped_run,
-        unwrapped_run,
-        nvt_start,
-        time_step,
-        name,
-        select_dict=None,
-        res_dict=None,
-        cation_name="cation",
-        anion_name="anion",
-        cation_charge=1,
-        anion_charge=-1,
-        temperature=298.5,
-        cond=True,
+            self,
+            lammps_data,
+            wrapped_run,
+            unwrapped_run,
+            nvt_start,
+            time_step,
+            name,
+            select_dict=None,
+            res_dict=None,
+            cation_name="cation",
+            anion_name="anion",
+            cation_charge=1,
+            anion_charge=-1,
+            temperature=298.5,
+            cond=True,
     ):
         """
         Base constructor. This is a low level constructor designed to work with
@@ -144,21 +144,21 @@ class MdRun:
 
     @classmethod
     def from_output_full(
-        cls,
-        data_dir,
-        wrapped_dir,
-        unwrapped_dir,
-        nvt_start,
-        time_step,
-        name,
-        select_dict=None,
-        res_dict=None,
-        cation_name="cation",
-        anion_name="anion",
-        cation_charge=1,
-        anion_charge=-1,
-        temperature=298.5,
-        cond=True,
+            cls,
+            data_dir,
+            wrapped_dir,
+            unwrapped_dir,
+            nvt_start,
+            time_step,
+            name,
+            select_dict=None,
+            res_dict=None,
+            cation_name="cation",
+            anion_name="anion",
+            cation_charge=1,
+            anion_charge=-1,
+            temperature=298.5,
+            cond=True,
     ):
         """
         Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
@@ -255,15 +255,23 @@ class MdRun:
         )
         return cond_array
 
-    def plot_cond_array(self, start, end, *runs, reference=True):
+    def plot_cond_array(
+            self,
+            start: int,
+            end: int,
+            *runs: MdRun,
+            reference: bool = True,
+            units: str = "real",
+    ):
         """Plots the conductivity MSD as a function of time
 
         Args:
-            start (int): Start time step.
-            end (int): End time step.
+            start (int): Start time step for fitting.
+            end (int): End time step for fitting.
             runs (MdRun): Other runs to be compared in the same plot.
             reference (bool): Whether to plot reference line.
                 Default to True.
+            units (str): unit system (currently 'real' and 'lj' are supported)
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
@@ -271,26 +279,33 @@ class MdRun:
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.loglog(
-            self.time_array[start:end],
-            self.cond_array[start:end],
+            self.time_array,
+            self.cond_array,
             color="b",
             lw=2,
             label=self.name,
         )
         for i, run in enumerate(runs):
             ax.loglog(
-                run.time_array[start:end],
-                run.cond_array[start:end],
+                run.time_array,
+                run.cond_array,
                 color=colors[i],
                 lw=2,
                 label=run.name,
             )
         if reference:
-            ax.loglog((100000, 1000000), (1000, 10000))
-        ax.set_ylabel("MSD (A^2)")
-        ax.set_xlabel("Time (ps)")
-        ax.set_ylim([10, 1000000])
-        ax.set_xlim([100, 500000000])
+            slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
+                    self.time_array[int(np.log(len(self.time_array)) / 2)] - time_array[5])
+            ax.loglog(time_array[start:end], time_array[start:end] * slope_guess * 2, 'k--')
+        if units == 'real':
+            ax.set_ylabel("MSD (A$^2$)")
+            ax.set_xlabel("Time (ps)")
+        elif units == 'lj':
+            ax.set_ylabel("MSD ($\sigma^2$)")
+            ax.set_xlabel("Time ($\\tau$)")
+        else:
+            raise ValueError("units selection not supported")
+        ax.set_ylim(min(np.abs(self.cond_array[1:])) * 0.9, max(np.abs(self.cond_array)) * 1.2)
         ax.legend()
         fig.show()
 
@@ -697,17 +712,17 @@ class MdRun:
         return np.mean(freqs), np.mean(hopping_distance)
 
     def shell_evolution(
-        self,
-        species_dict,
-        run_start,
-        run_end,
-        lag_step,
-        distance,
-        hopping_cutoff,
-        smooth=51,
-        cool=0,
-        center="center",
-        duplicate_run=None,
+            self,
+            species_dict,
+            run_start,
+            run_end,
+            lag_step,
+            distance,
+            hopping_cutoff,
+            smooth=51,
+            cool=0,
+            center="center",
+            duplicate_run=None,
     ):
         """Calculates the coordination number of species in the species_dict
         as a function of time before and after hopping events.
@@ -775,17 +790,17 @@ class MdRun:
         return cn_dict
 
     def get_heat_map(
-        self,
-        run_start,
-        run_end,
-        species,
-        distance,
-        hopping_cutoff,
-        cartesian_by_ref=None,
-        bind_atom_type=None,
-        sym_dict=None,
-        sample=None,
-        smooth=51,
+            self,
+            run_start,
+            run_end,
+            species,
+            distance,
+            hopping_cutoff,
+            cartesian_by_ref=None,
+            bind_atom_type=None,
+            sym_dict=None,
+            sample=None,
+            smooth=51,
     ):
         """Calculates the heatmap matrix of cation around a cluster/molecule
 
