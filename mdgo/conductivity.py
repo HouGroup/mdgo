@@ -62,51 +62,57 @@ def msd_fft(r: np.ndarray) -> np.ndarray:
 from typing import Union
 from MDAnalysis import Universe, AtomGroup
 
+
 def calc_cond_msd(
-    u: Universe,
-    anions: AtomGroup,
-    cations: AtomGroup,
-    run_start: int,
-    cation_charge: Union[int, float] = 1,
-    anion_charge: Union[int, float] = -1,
+        u: Universe,
+        anions: AtomGroup,
+        cations: AtomGroup,
+        run_start: int,
+        cation_charge: Union[int, float] = 1,
+        anion_charge: Union[int, float] = -1,
 ) -> np.ndarray:
     """Calculates the conductivity "mean square displacement" over time
 
     Note:
        Coordinates must be unwrapped (in dcd file when creating MDAnalysis Universe)
+       Ions selections may consist of only one atom per ion, or include all of the atoms
+          in the ion. The ion AtomGroups may consist of multiple types of cations/anions.
 
     Args:
         u: MDAnalysis universe
-        anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
-        cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
+        anions: MDAnalysis AtomGroup containing all anions
+        cations: MDAnalysis AtomGroup containing all cations
         run_start (int): index of trajectory from which to start analysis
         cation_charge (int): net charge of cation
         anion_charge (int): net charge of anion
 
     Returns a numpy.array containing conductivity "MSD" over time
     """
-    # Current code assumes anion and cation selections are single atoms
+    # convert AtomGroup into list of molecules
+    cation_list = cations.split('residue')
+    anion_list = anions.split('residue')
+    # compute sum over all charges and positions
     qr = []
     for ts in tqdm(u.trajectory[run_start:]):
         qr_temp = np.zeros(3)
-        for anion in anions.atoms:
-            qr_temp += anion.position * anion_charge
-        for cation in cations.atoms:
-            qr_temp += cation.position * cation_charge
+        for anion in anion_list:
+            qr_temp += anion.center_of_mass() * anion_charge
+        for cation in cation_list:
+            qr_temp += cation.center_of_mass() * cation_charge
         qr.append(qr_temp)
     msd = msd_fft(np.array(qr))
     return msd
 
 
 def conductivity_calculator(
-    time_array: np.ndarray,
-    cond_array: np.ndarray,
-    v: Union[int, float],
-    name: str,
-    start: int,
-    end: int,
-    T: Union[int, float],
-    units: str = "real",
+        time_array: np.ndarray,
+        cond_array: np.ndarray,
+        v: Union[int, float],
+        name: str,
+        start: int,
+        end: int,
+        T: Union[int, float],
+        units: str = "real",
 ) -> float:
     """Calculates the overall conductivity of the system
 
