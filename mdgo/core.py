@@ -29,8 +29,8 @@ from mdgo.util import (
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
     coord_shell_array,
-    num_of_neighbor_one,
-    num_of_neighbor_one_simple,
+    num_of_neighbor,
+    num_of_neighbor_simple,
     trajectory,
     find_nearest,
     find_nearest_free_only,
@@ -342,7 +342,7 @@ class MdRun:
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one,
+            num_of_neighbor,
             center_atoms,
             species_dict,
             self.select_dict,
@@ -374,7 +374,7 @@ class MdRun:
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one,
+            num_of_neighbor,
             center_atoms,
             species_dict,
             self.select_dict,
@@ -412,7 +412,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         for atom in tqdm(center_atoms):
-            num_of_neighbor_one(
+            num_of_neighbor(
                 nvt_run,
                 atom,
                 species_dict,
@@ -452,7 +452,7 @@ class MdRun:
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
-            num_of_neighbor_one_simple,
+            num_of_neighbor_simple,
             center_atoms,
             species_dict,
             self.select_dict,
