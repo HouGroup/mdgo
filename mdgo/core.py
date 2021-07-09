@@ -265,14 +265,13 @@ class MdRun:
         return cond_array
 
     def plot_cond_array(self, start: int, end: int, *runs: MdRun, reference: bool = True):
-        """Plots the conductivity MSD as a function of time
+        """Plots the conductivity MSD as a function of time.
 
         Args:
             start: Start time step.
             end: End time step.
             runs: Other runs to be compared in the same plot.
-            reference: Whether to plot reference line.
-                Default to True.
+            reference: Whether to plot reference line. Default to True.
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
@@ -390,7 +389,7 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out the desired solvation structure.
+        """Writes out a series of desired solvation structures as .xyz files
 
         Args:
             species_dict: A dict of coordination cutoff distance
@@ -403,8 +402,6 @@ class MdRun:
             write_freq: Probability to write out files.
             write_path: Path to write out files.
             center_atom: The interested atom. Default to "cation".
-
-        Write out a series of solvation structures as .xyz files .
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))

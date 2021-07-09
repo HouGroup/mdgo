@@ -6,7 +6,7 @@
 Computes the volume for each ligand or active site in a file.
 
 In ligand mode, the volume of the entire structure is calculated. The -x, -y,
-  -z, -xsize, -ysize and -zsize options are ignored.
+-z, -xsize, -ysize and -zsize options are ignored.
 
 In active site mode, the unoccupied volume within a cube is calculated. The
 center of the cube is defined by the -x, -y and -z options, and the size of
@@ -28,8 +28,10 @@ DEFAULT_VDW = 1.5  # See Ev:130902
 def parse_command_line():
     """
 
-    Returns:
+    The command line parser helper function.
 
+    Usage:
+        python volume.py -xyz <input_xyz> [options]
     """
     usage = """
     python volume.py -xyz <input_xyz> [options]
@@ -392,7 +394,8 @@ def get_radii(radii_type: str = "Bondi") -> Dict[str, float]:
     Args:
         radii_type: The radii type. Valid types are "Bondi", "Lange", and "pymatgen". Default to "Bondi".
 
-    Returns: a radii dict.
+    Return:
+        A radii dict.
 
     """
     if radii_type == "Bondi":
@@ -600,7 +603,7 @@ def molecular_volume(
         z_size: Z side length for volume grid. Default to 10.0.
 
     Returns:
-        float: The molar volume in cm^3/mol or volume in Å^3.
+        The molar volume in cm^3/mol or volume in Å^3.
     """
     if isinstance(mol, str):
         molecule = Molecule.from_file(mol)
