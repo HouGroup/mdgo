@@ -24,7 +24,7 @@ from mdgo.util import (
     res_dict_from_datafile,
     select_dict_from_resname,
 )
-from mdgo.conductivity import calc_cond_msd, conductivity_calculator
+from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region
 from mdgo.coordination import (
     coord_shell_array,
     num_of_neighbor_one_li,
@@ -162,6 +162,7 @@ class MdRun:
             anion_charge=-1,
             temperature=298.5,
             cond=True,
+            units="real",
     ):
         """
         Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
@@ -181,6 +182,7 @@ class MdRun:
             anion_charge: Charge of anion. Default to 1.
             temperature: Temperature of the MD run. Default to 298.15.
             cond (bool): Whether to calculate conductivity MSD. Default to True.
+            units (str): unit system (currently 'real' and 'lj' are supported)
         """
         lammps_data = LammpsData.from_file(data_dir)
         if res_dict is None:
@@ -203,6 +205,7 @@ class MdRun:
             anion_charge=anion_charge,
             temperature=temperature,
             cond=cond,
+            units=units,
         )
 
     def get_time_array(self):
@@ -263,6 +266,21 @@ class MdRun:
             self.anion_charge,
         )
         return cond_array
+
+    def choose_cond_fit_region(self,
+    ) -> tuple:
+        """Computes the optimal fitting region (linear regime) of conductivity MSD.
+
+        Args:
+            msd (numpy.array): mean squared displacement
+
+        Returns at tuple with the start of the fitting regime (int), end of the
+        fitting regime (int), and the beta value of the fitting regime (float).
+        """
+        if self.cond_array is None:
+            self.cond_array = self.get_cond_array()
+        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
+        return start, end, beta
 
     def plot_cond_array(
             self,
