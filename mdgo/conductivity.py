@@ -104,6 +104,27 @@ def calc_cond_msd(
     return msd
 
 
+def get_beta(
+        msd: np.ndarray,
+        time_array: np.ndarray,
+        start: int,
+        end: int,
+) -> tuple:
+    """Fits the MSD to the form t^(\beta) and returns \beta. \beta = 1 corresponds
+    to the diffusive regime.
+
+    Args:
+        msd (numpy.array): mean squared displacement
+        time_array (numpy.array): times at which position data was collected in the simulation
+        start (int): index at which to start fitting linear regime of the MSD
+        end (int): index at which to end fitting linear regime of the MSD
+
+    Returns beta (int)
+    """
+    msd_slope = np.gradient(np.log(msd[start:end]), np.log(time_array[start:end]))
+    beta = np.mean(np.array(msd_slope))
+    return beta
+
 def choose_msd_fitting_region(
         msd: np.ndarray,
         time_array: np.ndarray,
@@ -131,8 +152,7 @@ def choose_msd_fitting_region(
     for i in np.logspace(np.log10(2), np.log10(len(time_array) / 10), 10):  # try 10 regions
         start = int(i)
         end = int(i * 10)  # fit over one decade
-        msd_slope = np.gradient(np.log(msd[start:end]), np.log(time_array[start:end]))
-        beta = np.mean(np.array(msd_slope))
+        beta = get_beta(msd, time_array, start, end)
         # check if beta in this region is better than regions tested so far
         if (np.abs(beta - 1) < np.abs(beta_best - 1)) or beta_best == 0:
             beta_best = beta

@@ -24,7 +24,7 @@ from mdgo.util import (
     res_dict_from_datafile,
     select_dict_from_resname,
 )
-from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region
+from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region, get_beta
 from mdgo.coordination import (
     coord_shell_array,
     num_of_neighbor_one_li,
@@ -208,12 +208,6 @@ class MdRun:
             units=units,
         )
 
-    def get_time_array(self):
-        """
-        Returns the time array.
-        """
-        return self.time_array
-
     def get_init_dimension(self):
         """
         Returns the initial box dimension.
@@ -268,7 +262,7 @@ class MdRun:
         return cond_array
 
     def choose_cond_fit_region(self,
-    ) -> tuple:
+                               ) -> tuple:
         """Computes the optimal fitting region (linear regime) of conductivity MSD.
 
         Args:
@@ -279,17 +273,20 @@ class MdRun:
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
-        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
+        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array, self.units)
         return start, end, beta
 
     def plot_cond_array(
             self,
-            start: int,
-            end: int,
+            start: int = -1,
+            end: int = -1,
             *runs: 'MdRun',
             reference: bool = True,
     ):
-        """Plots the conductivity MSD as a function of time
+        """Plots the conductivity MSD as a function of time.
+        If no fitting region (start, end) is provided, computes the optimal
+        fitting region based on the portion of the MSD with greatest
+        linearity.
 
         Args:
             start (int): Start time step for fitting.
@@ -301,6 +298,8 @@ class MdRun:
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
+        if start == -1 and end == -1:
+            start, end, _ = choose_msd_fitting_region(self.cond_array, self.time_array)
         colors = ["g", "r", "c", "m", "y", "k"]
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
@@ -335,8 +334,11 @@ class MdRun:
         ax.legend()
         fig.show()
 
-    def get_conductivity(self, start, end):
-        """Calculates the Green-Kubo (GK) conductivity
+    def get_conductivity(self, start=-1, end=-1):
+        """Calculates the Green-Kubo (GK) conductivity given fitting region.
+        If no fitting region (start, end) is provided, computes the optimal
+        fitting region based on the portion of the MSD with greatest
+        linearity.
 
         Args:
             start (int): Start time step for fitting MSD.
@@ -344,6 +346,19 @@ class MdRun:
 
         Print and return conductivity.
         """
+        if start == -1 and end == -1:
+            start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
+        else:
+            beta = get_beta(self.cond_array, self.time_array, start, end)
+        # print info on fitting
+        time_units = ''
+        if units == 'real':
+            time_units = 'ps'
+        elif units == 'lj':
+            time_units = 'tau'
+        print('Start of linear fitting regime: {} ({} {})'.format(start, self.time_array[start], time_units))
+        print('End of linear fitting regime: {} ({} {})'.format(end, self.time_array[end], time_units))
+        print('Beta value (fit to MSD = t^beta): {} (beta = 1 in the diffusive regime)'.format(beta))
         cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp,
                                        self.units)
         return cond
