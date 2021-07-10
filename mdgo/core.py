@@ -38,7 +38,7 @@ from mdgo.coordination import (
     heat_map,
     get_full_coords,
 )
-from mdgo.msd import total_msd, partial_msd, special_msd
+from mdgo.msd import total_msd, partial_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
 __author__ = "Tingzheng Hou"
@@ -567,30 +567,6 @@ class MdRun:
             fft=fft,
         )
         return msd_array
-
-    def get_msd_by_length(
-        self,
-        distance: float,
-        run_start: int,
-        run_end: int,
-        center_atom: str = "cation",
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Calculates the special mean square displacement (MSD) of the interested atom species.
-
-        Args:
-            distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
-            center_atom: The interested atom. Default to "cation".
-
-        Returns:
-            Two arrays of MSD in the trajectory
-        """
-        nvt_run = self.unwrapped_run
-        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        free_array, attach_array = special_msd(nvt_run, center_atoms, self.select_dict, distance, run_start, run_end)
-        return free_array, attach_array
 
     def get_msd_partial(
         self,
