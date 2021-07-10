@@ -599,8 +599,12 @@ def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select
                 select_dict[cation_name + "_" + pos_center.name + pos_center.type] = "type " + pos_center.type
                 select_dict[cation_name] = "type " + uni_center
     else:
+        if number == 0:
+            anion_name = "anion"
+        else:
+            anion_name = "anion_" + str(number)
         if len(ion.atoms.types) == 1:
-            select_dict["anion"] = "type " + ion.atoms.types[0]
+            select_dict[anion_name] = "type " + ion.atoms.types[0]
         else:
             # The most negatively charged atom in the anion
             neg_center = ion.atoms[np.argmin(ion.atoms.charges)]
@@ -608,10 +612,10 @@ def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select
             # One unique atom in the anion
             uni_center = unique_types[0][np.argmin(unique_types[1])]
             if neg_center.type == uni_center:
-                select_dict["anion"] = "type " + uni_center
+                select_dict[anion_name] = "type " + uni_center
             else:
-                select_dict["anion_" + neg_center.name + neg_center.type] = "type " + neg_center.type
-                select_dict["anion"] = "type " + uni_center
+                select_dict[anion_name + "_" + neg_center.name + neg_center.type] = "type " + neg_center.type
+                select_dict[anion_name] = "type " + uni_center
 
 
 def extract_atom_from_molecule(
