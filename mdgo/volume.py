@@ -201,11 +201,7 @@ def parse_command_line():
     return args
 
 
-def get_max_dimensions(
-    mol: Molecule,
-) -> Tuple[
-    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
-]:
+def get_max_dimensions(mol: Molecule) -> Tuple[float, float, float, float, float, float]:
     """
     Calculates the dimension of a Molecule
 
@@ -239,15 +235,8 @@ def get_max_dimensions(
 
 
 def set_max_dimensions(
-    x: Union[float, int] = 0.0,
-    y: Union[float, int] = 0.0,
-    z: Union[float, int] = 0.0,
-    x_size: Union[float, int] = 10.0,
-    y_size: Union[float, int] = 10.0,
-    z_size: Union[float, int] = 10.0,
-) -> Tuple[
-    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
-]:
+    x: float = 0.0, y: float = 0.0, z: float = 0.0, x_size: float = 10.0, y_size: float = 10.0, z_size: float = 10.0
+) -> Tuple[float, float, float, float, float, float]:
     """
     Set the max dimensions for calculating active site volume.
 
@@ -272,16 +261,8 @@ def set_max_dimensions(
 
 
 def round_dimensions(
-    x_min: Union[float, int],
-    x_max: Union[float, int],
-    y_min: Union[float, int],
-    y_max: Union[float, int],
-    z_min: Union[float, int],
-    z_max: Union[float, int],
-    mode: str = "lig",
-) -> Tuple[
-    Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int], Union[float, int]
-]:
+    x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float, mode: str = "lig"
+) -> Tuple[float, float, float, float, float, float]:
     """
     Round dimensions to a larger box size (+ buffer).
 
@@ -309,14 +290,7 @@ def round_dimensions(
     return x0, x1, y0, y1, z0, z1
 
 
-def dsq(
-    a1: Union[float, int],
-    a2: Union[float, int],
-    a3: Union[float, int],
-    b1: Union[float, int],
-    b2: Union[float, int],
-    b3: Union[float, int],
-) -> Union[float, int]:
+def dsq(a1: float, a2: float, a3: float, b1: float, b2: float, b3: float) -> float:
     """
     Squared distance between a and b
 
@@ -336,13 +310,7 @@ def dsq(
 
 
 def get_dimensions(
-    x0: Union[float, int],
-    x1: Union[float, int],
-    y0: Union[float, int],
-    y1: Union[float, int],
-    z0: Union[float, int],
-    z1: Union[float, int],
-    res: Union[float, int] = 0.1,
+    x0: float, x1: float, y0: float, y1: float, z0: float, z1: float, res: float = 0.1
 ) -> Tuple[int, int, int]:
     """
     Mesh dimensions in unit of res.
@@ -438,13 +406,13 @@ def get_radii(radii_type: str = "Bondi") -> Dict[str, float]:
 
 def fill_volume_matrix(
     mol: Molecule,
-    x0: Union[int, float],
-    x1: Union[int, float],
-    y0: Union[int, float],
-    y1: Union[int, float],
-    z0: Union[int, float],
-    z1: Union[int, float],
-    res: Union[int, float],
+    x0: float,
+    x1: float,
+    y0: float,
+    y1: float,
+    z0: float,
+    z1: float,
+    res: float,
     matrix: np.ndarray,
     radii_type: str,
     exclude_h: bool = True,
@@ -512,9 +480,7 @@ def fill_volume_matrix(
     return matrix
 
 
-def get_occupied_volume(
-    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
-) -> float:
+def get_occupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = None, molar_volume=True) -> float:
     """
     Get the occupied volume of the molecule in the box.
 
@@ -536,9 +502,7 @@ def get_occupied_volume(
         return v  # Å^3
 
 
-def get_unoccupied_volume(
-    matrix: np.ndarray, res: Union[int, float], name: Optional[str] = None, molar_volume=True
-) -> float:
+def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = None, molar_volume=True) -> float:
     """
     Get the unoccupied volume of the molecule in the box.
 
@@ -563,17 +527,17 @@ def get_unoccupied_volume(
 def molecular_volume(
     mol: Union[str, Molecule],
     name: Optional[str] = None,
-    res: Union[int, float] = 0.1,
+    res: float = 0.1,
     radii_type: str = "Bondi",
     molar_volume: bool = True,
     exclude_h: bool = True,
     mode: str = "lig",
-    x_cent: Union[int, float] = 0.0,
-    y_cent: Union[int, float] = 0.0,
-    z_cent: Union[int, float] = 0.0,
-    x_size: Union[int, float] = 10.0,
-    y_size: Union[int, float] = 10.0,
-    z_size: Union[int, float] = 10.0,
+    x_cent: float = 0.0,
+    y_cent: float = 0.0,
+    z_cent: float = 0.0,
+    x_size: float = 10.0,
+    y_size: float = 10.0,
+    z_size: float = 10.0,
 ) -> float:
     """
     Estimate the molar volume in cm^3/mol or volume in Å^3

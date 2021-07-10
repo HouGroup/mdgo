@@ -211,7 +211,7 @@ BOX: Final[
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME: Final[Dict[str, Union[float, int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[Dict[str, float]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
 ALIAS: Final[Dict[str, str]] = {
     "ethylene carbonate": "ec",
@@ -313,9 +313,9 @@ def atom_vec(atom1: Atom, atom2: Atom, dimension: np.ndarray) -> np.ndarray:
 
 
 def position_vec(
-    pos1: Union[List[Union[int, float]], np.ndarray],
-    pos2: Union[List[Union[int, float]], np.ndarray],
-    dimension: Union[List[Union[int, float]], np.ndarray],
+    pos1: Union[List[float], np.ndarray],
+    pos2: Union[List[float], np.ndarray],
+    dimension: Union[List[float], np.ndarray],
 ) -> np.ndarray:
     """
     Calculate the vector from pos2 to pos2.
@@ -750,7 +750,7 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
 def concentration_matcher(
     concentration: float,
     salt: Union[float, int, str, Molecule],
-    solvents: List[Union[str, Dict[str, Union[float, int]]]],
+    solvents: List[Union[str, Dict[str, float]]],
     solv_ratio: List[float],
     num_salt: int = 100,
     mode: str = "v",

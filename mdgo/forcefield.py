@@ -644,7 +644,7 @@ class ChargeWriter:
         self.data = data
         self.precision = precision
 
-    def scale(self, factor: Union[int, float]) -> LammpsData:
+    def scale(self, factor: float) -> LammpsData:
         """
 
         Args:
@@ -674,7 +674,7 @@ class ChargeWriter:
         items["topology"] = self.data.topology
         return LammpsData(**items)
 
-    def count_significant_figures(self, number: Union[int, float]) -> int:
+    def count_significant_figures(self, number: float) -> int:
         """
         Count significant figures in a float.
 
