@@ -15,7 +15,7 @@ from tqdm.notebook import tqdm
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom
 
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Tuple
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "1.0"
@@ -46,7 +46,7 @@ def neighbors_one_atom(
         run_end:
 
     Returns:
-
+        A neighbor dict with neighbor atom id as keys and arrays of adjacent boolean (0/1) as values.
     """
     bool_values = dict()
     time_count = 0
@@ -74,7 +74,7 @@ def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
         a_values:
 
     Returns:
-
+        A list of auto-correlation functions for each neighbor.
     """
     acfs = []
     for atom_id, neighbors in a_values.items():
@@ -88,8 +88,9 @@ def exponential_func(
     a: Union[int, float, np.number],
     b: Union[int, float, np.number],
     c: Union[int, float, np.number],
-) -> np.number:
+) -> np.floating:
     """
+    An exponential decay function
 
     Args:
         x:
@@ -98,7 +99,7 @@ def exponential_func(
         c:
 
     Returns:
-
+        The acf
     """
     return a * np.exp(-b * x) + c
 
@@ -111,7 +112,7 @@ def calc_neigh_corr(
     run_start: int,
     run_end: int,
     center_atom_type: str = "cation",
-):
+) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
     """
 
     Args:
@@ -163,7 +164,7 @@ def fit_residence_time(
     acf_avg_dict: Dict[str, np.ndarray],
     cutoff_time: int,
     time_step: float,
-):
+) -> Dict[str, np.floating]:
     """
 
     Args:
@@ -174,7 +175,7 @@ def fit_residence_time(
         time_step:
 
     Returns:
-
+        A dict containing residence time of each species
     """
     acf_avg_norm = dict()
     popt = dict()
@@ -207,7 +208,7 @@ def fit_residence_time(
 
     plt.xlabel("Time (ps)")
     plt.legend()
-    plt.ylabel("Neighbor Autocorrelation Function")
+    plt.ylabel("Neighbor Auto-correlation Function")
     plt.ylim(0, 1)
     plt.xlim(0, cutoff_time * time_step)
     plt.show()
