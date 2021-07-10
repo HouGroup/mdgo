@@ -85,15 +85,15 @@ class FFcrawler:
     server and download LAMMPS/GROMACS data file.
 
     Args:
-        write_dir (str): Directory for writing output.
-        chromedriver_dir (str): Directory to the ChromeDriver executable.
-        headless (bool): Whether to run Chrome in headless (silent) mode.
+        write_dir: Directory for writing output.
+        chromedriver_dir: Directory to the ChromeDriver executable.
+        headless: Whether to run Chrome in headless (silent) mode.
             Default to True.
-        xyz (bool): Whether to write the structure in the LigParGen
+        xyz: Whether to write the structure in the LigParGen
             generated data file as .xyz. Default to False. This is useful
             because the order and the name of the atoms could be
             different from the initial input.)
-        gromacs (bool): Whether to save GROMACS format data files.
+        gromacs: Whether to save GROMACS format data files.
             Default to False.
 
     Examples:
@@ -102,7 +102,14 @@ class FFcrawler:
         >>> lpg.data_from_pdb("/path/to/pdb")
     """
 
-    def __init__(self, write_dir, chromedriver_dir=None, headless=True, xyz=False, gromacs=False):
+    def __init__(
+        self,
+        write_dir: str,
+        chromedriver_dir: Optional[str] = None,
+        headless: bool = True,
+        xyz: bool = False,
+        gromacs: bool = False,
+    ):
         """Base constructor."""
         self.write_dir = write_dir
         self.xyz = xyz
@@ -140,12 +147,12 @@ class FFcrawler:
         """
         self.web.quit()
 
-    def data_from_pdb(self, pdb_dir):
+    def data_from_pdb(self, pdb_dir: str):
         """
         Use the LigParGen server to generate a LAMMPS data file from a pdb file.
 
         Arg:
-            pdb_dir (str): The path to the input pdb structure file.
+            pdb_dir: The path to the input pdb structure file.
 
         Write out a LAMMPS data file.
         """
@@ -188,12 +195,12 @@ class FFcrawler:
         finally:
             self.quit()
 
-    def download_data(self, lmp_name):
+    def download_data(self, lmp_name: str):
         """
         Helper function that download and write out the LAMMPS data file.
 
         Arg:
-            lmp_name (str): Name of the LAMMPS data file.
+            lmp_name: Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
         self.wait.until(EC.presence_of_element_located((By.NAME, "go")))
@@ -213,7 +220,9 @@ class FFcrawler:
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
-                line = element_id_dict.get(int(r["type"])) + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
+                element_name = element_id_dict.get(int(r["type"]))
+                assert element_name is not None
+                line = element_name + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
                 lines.append(line)
 
             with open(os.path.join(self.write_dir, lmp_name + ".xyz"), "w") as xyz_file:
@@ -245,18 +254,18 @@ class MaestroRunner:
     force field parameter for a molecule.
 
     Args:
-        structure_dir (str): Path to the structure file.
+        structure_dir: Path to the structure file.
             Supported input format please check
             https://www.schrodinger.com/kb/1278
-        working_dir (str): Directory for writing intermediate
+        working_dir: Directory for writing intermediate
             and final output.
-        out (str): Force field output form. Default to "lmp",
+        out: Force field output form. Default to "lmp",
             the data file for LAMMPS. Other supported formats
             are under development.
-        cmd_template (str): String template for input script
+        cmd_template: String template for input script
             with placeholders. Default to None, i.e., using
             the default template.
-        assign_bond (bool): Whether to assign bond to the input
+        assign_bond: Whether to assign bond to the input
             structure. Default to None.
 
     Supported input format please check https://www.schrodinger.com/kb/1278
@@ -286,11 +295,11 @@ class MaestroRunner:
 
     def __init__(
         self,
-        structure_dir,
-        working_dir,
-        out="lmp",
-        cmd_template=None,
-        assign_bond=False,
+        structure_dir: str,
+        working_dir: str,
+        out: str = "lmp",
+        cmd_template: Optional[str] = None,
+        assign_bond: bool = False,
     ):
         """Base constructor."""
         self.structure = structure_dir
@@ -371,12 +380,12 @@ class PubChemRunner:
     structure and information.
 
     Args:
-        write_dir (str): Directory for writing output.
-        chromedriver_dir (str): Directory to the ChromeDriver executable.
-        api (bool): Whether to use the PUG REST web interface for accessing
+        write_dir: Directory for writing output.
+        chromedriver_dir: Directory to the ChromeDriver executable.
+        api: Whether to use the PUG REST web interface for accessing
             PubChem data. If None, then all search/download will be
             performed via web browser mode. Default to True.
-        headless (bool): Whether to run Chrome in headless (silent) mode.
+        headless: Whether to run Chrome in headless (silent) mode.
             Default to False.
 
     Examples:
@@ -387,10 +396,10 @@ class PubChemRunner:
 
     def __init__(
         self,
-        write_dir,
-        chromedriver_dir,
-        api=True,
-        headless=False,
+        write_dir: str,
+        chromedriver_dir: str,
+        api: bool = True,
+        headless: bool = False,
     ):
         """Base constructor."""
         self.write_dir = write_dir
@@ -427,15 +436,15 @@ class PubChemRunner:
         if not self.api:
             self.web.quit()
 
-    def obtain_entry(self, search_text, name, output_format="sdf"):
+    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> Optional[str]:
         """
         Search the PubChem database with a text entry and save the
         structure in desired format.
 
         Args:
-            search_text (str): The text to use as a search query.
-            name (str): The short name for the molecule.
-            output_format (str): The output format of the structure.
+            search_text: The text to use as a search query.
+            name: The short name for the molecule.
+            output_format: The output format of the structure.
                 Default to sdf.
         """
         if self.api:
@@ -443,12 +452,12 @@ class PubChemRunner:
         else:
             return self._obtain_entry_web(search_text, name, output_format=output_format)
 
-    def smiles_to_pdb(self, smiles):
+    def smiles_to_pdb(self, smiles: str):
         """
         Obtain pdf file based on SMILES code.
 
         Args:
-            smiles (str): SMILES code.
+            smiles: SMILES code.
 
         Returns:
 
@@ -472,7 +481,7 @@ class PubChemRunner:
             print(".", end="")
         print("\nStructure file saved.")
 
-    def _obtain_entry_web(self, search_text, name, output_format):
+    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> Optional[str]:
         cid = None
 
         try:
@@ -526,7 +535,7 @@ class PubChemRunner:
             self.quit()
         return cid
 
-    def _obtain_entry_api(self, search_text, name, output_format):
+    def _obtain_entry_api(self, search_text, name, output_format) -> Optional[str]:
         cid = None
         cids = pcp.get_cids(search_text, "name", record_type="3d")
         if len(cids) == 0:
