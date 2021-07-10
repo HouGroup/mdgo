@@ -22,7 +22,7 @@ from pymatgen.core import Molecule
 from pymatgen.io.lammps.data import CombinedData
 
 from MDAnalysis import Universe
-from MDAnalysis.core.groups import Atom
+from MDAnalysis.core.groups import Atom, Residue, AtomGroup
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -518,6 +518,7 @@ def res_dict_from_lammpsdata(lammps_data: CombinedData) -> Dict[str, str]:
 def select_dict_from_resname(u: Universe) -> Dict[str, str]:
     """
     Infer select_dict (possibly interested atom species selection) from resnames in a MDAnalysis.universe object.
+    The resname must be pre-assigned already.
 
     Args:
         u: The universe object to work with.
@@ -533,14 +534,29 @@ def select_dict_from_resname(u: Universe) -> Dict[str, str]:
         residue = u.select_atoms("resname " + resname).residues[0]
         if np.isclose(residue.charge, 0, atol=1e-5):
             if len(residue.atoms.fragments) == 2:
-                for frag in residue.atoms.fragments:
+                for i, frag in enumerate(residue.atoms.fragments):
                     charge = np.sum(frag.charges)
-                    if charge > 0.01:
+                    if charge > 0.001:
                         extract_atom_from_ion(True, frag, select_dict)
-                    elif charge < -0.01:
+                    elif charge < -0.001:
                         extract_atom_from_ion(False, frag, select_dict)
                     else:
-                        extract_atom_from_molecule(resname, residue, select_dict)
+                        extract_atom_from_molecule(resname, frag, select_dict, number=i + 1)
+            elif len(residue.atoms.fragments) >= 2:
+                cation_number = 1
+                anion_number = 1
+                molecule_number = 1
+                for frag in residue.atoms.fragments:
+                    charge = np.sum(frag.charges)
+                    if charge > 0.001:
+                        extract_atom_from_ion(True, frag, select_dict, cation_number)
+                        cation_number += 1
+                    elif charge < -0.001:
+                        extract_atom_from_ion(False, frag, select_dict, anion_number)
+                        anion_number += 1
+                    else:
+                        extract_atom_from_molecule(resname, frag, select_dict, molecule_number)
+                        molecule_number += 1
             else:
                 extract_atom_from_molecule(resname, residue, select_dict)
         elif residue.charge > 0:
@@ -550,35 +566,46 @@ def select_dict_from_resname(u: Universe) -> Dict[str, str]:
     return select_dict
 
 
-def extract_atom_from_ion(positive, residue, select_dict):
+def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select_dict: Dict[str, str], number: int = 0):
     """
+    Assign the most most charged atom and/or one unique atom in the ion into select_dict.
 
     Args:
-        positive:
-        residue:
-        select_dict:
+        positive: Whether the charge of ion is positive. Otherwise negative. Default to True.
+        ion: Residue or AtomGroup
+        select_dict: A dictionary of atom species, where each atom species name is a key
+            and the corresponding values are the selection language.
+        number: The serial number of the ion.
 
     Returns:
 
     """
     if positive:
-        if len(residue.atoms.types) == 1:
-            select_dict["cation"] = "type " + residue.atoms.types[0]
+        if number == 0:
+            cation_name = "cation"
         else:
-            pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
-            unique_types = np.unique(residue.atoms.types, return_counts=True)
+            cation_name = "cation_" + str(number)
+        if len(ion.atoms.types) == 1:
+            select_dict[cation_name] = "type " + ion.atoms.types[0]
+        else:
+            # The most positively charged atom in the cation
+            pos_center = ion.atoms[np.argmax(ion.atoms.charges)]
+            unique_types = np.unique(ion.atoms.types, return_counts=True)
+            # One unique atom in the cation
             uni_center = unique_types[0][np.argmin(unique_types[1])]
             if pos_center.type == uni_center:
-                select_dict["cation"] = "type " + uni_center
+                select_dict[cation_name] = "type " + uni_center
             else:
-                select_dict["cation_" + pos_center.name + pos_center.type] = "type " + pos_center.type
-                select_dict["cation"] = "type " + uni_center
+                select_dict[cation_name + "_" + pos_center.name + pos_center.type] = "type " + pos_center.type
+                select_dict[cation_name] = "type " + uni_center
     else:
-        if len(residue.atoms.types) == 1:
-            select_dict["anion"] = "type " + residue.atoms.types[0]
+        if len(ion.atoms.types) == 1:
+            select_dict["anion"] = "type " + ion.atoms.types[0]
         else:
-            neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
-            unique_types = np.unique(residue.atoms.types, return_counts=True)
+            # The most negatively charged atom in the anion
+            neg_center = ion.atoms[np.argmin(ion.atoms.charges)]
+            unique_types = np.unique(ion.atoms.types, return_counts=True)
+            # One unique atom in the anion
             uni_center = unique_types[0][np.argmin(unique_types[1])]
             if neg_center.type == uni_center:
                 select_dict["anion"] = "type " + uni_center
@@ -587,13 +614,18 @@ def extract_atom_from_ion(positive, residue, select_dict):
                 select_dict["anion"] = "type " + uni_center
 
 
-def extract_atom_from_molecule(resname, residue, select_dict):
+def extract_atom_from_molecule(
+    resname: str, molecule: Union[Residue, AtomGroup], select_dict: Dict[str, str], number: int = 0
+):
     """
+    Assign the most negatively charged atom in the molecule into select_dict
 
     Args:
-        resname:
-        residue:
-        select_dict:
+        resname: The name of the molecule
+        molecule: The Residue or AtomGroup obj of the molecule.
+        select_dict: A dictionary of atom species, where each atom species name is a key
+            and the corresponding values are the selection language.
+        number: The serial number of the molecule under the name of resname.
 
     Returns:
 
@@ -602,8 +634,10 @@ def extract_atom_from_molecule(resname, residue, select_dict):
     # select_dict[resname + "-" + neg_center.name + neg_center.type] = "type " + neg_center.type
     # pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
     # select_dict[resname + "+" + pos_center.name + pos_center.type] = "type " + pos_center.type
-    neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
-    select_dict[resname] = "type " + neg_center.type
+
+    # The most negatively charged atom in the anion
+    neg_center = molecule.atoms[np.argmin(molecule.atoms.charges)]
+    select_dict[resname + "_" + str(number)] = "type " + neg_center.type
 
 
 def ff_parser(ff_dir: str, xyz_dir: str) -> str:
@@ -765,7 +799,7 @@ def concentration_matcher(
 
     Returns:
         A list of number of molecules in the simulation box, starting with
-            the salt and followed by each solvent in 'solvents'.
+        the salt and followed by each solvent in 'solvents'.
         The list is followed by a float of the approximate length of one side of the box in Å.
 
     """
