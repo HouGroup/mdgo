@@ -79,15 +79,15 @@ class MdRun:
         wrapped_run: Universe,
         unwrapped_run: Universe,
         nvt_start: int,
-        time_step: Union[int, float],
+        time_step: float,
         name: str,
         select_dict: Optional[Dict[str, str]] = None,
         res_dict: Optional[Dict[str, str]] = None,
         cation_name: str = "cation",
         anion_name: str = "anion",
-        cation_charge: Union[int, float] = 1,
-        anion_charge: Union[int, float] = -1,
-        temperature: Union[int, float] = 298.15,
+        cation_charge: float = 1,
+        anion_charge: float = -1,
+        temperature: float = 298.15,
         cond: bool = True,
     ):
         """
@@ -154,15 +154,15 @@ class MdRun:
         wrapped_dir: str,
         unwrapped_dir: str,
         nvt_start: int,
-        time_step: Union[int, float],
+        time_step: float,
         name: str,
         select_dict: Optional[Dict[str, str]] = None,
         res_dict: Optional[Dict[str, str]] = None,
         cation_name: str = "cation",
         anion_name: str = "anion",
-        cation_charge: Union[int, float] = 1,
-        anion_charge: Union[int, float] = -1,
-        temperature: Union[int, float] = 298.15,
+        cation_charge: float = 1,
+        anion_charge: float = -1,
+        temperature: float = 298.15,
         cond: bool = True,
     ):
         """
@@ -316,7 +316,7 @@ class MdRun:
     def coord_num_array_one_species(
         self,
         species: str,
-        distance: Union[int, float],
+        distance: float,
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -349,7 +349,7 @@ class MdRun:
 
     def coord_num_array_multi_species(
         self,
-        species_dict: Dict[str, Union[int, float]],
+        species_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -382,11 +382,11 @@ class MdRun:
 
     def get_solvation_structure(
         self,
-        species_dict: Dict[str, Union[int, float]],
+        species_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         structure_code: int,
-        write_freq: Union[int, float],
+        write_freq: float,
         write_path: str,
         center_atom: str = "cation",
     ):
@@ -424,7 +424,7 @@ class MdRun:
     def coord_num_array_simple(
         self,
         species: str,
-        distance: Union[int, float],
+        distance: float,
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -456,9 +456,7 @@ class MdRun:
         )["total"]
         return num_array
 
-    def coordination_one_species(
-        self, species: str, distance: Union[int, float], run_start: int, run_end: int
-    ) -> pd.DataFrame:
+    def coordination_one_species(self, species: str, distance: float, run_start: int, run_end: int) -> pd.DataFrame:
         """Tabulates the coordination number distribution of one species
         around the cation
 
@@ -485,7 +483,7 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def rdf_integral(self, species_dict: Dict[str, Union[int, float]], run_start: int, run_end: int) -> pd.DataFrame:
+    def rdf_integral(self, species_dict: Dict[str, float], run_start: int, run_end: int) -> pd.DataFrame:
         """Calculate the integral of the radial distribution function of
         selected species
 
@@ -512,7 +510,7 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def shell_simple(self, species: str, distance: Union[int, float], run_start: int, run_end: int) -> pd.DataFrame:
+    def shell_simple(self, species: str, distance: float, run_start: int, run_end: int) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
@@ -570,7 +568,7 @@ class MdRun:
 
     def get_msd_by_length(
         self,
-        distance: Union[int, float],
+        distance: float,
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -594,7 +592,7 @@ class MdRun:
 
     def get_msd_partial(
         self,
-        distance: Union[int, float],
+        distance: float,
         run_start: int,
         run_end: int,
         largest: int = 1000,
@@ -622,9 +620,7 @@ class MdRun:
         )
         return free_array, attach_array
 
-    def get_d(
-        self, msd_array: np.ndarray, start: int, stop: int, percentage: Union[int, float] = 1, species: str = "cation"
-    ):
+    def get_d(self, msd_array: np.ndarray, start: int, stop: int, percentage: float = 1, species: str = "cation"):
         """Prints the self-diffusion coefficient (in m^2/s) of the species.
         Prints the Nernst-Einstein conductivity (in mS/cm) if it's the cation.
 
@@ -662,13 +658,13 @@ class MdRun:
                 print("NE Conductivity of all " + species + ":", sigma, "mS/cm")
 
     def get_neighbor_corr(
-        self, species_dict: Dict[str, Union[int, float]], run_start: int, run_end: int
+        self, distance_dict: Dict[str, float], run_start: int, run_end: int
     ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """Calculates the neighbor auto-correlation function (ACF)
         of selected species around cation
 
         Args:
-            species_dict: Dict of Cutoff distance of neighbor
+            distance_dict: Dict of Cutoff distance of neighbor
                 for each species.
             run_start: Start time step.
             run_end: End time step.
@@ -678,7 +674,7 @@ class MdRun:
         """
         return calc_neigh_corr(
             self.wrapped_run,
-            species_dict,
+            distance_dict,
             self.select_dict,
             self.time_step,
             run_start,
@@ -706,7 +702,7 @@ class MdRun:
         run_start: int,
         run_end: int,
         species: str,
-        distance: Union[int, float],
+        distance: float,
         center_atom: str = "cation",
         idx: int = 0,
     ) -> Dict[str, np.floating]:
@@ -739,8 +735,8 @@ class MdRun:
         run_start: int,
         run_end: int,
         binding_site: str,
-        distance: Union[int, float],
-        hopping_cutoff: Union[int, float],
+        distance: float,
+        hopping_cutoff: float,
         floating_atom: str = "cation",
         smooth: int = 51,
         mode: str = "full",
@@ -790,12 +786,12 @@ class MdRun:
 
     def shell_evolution(
         self,
-        species_dict: Dict[str, Union[int, float]],
+        species_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         lag_step: int,
-        binding_cutoff: Union[int, float],
-        hopping_cutoff: Union[int, float],
+        binding_cutoff: float,
+        hopping_cutoff: float,
         smooth: int = 51,
         cool: int = 0,
         center: str = "center",
@@ -875,8 +871,8 @@ class MdRun:
         run_end: int,
         cluster_center: str,
         cluster_terminal: str,
-        binding_cutoff: Union[int, float],
-        hopping_cutoff: Union[int, float],
+        binding_cutoff: float,
+        hopping_cutoff: float,
         floating_atom: str = "cation",
         cartesian_by_ref: np.ndarray = None,
         sym_dict: Dict[str, List[np.ndarray]] = None,
@@ -932,7 +928,7 @@ class MdRun:
             return get_full_coords(coord_list, sample=sample)
 
     def get_cluster_distance(
-        self, run_start: int, run_end: int, neighbor_cutoff: Union[int, float], cluster_center: str = "center"
+        self, run_start: int, run_end: int, neighbor_cutoff: float, cluster_center: str = "center"
     ) -> np.floating:
         """Calculates the average distance of the center of clusters/molecules
 
