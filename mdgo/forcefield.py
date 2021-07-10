@@ -44,7 +44,6 @@ import shutil
 import signal
 import subprocess
 import numpy as np
-from typing import Union
 
 from typing import Optional
 from typing_extensions import Final
