@@ -15,6 +15,11 @@ except ImportError:
 import numpy as np
 from tqdm.notebook import trange
 
+from MDAnalysis import Universe, AtomGroup
+from MDAnalysis.core.groups import Atom
+
+from typing import List, Dict, Tuple, Union, Optional
+
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
 __maintainer__ = "Tingzheng Hou"
@@ -22,7 +27,9 @@ __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Feb 9, 2021"
 
 
-def total_msd(nvt_run, start, stop, select="all", msd_type="xyz", fft=True):
+def total_msd(
+    nvt_run: Universe, start: int, stop: int, select: str = "all", msd_type: str = "xyz", fft: bool = True
+) -> np.ndarray:
     """
 
     Args:
@@ -47,7 +54,7 @@ def total_msd(nvt_run, start, stop, select="all", msd_type="xyz", fft=True):
         return _total_msd(nvt_run, select, start, stop)
 
 
-def _total_msd(nvt_run, select, run_start, run_end):
+def _total_msd(nvt_run: Universe, select: str, run_start: int, run_end: int) -> np.ndarray:
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     li_atoms = nvt_run.select_atoms(select)
     all_list = list()
@@ -61,7 +68,7 @@ def _total_msd(nvt_run, select, run_start, run_end):
     return total_array
 
 
-def msd_states(coord_list, largest):
+def msd_states(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
     """
 
     Args:
@@ -71,7 +78,7 @@ def msd_states(coord_list, largest):
     Returns:
 
     """
-    msd_dict = dict()
+    msd_dict: Dict[Union[int, np.integer], np.ndarray] = dict()
     for state in coord_list:
         n_frames = state.shape[0]
         lag_times = np.arange(1, min(n_frames, largest))
@@ -86,13 +93,17 @@ def msd_states(coord_list, largest):
     time_range = len(msd_dict) + 1
     msds_by_state = np.zeros(time_range)
     for kw in range(1, time_range):
-        msds_by_state[kw] = msd_dict.get(kw).mean()
+        msds = msd_dict.get(kw)
+        assert msds is not None
+        msds_by_state[kw] = msds.mean()
         timeseries.append(msds_by_state[kw])
     timeseries = np.array(timeseries)
     return timeseries
 
 
-def states_coord_array(nvt_run, li_atom, select_dict, distance, run_start, run_end):
+def states_coord_array(
+    nvt_run: Universe, li_atom: Atom, select_dict: Dict[str, str], distance: float, run_start: int, run_end: int
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
 
     Args:
@@ -151,12 +162,20 @@ def states_coord_array(nvt_run, li_atom, select_dict, distance, run_start, run_e
     return attach_list, free_list
 
 
-def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, run_end):
+def partial_msd(
+    nvt_run: Universe,
+    atoms: AtomGroup,
+    largest: int,
+    select_dict: Dict[str, str],
+    distance: float,
+    run_start: int,
+    run_end: int,
+) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
     """
 
     Args:
         nvt_run:
-        li_atoms:
+        atoms:
         largest:
         select_dict:
         distance:
@@ -168,8 +187,8 @@ def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, ru
     """
     free_coords = list()
     attach_coords = list()
-    for i in trange(len(li_atoms)):
-        attach_coord, free_coord = states_coord_array(nvt_run, li_atoms[i], select_dict, distance, run_start, run_end)
+    for i in trange(len(atoms)):
+        attach_coord, free_coord = states_coord_array(nvt_run, atoms[i], select_dict, distance, run_start, run_end)
         attach_coords.extend(attach_coord)
         free_coords.extend(free_coord)
     attach_data = None
@@ -181,7 +200,7 @@ def partial_msd(nvt_run, li_atoms, largest, select_dict, distance, run_start, ru
     return free_data, attach_data
 
 
-def msd_by_length(coord_list):
+def msd_by_length(coord_list: List[np.ndarray]):
     """
 
     Args:

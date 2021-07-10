@@ -557,11 +557,13 @@ class MdRun:
         Return:
              An array of MSD values in the trajectory
         """
+        selection = self.select_dict.get(species)
+        assert selection is not None
         msd_array = total_msd(
             self.unwrapped_run,
             start=start,
             stop=stop,
-            select=self.select_dict.get(species),
+            select=selection,
             fft=fft,
         )
         return msd_array
