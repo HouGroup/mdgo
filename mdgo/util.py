@@ -576,9 +576,6 @@ def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select
         select_dict: A dictionary of atom species, where each atom species name is a key
             and the corresponding values are the selection language.
         number: The serial number of the ion.
-
-    Returns:
-
     """
     if positive:
         if number == 0:
@@ -630,9 +627,6 @@ def extract_atom_from_molecule(
         select_dict: A dictionary of atom species, where each atom species name is a key
             and the corresponding values are the selection language.
         number: The serial number of the molecule under the name of resname.
-
-    Returns:
-
     """
     # neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
     # select_dict[resname + "-" + neg_center.name + neg_center.type] = "type " + neg_center.type
@@ -875,12 +869,20 @@ def sdf_to_pdb(
     sdf_file: str,
     pdb_file: str,
     write_title: bool = True,
-    remark4: bool = True,
+    version: bool = True,
     credit: bool = True,
     pubchem: bool = True,
 ):
     """
     Convert SDF file to PDB file.
+
+    Args:
+        sdf_file: Path to the input sdf file.
+        pdb_file: Path to the output pdb file.
+        write_title: Whether to write title in the pdb file. Default to True.
+        version: Whether to version line (remark 4) line in the pdb file. Default to True.
+        credit: Whether to credit line (remark 888) in the pdb file. Default to True.
+        pubchem: Whether the sdf is downloaded from PubChem. Default to True.
     """
 
     # parse sdf file file
@@ -950,7 +952,7 @@ def sdf_to_pdb(
     with open(pdb_file, "wt") as outp:
         if write_title:
             outp.write("TITLE     {:70s}\n".format(title))
-        if remark4:
+        if version:
             outp.write("REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n")
         if credit:
             outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
