@@ -273,7 +273,7 @@ class MdRun:
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
-        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array, self.units)
+        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
         return start, end, beta
 
     def plot_cond_array(
@@ -349,12 +349,12 @@ class MdRun:
         if start == -1 and end == -1:
             start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
         else:
-            beta = get_beta(self.cond_array, self.time_array, start, end)
+            beta, _ = get_beta(self.cond_array, self.time_array, start, end)
         # print info on fitting
         time_units = ''
-        if units == 'real':
+        if self.units == 'real':
             time_units = 'ps'
-        elif units == 'lj':
+        elif self.units == 'lj':
             time_units = 'tau'
         print('Start of linear fitting regime: {} ({} {})'.format(start, self.time_array[start], time_units))
         print('End of linear fitting regime: {} ({} {})'.format(end, self.time_array[end], time_units))

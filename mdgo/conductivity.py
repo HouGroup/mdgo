@@ -119,11 +119,13 @@ def get_beta(
         start (int): index at which to start fitting linear regime of the MSD
         end (int): index at which to end fitting linear regime of the MSD
 
-    Returns beta (int)
+    Returns beta (int) and the range of beta values within the region
     """
     msd_slope = np.gradient(np.log(msd[start:end]), np.log(time_array[start:end]))
     beta = np.mean(np.array(msd_slope))
-    return beta
+    beta_range = np.max(msd_slope) - np.min(msd_slope)
+    return beta, beta_range
+
 
 def choose_msd_fitting_region(
         msd: np.ndarray,
@@ -152,9 +154,10 @@ def choose_msd_fitting_region(
     for i in np.logspace(np.log10(2), np.log10(len(time_array) / 10), 10):  # try 10 regions
         start = int(i)
         end = int(i * 10)  # fit over one decade
-        beta = get_beta(msd, time_array, start, end)
+        beta, beta_range = get_beta(msd, time_array, start, end)
+        slope_tolerance = 2 # acceptable level of noise in beta values
         # check if beta in this region is better than regions tested so far
-        if (np.abs(beta - 1) < np.abs(beta_best - 1)) or beta_best == 0:
+        if (np.abs(beta - 1) < np.abs(beta_best - 1) and beta_range < slope_tolerance) or beta_best == 0:
             beta_best = beta
             start_final = start
             end_final = end
