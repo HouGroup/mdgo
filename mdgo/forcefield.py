@@ -150,11 +150,10 @@ class FFcrawler:
     def data_from_pdb(self, pdb_dir: str):
         """
         Use the LigParGen server to generate a LAMMPS data file from a pdb file.
-
-        Arg:
-            pdb_dir: The path to the input pdb structure file.
-
         Write out a LAMMPS data file.
+
+        Args:
+            pdb_dir: The path to the input pdb structure file.
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
@@ -174,13 +173,11 @@ class FFcrawler:
 
     def data_from_smiles(self, smiles_code):
         """
-        Use the LigParGen server to generate a LAMMPS data file
-        from a SMILES code.
-
-        Arg:
-            smiles_code (str): The SMILES code for the LigParGen input.
-
+        Use the LigParGen server to generate a LAMMPS data file from a SMILES code.
         Write out a LAMMPS data file.
+
+        Args:
+            smiles_code: The SMILES code for the LigParGen input.
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
@@ -199,7 +196,7 @@ class FFcrawler:
         """
         Helper function that download and write out the LAMMPS data file.
 
-        Arg:
+        Args:
             lmp_name: Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
@@ -606,10 +603,11 @@ class Aqueous:
                 models, the only choice is 'default'. For the joung_cheatham
                 model, valid choices are "spce", "tip3p", and "tip4pew".
             ion: Formula of the ion (e.g., "Li+").
+
         Returns:
-            LammpsData: Force field parameters for the chosen water model.
-                If the desired combination of force field and water model
-                for the given ion is not available, None is returned.
+            Force field parameters for the chosen water model.
+            If the desired combination of force field and water model
+            for the given ion is not available, None is returned.
         """
         data_path = DATA_DIR
         alias = DATA_MODELS.get("alias", {})
@@ -644,7 +642,6 @@ class ChargeWriter:
     Args:
         data: The provided LammpsData obj.
         precision: Number of significant figures.
-
     """
 
     def __init__(self, data: LammpsData, precision: int = 10):
@@ -654,12 +651,13 @@ class ChargeWriter:
 
     def scale(self, factor: float) -> LammpsData:
         """
+        Scales the charge in of the in self.data and returns a new one. TODO: check if non-destructive
 
         Args:
-            factor:
+            factor: The charge scaling factor
 
         Returns:
-
+            A recreated LammpsData obj
         """
         items = dict()
         items["box"] = self.data.box
@@ -690,7 +688,7 @@ class ChargeWriter:
             number: The number to count.
 
         Returns:
-
+            The number of significant figures.
         """
         number_str = repr(float(number))
         tokens = number_str.split(".")
