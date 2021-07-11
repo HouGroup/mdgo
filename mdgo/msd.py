@@ -50,8 +50,9 @@ def total_msd(
         return total_array
     else:
         if fft:
-            print("Warning! MDAnalysis version too low, fft not supported. Use conventional instead")
-        return _total_msd(nvt_run, select, start, stop)
+            raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
+        else:
+            return _total_msd(nvt_run, select, start, stop)
 
 
 def _total_msd(nvt_run: Universe, select: str, run_start: int, run_end: int) -> np.ndarray:
@@ -115,7 +116,7 @@ def states_coord_array(
         run_end:
 
     Returns:
-
+        Two list of coordinates arrays containing. One for the attached state, the other for the free state.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     attach_list = list()
