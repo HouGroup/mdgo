@@ -31,7 +31,7 @@ from mdgo.coordination import (
     coord_shell_array,
     num_of_neighbor,
     num_of_neighbor_simple,
-    trajectory,
+    neighbor_distance,
     find_nearest,
     find_nearest_free_only,
     process_evol,
@@ -334,13 +334,13 @@ class MdRun:
              An array of coordination number for each time in the trajectory.
         """
         nvt_run = self.wrapped_run
-        species_dict = {species: distance}
+        distance_dict = {species: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
-            species_dict,
+            distance_dict,
             self.select_dict,
             run_start,
             run_end,
@@ -349,7 +349,7 @@ class MdRun:
 
     def coord_num_array_multi_species(
         self,
-        species_dict: Dict[str, float],
+        distance_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -357,7 +357,7 @@ class MdRun:
         """Calculates the coordination number array of multiple species around the interested center atom.
 
         Args:
-            species_dict: A dict of coordination cutoff distance
+            distance_dict: A dict of coordination cutoff distance
                 of the interested species.
             run_start: Start time step.
             run_end: End time step.
@@ -373,7 +373,7 @@ class MdRun:
             nvt_run,
             num_of_neighbor,
             center_atoms,
-            species_dict,
+            distance_dict,
             self.select_dict,
             run_start,
             run_end,
@@ -382,7 +382,7 @@ class MdRun:
 
     def get_solvation_structure(
         self,
-        species_dict: Dict[str, float],
+        distance_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         structure_code: int,
@@ -393,8 +393,7 @@ class MdRun:
         """Writes out a series of desired solvation structures as .xyz files
 
         Args:
-            species_dict: A dict of coordination cutoff distance
-                of interested species.
+            distance_dict: A dict of coordination cutoff distance of interested species.
             run_start: Start time step.
             run_end: End time step.
             structure_code: An integer code representing the solvation
@@ -410,7 +409,7 @@ class MdRun:
             num_of_neighbor(
                 nvt_run,
                 atom,
-                species_dict,
+                distance_dict,
                 self.select_dict,
                 run_start,
                 run_end,
@@ -443,13 +442,13 @@ class MdRun:
             An array of the solvation structure type for each timestep in the trajectory.
         """
         nvt_run = self.wrapped_run
-        species_dict = {species: distance}
+        distance_dict = {species: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
             num_of_neighbor_simple,
             center_atoms,
-            species_dict,
+            distance_dict,
             self.select_dict,
             run_start,
             run_end,
@@ -483,12 +482,12 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def rdf_integral(self, species_dict: Dict[str, float], run_start: int, run_end: int) -> pd.DataFrame:
+    def rdf_integral(self, distance_dict: Dict[str, float], run_start: int, run_end: int) -> pd.DataFrame:
         """Calculate the integral of the radial distribution function of
         selected species
 
         Args:
-            species_dict: A dict of coordination cutoff distance
+            distance_dict: A dict of coordination cutoff distance
                 of interested species.
             run_start: Start time step.
             run_end: End time step.
@@ -496,7 +495,7 @@ class MdRun:
         Return:
              A dataframe of the species and the coordination number.
         """
-        cn_values = self.coord_num_array_multi_species(species_dict, run_start, run_end)
+        cn_values = self.coord_num_array_multi_species(distance_dict, run_start, run_end)
         item_name = "species in first solvation shell"
         item_list = []
         cn_list = []
@@ -698,7 +697,7 @@ class MdRun:
              A dict of distance arrays of the center atom-neighbor as a function of time with neighbor id as keys.
         """
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(center_atom))
-        return trajectory(
+        return neighbor_distance(
             self.wrapped_run,
             center_atoms[idx],
             run_start,
@@ -739,7 +738,7 @@ class MdRun:
         freqs = []
         hopping_distance = []
         for ion in tqdm(floating_atoms[:]):
-            neighbor_trj = trajectory(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
+            neighbor_trj = neighbor_distance(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
             if mode == "full":
                 sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
             elif mode == "free":
@@ -764,7 +763,7 @@ class MdRun:
 
     def shell_evolution(
         self,
-        species_dict: Dict[str, float],
+        distance_dict: Dict[str, float],
         run_start: int,
         run_end: int,
         lag_step: int,
@@ -775,11 +774,11 @@ class MdRun:
         center: str = "center",
         duplicate_run: Optional[List[MdRun]] = None,
     ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
-        """Calculates the coordination number of species in the species_dict
+        """Calculates the coordination number of species in the distance_dict
         as a function of time before and after hopping events.
 
         Args:
-            species_dict: A dict of coordination cutoff distance of interested species.
+            distance_dict: A dict of coordination cutoff distance of interested species.
             run_start: Start time step.
             run_end: End time step.
             lag_step: time steps to track before and after the hopping event
@@ -796,14 +795,14 @@ class MdRun:
         """
         in_list: Dict[str, List[Any]] = dict()
         out_list: Dict[str, List[Any]] = dict()
-        for k in list(species_dict):
+        for k in list(distance_dict):
             in_list[k] = []
             out_list[k] = []
         process_evol(
             self,
             in_list,
             out_list,
-            species_dict,
+            distance_dict,
             run_start,
             run_end,
             lag_step,
@@ -819,7 +818,7 @@ class MdRun:
                     run,
                     in_list,
                     out_list,
-                    species_dict,
+                    distance_dict,
                     run_start,
                     run_end,
                     lag_step,
@@ -831,7 +830,7 @@ class MdRun:
                 )
         cn_dict = dict()
         cn_dict["time"] = np.array([i * self.time_step - lag_step * self.time_step for i in range(lag_step * 2 + 1)])
-        for k in list(species_dict):
+        for k in list(distance_dict):
             if "in_count" not in cn_dict:
                 cn_dict["in_count"] = np.array(in_list[k]).shape[0]
                 cn_dict["out_count"] = np.array(out_list[k]).shape[0]
@@ -881,7 +880,7 @@ class MdRun:
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
-            neighbor_trj = trajectory(
+            neighbor_trj = neighbor_distance(
                 nvt_run, atom, run_start, run_end, cluster_center, self.select_dict, binding_cutoff
             )
             sites, freq, steps = find_nearest(
