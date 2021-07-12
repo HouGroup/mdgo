@@ -36,7 +36,7 @@ def neighbor_distance(
     Calculates a distance dictionary of neighbor atoms to the {center_atom}.
 
     Args:
-        nvt_run: An Universe object of wrapped trajectory.
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom: the interested central atom object.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
@@ -345,7 +345,7 @@ def check_contiguous_steps(
     in the checkpoint +/- lag time range.
 
     Args:
-        nvt_run: An Universe object of wrapped trajectory.
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom: the interested central atom object.
         distance_dict: Dict of Cutoff distance of neighbor for each species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -399,7 +399,7 @@ def heat_map(
     a cartesian coordinate system where the cluster_center_sites atom is the origin.
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         floating_atom:
         cluster_center_sites:
         cluster_terminal:
@@ -473,7 +473,7 @@ def process_evol(
     hopping to and hopping out from the {binding_site}.
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         in_list:
@@ -578,13 +578,13 @@ def cluster_coordinates(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
         species:
-        distance:
+        distance: The coordination cutoff distance.
         basis_vectors:
         cluster_center:
 
@@ -650,7 +650,7 @@ def num_of_neighbor(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom:
         distance_dict:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -718,7 +718,7 @@ def num_of_neighbor_simple(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom:
         distance_dict:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -772,7 +772,7 @@ def num_of_neighbor_one_li_simple_extra(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom:
         species:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -838,7 +838,7 @@ def num_of_neighbor_one_li_simple_extra_two(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom:
         species_list:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -915,7 +915,7 @@ def num_of_neighbor_one_li_complex(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         center_atom:
         species:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -976,7 +976,7 @@ def coord_shell_array(
 ):
     """
     Args:
-        nvt_run: MDAnalysis Universe
+        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
         func: One of the neighbor statistical method (num_of_neighbor, num_of_neighbor_simple)
         center_atoms: Atom group of the center atoms.
         distance_dict: A dict of coordination cutoff distance

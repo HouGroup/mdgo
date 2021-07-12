@@ -37,7 +37,7 @@ def neighbors_one_atom(
     Create adjacency matrix for one center atom.
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe}.
         atom:
         species:
         select_dict:
@@ -116,7 +116,7 @@ def calc_neigh_corr(
     """
 
     Args:
-        nvt_run:
+        nvt_run: An MDAnalysis {Universe}.
         distance_dict:
         select_dict:
         time_step:

@@ -588,11 +588,12 @@ class MdRun:
         run_end: int,
         largest: int = 1000,
         center_atom: str = "cation",
+        binding_site: str = "anion",
     ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
         """
-        Calculates the mean square displacement (MSD) of the interested atom species
-        according to binding states. The returned free_array include the MSD of the
-        free floating atoms, attach_array includes the MSD of binded/attached atoms.
+        Calculates the mean square displacement (MSD) of the {center_atom} according to coordination states.
+        The returned {free_array} include the MSD when {center_atom} is not coordinated to {binding_site}.
+        The {attach_array} includes the MSD of {center_atom} is not coordinated to {binding_site}.
 
         Args:
             distance: The coordination cutoff distance.
@@ -600,6 +601,7 @@ class MdRun:
             run_end: End frame of analysis.
             largest: The largest time sequence to trace.
             center_atom: The interested atom. Default to "cation".
+            binding_site: The species the {center_atom} coordinates to. Default to "anion".
 
         Returns:
             Two arrays of MSD in the trajectory
@@ -607,7 +609,7 @@ class MdRun:
         nvt_run = self.unwrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         free_array, attach_array = partial_msd(
-            nvt_run, center_atoms, largest, self.select_dict, distance, run_start, run_end
+            nvt_run, center_atoms, largest, self.select_dict, distance, run_start, run_end, binding_site=binding_site
         )
         return free_array, attach_array
 
