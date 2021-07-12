@@ -42,8 +42,8 @@ def neighbors_one_atom(
         species:
         select_dict:
         distance:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
         A neighbor dict with neighbor atom id as keys and arrays of adjacent boolean (0/1) as values.
@@ -120,8 +120,8 @@ def calc_neigh_corr(
         distance_dict:
         select_dict:
         time_step:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         center_atom_type:
 
     Returns:
