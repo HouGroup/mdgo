@@ -574,7 +574,7 @@ class MdRun:
         run_end: int,
         largest: int = 1000,
         center_atom: str = "cation",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
         """
         Calculates the mean square displacement (MSD) of the interested atom species
         according to binding states. The returned free_array include the MSD of the
@@ -679,19 +679,19 @@ class MdRun:
         run_start: int,
         run_end: int,
         species: str,
-        distance: float,
+        neighbor_cutoff: float,
         center_atom: str = "cation",
-        idx: int = 0,
-    ) -> Dict[str, np.floating]:
-        """Calculates the distance of a center atom-neighbor as a function of time
+        index: int = 0,
+    ) -> Dict[str, np.ndarray]:
+        """Returns the distance between one center atom and neighbors as a function of time
 
         Args:
             run_start: start time step.
             run_end: end time step.
             center_atom: The interested atom. Default to "cation".
             species: The interested neighbor species.
-            distance: The coordination cutoff distance.
-            idx: The index of the atom in the interested atom group.
+            neighbor_cutoff: The neighbor cutoff distance.
+            index: The index of the atom in the interested atom group.
 
         Return:
              A dict of distance arrays of the center atom-neighbor as a function of time with neighbor id as keys.
@@ -699,12 +699,12 @@ class MdRun:
         center_atoms = self.wrapped_run.select_atoms(self.select_dict.get(center_atom))
         return neighbor_distance(
             self.wrapped_run,
-            center_atoms[idx],
+            center_atoms[index],
             run_start,
             run_end,
             species,
             self.select_dict,
-            distance,
+            neighbor_cutoff,
         )
 
     def get_hopping_freq_dist(
@@ -771,7 +771,8 @@ class MdRun:
         hopping_cutoff: float,
         smooth: int = 51,
         cool: int = 0,
-        center: str = "center",
+        center_atom: str = "cation",
+        binding_site: str = "anion",
         duplicate_run: Optional[List[MdRun]] = None,
     ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
         """Calculates the coordination number of species in the distance_dict
@@ -786,20 +787,21 @@ class MdRun:
             hopping_cutoff: Detaching cutoff distance.
             smooth: The length of the smooth filter window. Default to 51.
             cool: The cool down timesteps between hopping in and hopping out.
-            center: The select_dict key of the binding site. Default to "center".
+            binding_site: The select_dict key of the binding site. Default to "anion".
             duplicate_run: Default to None.
 
         Return:
             A dictionary containing the number of trj logged, the averaged coordination number and standard deviation
             for each species, and the corresponding time sequence.
         """
-        in_list: Dict[str, List[Any]] = dict()
-        out_list: Dict[str, List[Any]] = dict()
+        in_list: Dict[str, List[np.ndarray]] = dict()
+        out_list: Dict[str, List[np.ndarray]] = dict()
         for k in list(distance_dict):
             in_list[k] = []
             out_list[k] = []
         process_evol(
-            self,
+            self.wrapped_run,
+            self.select_dict,
             in_list,
             out_list,
             distance_dict,
@@ -810,12 +812,14 @@ class MdRun:
             hopping_cutoff,
             smooth,
             cool,
-            center,
+            binding_site,
+            center_atom,
         )
         if duplicate_run is not None:
             for run in duplicate_run:
                 process_evol(
-                    run,
+                    run.wrapped_run,
+                    run.select_dict,
                     in_list,
                     out_list,
                     distance_dict,
@@ -826,7 +830,8 @@ class MdRun:
                     hopping_cutoff,
                     smooth,
                     cool,
-                    center,
+                    binding_site,
+                    center_atom,
                 )
         cn_dict = dict()
         cn_dict["time"] = np.array([i * self.time_step - lag_step * self.time_step for i in range(lag_step * 2 + 1)])
