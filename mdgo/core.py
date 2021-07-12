@@ -52,22 +52,22 @@ class MdRun:
     """
 
     def __init__(
-            self,
-            lammps_data,
-            wrapped_run,
-            unwrapped_run,
-            nvt_start,
-            time_step,
-            name,
-            select_dict=None,
-            res_dict=None,
-            cation_name="cation",
-            anion_name="anion",
-            cation_charge=1,
-            anion_charge=-1,
-            temperature=298.5,
-            cond=True,
-            units="real",
+        self,
+        lammps_data,
+        wrapped_run,
+        unwrapped_run,
+        nvt_start,
+        time_step,
+        name,
+        select_dict=None,
+        res_dict=None,
+        cation_name="cation",
+        anion_name="anion",
+        cation_charge=1,
+        anion_charge=-1,
+        temperature=298.5,
+        cond=True,
+        units="real",
     ):
         """
         Base constructor. This is a low level constructor designed to work with
@@ -147,22 +147,22 @@ class MdRun:
 
     @classmethod
     def from_output_full(
-            cls,
-            data_dir,
-            wrapped_dir,
-            unwrapped_dir,
-            nvt_start,
-            time_step,
-            name,
-            select_dict=None,
-            res_dict=None,
-            cation_name="cation",
-            anion_name="anion",
-            cation_charge=1,
-            anion_charge=-1,
-            temperature=298.5,
-            cond=True,
-            units="real",
+        cls,
+        data_dir,
+        wrapped_dir,
+        unwrapped_dir,
+        nvt_start,
+        time_step,
+        name,
+        select_dict=None,
+        res_dict=None,
+        cation_name="cation",
+        anion_name="anion",
+        cation_charge=1,
+        anion_charge=-1,
+        temperature=298.5,
+        cond=True,
+        units="real",
     ):
         """
         Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
@@ -261,8 +261,7 @@ class MdRun:
         )
         return cond_array
 
-    def choose_cond_fit_region(self,
-                               ) -> tuple:
+    def choose_cond_fit_region(self) -> tuple:
         """Computes the optimal fitting region (linear regime) of conductivity MSD.
 
         Args:
@@ -277,11 +276,11 @@ class MdRun:
         return start, end, beta
 
     def plot_cond_array(
-            self,
-            start: int = -1,
-            end: int = -1,
-            *runs: 'MdRun',
-            reference: bool = True,
+        self,
+        start: int = -1,
+        end: int = -1,
+        *runs: "MdRun",
+        reference: bool = True,
     ):
         """Plots the conductivity MSD as a function of time.
         If no fitting region (start, end) is provided, computes the optimal
@@ -320,12 +319,13 @@ class MdRun:
             )
         if reference:
             slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
-                    self.time_array[int(np.log(len(self.time_array)) / 2)] - self.time_array[5])
-            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2, 'k--')
-        if self.units == 'real':
+                self.time_array[int(np.log(len(self.time_array)) / 2)] - self.time_array[5]
+            )
+            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2, "k--")
+        if self.units == "real":
             ax.set_ylabel("MSD (A$^2$)")
             ax.set_xlabel("Time (ps)")
-        elif self.units == 'lj':
+        elif self.units == "lj":
             ax.set_ylabel("MSD ($\sigma^2$)")
             ax.set_xlabel("Time ($\\tau$)")
         else:
@@ -351,16 +351,17 @@ class MdRun:
         else:
             beta, _ = get_beta(self.cond_array, self.time_array, start, end)
         # print info on fitting
-        time_units = ''
-        if self.units == 'real':
-            time_units = 'ps'
-        elif self.units == 'lj':
-            time_units = 'tau'
-        print('Start of linear fitting regime: {} ({} {})'.format(start, self.time_array[start], time_units))
-        print('End of linear fitting regime: {} ({} {})'.format(end, self.time_array[end], time_units))
-        print('Beta value (fit to MSD = t^beta): {} (beta = 1 in the diffusive regime)'.format(beta))
-        cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp,
-                                       self.units)
+        time_units = ""
+        if self.units == "real":
+            time_units = "ps"
+        elif self.units == "lj":
+            time_units = "tau"
+        print("Start of linear fitting regime: {} ({} {})".format(start, self.time_array[start], time_units))
+        print("End of linear fitting regime: {} ({} {})".format(end, self.time_array[end], time_units))
+        print("Beta value (fit to MSD = t^beta): {} (beta = 1 in the diffusive regime)".format(beta))
+        cond = conductivity_calculator(
+            self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp, self.units
+        )
         return cond
 
     def coord_num_array_one_species(self, species, distance, run_start, run_end):
@@ -754,17 +755,17 @@ class MdRun:
         return np.mean(freqs), np.mean(hopping_distance)
 
     def shell_evolution(
-            self,
-            species_dict,
-            run_start,
-            run_end,
-            lag_step,
-            distance,
-            hopping_cutoff,
-            smooth=51,
-            cool=0,
-            center="center",
-            duplicate_run=None,
+        self,
+        species_dict,
+        run_start,
+        run_end,
+        lag_step,
+        distance,
+        hopping_cutoff,
+        smooth=51,
+        cool=0,
+        center="center",
+        duplicate_run=None,
     ):
         """Calculates the coordination number of species in the species_dict
         as a function of time before and after hopping events.
@@ -832,17 +833,17 @@ class MdRun:
         return cn_dict
 
     def get_heat_map(
-            self,
-            run_start,
-            run_end,
-            species,
-            distance,
-            hopping_cutoff,
-            cartesian_by_ref=None,
-            bind_atom_type=None,
-            sym_dict=None,
-            sample=None,
-            smooth=51,
+        self,
+        run_start,
+        run_end,
+        species,
+        distance,
+        hopping_cutoff,
+        cartesian_by_ref=None,
+        bind_atom_type=None,
+        sym_dict=None,
+        sample=None,
+        smooth=51,
     ):
         """Calculates the heatmap matrix of cation around a cluster/molecule
 
