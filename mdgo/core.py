@@ -6,7 +6,7 @@
 This module implements two core class MdRun and MdJob
 for molecular dynamics simulation analysis and job setup.
 """
-
+from __future__ import annotations
 import MDAnalysis
 import numpy as np
 import pandas as pd
@@ -281,7 +281,7 @@ class MdRun:
         self,
         start: int = -1,
         end: int = -1,
-        *runs: "MdRun",
+        *runs: MdRun,
         reference: bool = True,
     ):
         """Plots the conductivity MSD as a function of time.
