@@ -634,8 +634,10 @@ def extract_atom_from_molecule(
     # select_dict[resname + "+" + pos_center.name + pos_center.type] = "type " + pos_center.type
 
     # The most negatively charged atom in the anion
+    if number > 0:
+        resname = resname + "_" + str(number)
     neg_center = molecule.atoms[np.argmin(molecule.atoms.charges)]
-    select_dict[resname + "_" + str(number)] = "type " + neg_center.type
+    select_dict[resname] = "type " + neg_center.type
 
 
 def ff_parser(ff_dir: str, xyz_dir: str) -> str:
