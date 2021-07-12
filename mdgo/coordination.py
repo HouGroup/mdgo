@@ -13,7 +13,6 @@ from MDAnalysis.core.groups import Atom
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec, angle
-from mdgo.core import MdRun
 
 from typing import Dict, List, Tuple, Union, Callable, Optional
 
@@ -37,16 +36,17 @@ def neighbor_distance(
     Calculates a distance dictionary of neighbor atoms to the center atoms.
 
     Args:
-        nvt_run:
-        center_atom:
-        run_start:
-        run_end:
-        species:
-        select_dict:
-        distance:
+        nvt_run: An Universe object of wrapped trajectory.
+        center_atom: the interested central atom object.
+        run_start: Start time step.
+        run_end: End time step.
+        species: The interested neighbor species in the select_dict.
+        select_dict: A dictionary of atom species, where each atom species name is a key
+                and the corresponding values are the selection language.
+        distance: The neighbor cutoff distance.
 
     Returns:
-
+        A dictionary of distance of neighbor atoms to the center atom.
     """
     dist_dict = dict()
     time_count = 0
@@ -79,9 +79,9 @@ def find_nearest(
     hopping_cutoff: float,
     smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """Returns an array of binding sites (unique on each timestep),
-    the frequency of hopping between sites, and steps when each binding site
-    exhibits the closest distance to the central atom.
+    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to,
+    and calculates the frequency of hopping between each neighbor, and steps when each binding site exhibits
+    the closest distance to the central atom.
 
     Args:
         trj: A python dict of distances between central atom and selected atoms.
@@ -89,6 +89,11 @@ def find_nearest(
         binding_cutoff: Binding cutoff distance.
         hopping_cutoff: Detaching cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
+
+    Returns:
+        Returns an array of nearest neighbors (unique on each timestep),
+        the frequency of hopping between sites, and steps when each binding site
+        exhibits the closest distance to the central atom.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -155,11 +160,15 @@ def find_nearest(
 
 
 def find_nearest_free_only(
-    trj: Dict[str, np.ndarray], time_step: float, binding_cutoff: float, hopping_cutoff: float, smooth: int = 51
+    trj: Dict[str, np.ndarray],
+    time_step: float,
+    binding_cutoff: float,
+    hopping_cutoff: float,
+    smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """Returns an array of binding sites (unique on each timestep),
-    the frequency of hopping between sites, and steps when each binding site
-    exhibits the closest distance to the central atom.
+    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to, and calculates the frequency of hopping
+    between each neighbor, and steps when each binding site exhibits the closest distance to the central atom.
+    * Only hopping events with intermediate free state (no binded nearest neighbor) are counted.
 
     Args:
         trj: A python dict of distances between central atom and selected atoms.
@@ -167,6 +176,11 @@ def find_nearest_free_only(
         binding_cutoff: Binding cutoff distance.
         hopping_cutoff: Detaching cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
+
+    Returns:
+        Returns an array of nearest neighbors (unique on each timestep),
+        the frequency of hopping between sites, and steps when each binding site
+        exhibits the closest distance to the central atom.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -241,7 +255,8 @@ def find_nearest_free_only(
 def find_in_n_out(
     trj: Dict[str, np.ndarray], binding_cutoff: float, hopping_cutoff: float, smooth: int = 51, cool: int = 20
 ) -> Tuple[List[int], List[int]]:
-    """Returns two arrays of time step of hopping in and hopping out, respectively.
+    """Gives the time steps when the central atom binds with the neighbor (binding) or hopping out (hopping)
+    according to the dictionary of neighbor distance.
 
     Args:
         trj: A python dict of distances between central atom and selected atoms.
@@ -249,6 +264,9 @@ def find_in_n_out(
         hopping_cutoff: Detaching cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
         cool: The cool down timesteps between hopping in and hopping out.
+
+    Returns:
+        Two arrays of time steps of hopping in and hopping out event.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -316,13 +334,13 @@ def find_in_n_out(
 def check_contiguous_steps(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, Union[int, float]],
+    distance_dict: Dict[str, float],
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
     checkpoints: np.ndarray,
-    lag=20,
-):
+    lag: int = 20,
+) -> Dict[str, np.ndarray]:
     """Returns an array of distance between the center atom and the interested atom
     in the checkpoint +/- lag time range.
 
@@ -428,23 +446,26 @@ def heat_map(
 
 
 def process_evol(
-    mdrun: MdRun,
-    in_list,
-    out_list,
-    distance_dict,
-    run_start,
-    run_end,
-    lag_step,
-    distance,
-    hopping_cutoff,
-    smooth,
-    cool,
-    center,
+    nvt_run: Universe,
+    select_dict: Dict[str, str],
+    in_list: Dict[str, List[np.ndarray]],
+    out_list: Dict[str, List[np.ndarray]],
+    distance_dict: Dict[str, float],
+    run_start: int,
+    run_end: int,
+    lag_step: int,
+    distance: float,
+    hopping_cutoff: float,
+    smooth: int,
+    cool: int,
+    binding_site: str,
+    center_atom: str,
 ):
     """
 
     Args:
-        mdrun:
+        nvt_run:
+        select_dict:
         in_list:
         out_list:
         distance_dict:
@@ -455,17 +476,17 @@ def process_evol(
         hopping_cutoff:
         smooth:
         cool:
-        center:
+        binding_site:
+        center_atom:
 
     Returns:
 
     """
-    nvt_run = mdrun.wrapped_run
-    center_atoms = nvt_run.select_atoms(mdrun.select_dict.get("cation"))
-    select_dict = mdrun.select_dict
+    nvt_run = nvt_run
+    center_atoms = nvt_run.select_atoms(select_dict.get(center_atom))
     for atom in tqdm(center_atoms[::]):
         neighbor_trj = neighbor_distance(
-            nvt_run, atom, run_start + lag_step, run_end - lag_step, center, select_dict, distance
+            nvt_run, atom, run_start + lag_step, run_end - lag_step, binding_site, select_dict, distance
         )
         hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
         if len(hopping_in) > 0:
