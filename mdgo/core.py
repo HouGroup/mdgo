@@ -150,21 +150,21 @@ class MdRun:
     @classmethod
     def from_output_full(
         cls,
-        data_dir,
-        wrapped_dir,
-        unwrapped_dir,
-        nvt_start,
-        time_step,
-        name,
-        select_dict=None,
-        res_dict=None,
-        cation_name="cation",
-        anion_name="anion",
-        cation_charge=1,
-        anion_charge=-1,
-        temperature=298.5,
-        cond=True,
-        units="real",
+        data_dir: str,
+        wrapped_dir: str,
+        unwrapped_dir: str,
+        nvt_start: int,
+        time_step: float,
+        name: str,
+        select_dict: Optional[Dict[str, str]] = None,
+        res_dict: Optional[Dict[str, str]] = None,
+        cation_name: str = "cation",
+        anion_name: str = "anion",
+        cation_charge: float = 1,
+        anion_charge: float = -1,
+        temperature: float = 298.15,
+        cond: bool = True,
+        units: str = "real",
     ):
         """
         Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
@@ -183,8 +183,8 @@ class MdRun:
             cation_charge: Charge of cation. Default to 1.
             anion_charge: Charge of anion. Default to 1.
             temperature: Temperature of the MD run. Default to 298.15.
-            cond (bool): Whether to calculate conductivity MSD. Default to True.
-            units (str): unit system (currently 'real' and 'lj' are supported)
+            cond: Whether to calculate conductivity MSD. Default to True.
+            units: unit system (currently 'real' and 'lj' are supported)
         """
         lammps_data = LammpsData.from_file(data_dir)
         if res_dict is None:
