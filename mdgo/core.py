@@ -11,7 +11,9 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pymatgen.io.lammps.data import LammpsData
+from typing import Union, Dict, Tuple, List, Optional
+from pymatgen.io.lammps.data import LammpsData, CombinedData
+from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.notebook import tqdm
@@ -53,20 +55,20 @@ class MdRun:
 
     def __init__(
         self,
-        lammps_data,
-        wrapped_run,
-        unwrapped_run,
-        nvt_start,
-        time_step,
-        name,
-        select_dict=None,
-        res_dict=None,
-        cation_name="cation",
-        anion_name="anion",
-        cation_charge=1,
-        anion_charge=-1,
-        temperature=298.5,
-        cond=True,
+        lammps_data: Union[LammpsData, CombinedData],
+        wrapped_run: Universe,
+        unwrapped_run: Universe,
+        nvt_start: int,
+        time_step: float,
+        name: str,
+        select_dict: Optional[Dict[str, str]] = None,
+        res_dict: Optional[Dict[str, str]] = None,
+        cation_name: str = "cation",
+        anion_name: str = "anion",
+        cation_charge: float = 1,
+        anion_charge: float = -1,
+        temperature: float = 298.15,
+        cond: bool = True,
         units="real",
     ):
         """
@@ -334,7 +336,7 @@ class MdRun:
         ax.legend()
         fig.show()
 
-    def get_conductivity(self, start=-1, end=-1):
+    def get_conductivity(self, start: int = -1, end: int = -1) -> float:
         """Calculates the Green-Kubo (GK) conductivity given fitting region.
         If no fitting region (start, end) is provided, computes the optimal
         fitting region based on the portion of the MSD with greatest
