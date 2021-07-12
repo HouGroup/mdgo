@@ -84,11 +84,11 @@ def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
 
 
 def exponential_func(
-    x: Union[int, float, np.number],
-    a: Union[int, float, np.number],
-    b: Union[int, float, np.number],
-    c: Union[int, float, np.number],
-) -> np.floating:
+    x: Union[float, np.floating, np.ndarray],
+    a: Union[float, np.floating, np.ndarray],
+    b: Union[float, np.floating, np.ndarray],
+    c: Union[float, np.floating, np.ndarray],
+) -> Union[np.floating, np.ndarray]:
     """
     An exponential decay function
 

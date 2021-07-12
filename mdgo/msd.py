@@ -55,7 +55,7 @@ def total_msd(
             return _total_msd(nvt_run, select, start, stop)
 
 
-def _total_msd(nvt_run: Universe, select: str, run_start: int, run_end: int) -> np.ndarray:
+def _total_msd(nvt_run: Universe, select: str, run_start: int, run_end: int) -> np.ndarray:  # TODO: use fft method
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     li_atoms = nvt_run.select_atoms(select)
     all_list = list()

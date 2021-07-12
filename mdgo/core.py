@@ -11,7 +11,7 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Union, Dict, Tuple, List, Optional, Any
+from typing import Union, Dict, Tuple, List, Optional
 from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
@@ -53,7 +53,7 @@ class MdRun:
     A core class for MD results analysis.
 
     Args:
-        lammps_data: LammpsData object.
+        lammps_data: The LammpsData object that has the force field and topology information.
         wrapped_run: The Universe object of wrapped trajectory.
         unwrapped_run: The Universe object of unwrapped trajectory.
         nvt_start: NVT start time step.
@@ -92,7 +92,7 @@ class MdRun:
     ):
         """
         Base constructor. This is a low level constructor designed to work with
-         parsed data (mda.universe) or other bridging objects (CombinedData). Not
+         parsed data ({Universe}) or other bridging objects ({CombinedData}). Not
         recommended to use directly.
         """
 
@@ -218,7 +218,7 @@ class MdRun:
         Returns the equilibrium box dimension.
 
         Args:
-            npt_range: The maximum timestep of the npt run.
+            npt_range: The maximum time step of the npt run.
             period: The interval of checking points for volume convergence.
         """
         ave_dx = [np.inf, np.inf - 1]
@@ -321,7 +321,7 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> np.ndarray:
-        """Calculates the coordination number array of one species around the interested center atoms.
+        """Calculates the coordination number array of one {species} around the interested {center_atom}.
 
         Args:
             species: The interested species.
@@ -354,14 +354,14 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> Dict[str, np.ndarray]:
-        """Calculates the coordination number array of multiple species around the interested center atom.
+        """Calculates the coordination number array of multiple species around the interested {center_atom}.
 
         Args:
             distance_dict: A dict of coordination cutoff distance
                 of the interested species.
             run_start: Start time step.
             run_end: End time step.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The center atom. Default to "cation".
 
         Return:
              The coordination numbers of each species as a python dict of arrays
@@ -390,7 +390,7 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out a series of desired solvation structures as .xyz files
+        """Writes out a series of desired solvation structures as {.xyz} files
 
         Args:
             distance_dict: A dict of coordination cutoff distance of interested species.
@@ -429,14 +429,14 @@ class MdRun:
         center_atom: str = "cation",
     ) -> np.ndarray:
         """Calculates the solvation structure type (1 for SSIP, 2 for CIP,
-        3 for AGG) array of the interested center atom (typically the cation).
+        3 for AGG) array of the solvation structure {center_atom} (typically the cation).
 
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start time step.
             run_end: End time step.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation structure center atom. Default to "cation".
 
         Return:
             An array of the solvation structure type for each timestep in the trajectory.
@@ -455,20 +455,28 @@ class MdRun:
         )["total"]
         return num_array
 
-    def coordination_one_species(self, species: str, distance: float, run_start: int, run_end: int) -> pd.DataFrame:
+    def coordination_one_species(
+        self,
+        species: str,
+        distance: float,
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+    ) -> pd.DataFrame:
         """Tabulates the coordination number distribution of one species
-        around the cation
+        around the solvation structure {center_atom}.
 
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The solvation structure center atom. Default to "cation".
 
         Return:
              A dataframe of the species coordination number and corresponding percentage.
         """
-        num_array = self.coord_num_array_one_species(species, distance, run_start, run_end)
+        num_array = self.coord_num_array_one_species(species, distance, run_start, run_end, center_atom=center_atom)
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
@@ -482,20 +490,26 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def rdf_integral(self, distance_dict: Dict[str, float], run_start: int, run_end: int) -> pd.DataFrame:
-        """Calculate the integral of the radial distribution function of
-        selected species
+    def rdf_integral(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+    ) -> pd.DataFrame:
+        """Calculate the integral of the radial distribution function of selected species around the {center_atom}
 
         Args:
             distance_dict: A dict of coordination cutoff distance
                 of interested species.
             run_start: Start time step.
             run_end: End time step.
+            center_atom: The center atom to calculate the radial distribution for. Default to "cation".
 
         Return:
              A dataframe of the species and the coordination number.
         """
-        cn_values = self.coord_num_array_multi_species(distance_dict, run_start, run_end)
+        cn_values = self.coord_num_array_multi_species(distance_dict, run_start, run_end, center_atom=center_atom)
         item_name = "species in first solvation shell"
         item_list = []
         cn_list = []
@@ -771,12 +785,14 @@ class MdRun:
         hopping_cutoff: float,
         smooth: int = 51,
         cool: int = 0,
-        center_atom: str = "cation",
         binding_site: str = "anion",
+        center_atom: str = "cation",
         duplicate_run: Optional[List[MdRun]] = None,
     ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
-        """Calculates the coordination number of species in the distance_dict
-        as a function of time before and after hopping events.
+        """Calculates the coordination number evolution of species around {center_atom} as a function of time,
+        the coordination numbers are averaged over all time steps around events when the center_atom
+        hopping to and hopping out from the {binding_site}. If {duplicate_run} is given, it is also averaged over
+        all duplicate runs.
 
         Args:
             distance_dict: A dict of coordination cutoff distance of interested species.
@@ -787,6 +803,7 @@ class MdRun:
             hopping_cutoff: Detaching cutoff distance.
             smooth: The length of the smooth filter window. Default to 51.
             cool: The cool down timesteps between hopping in and hopping out.
+            center_atom:
             binding_site: The select_dict key of the binding site. Default to "anion".
             duplicate_run: Default to None.
 

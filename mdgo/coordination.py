@@ -33,7 +33,7 @@ def neighbor_distance(
     distance: float,
 ) -> Dict[str, np.ndarray]:
     """
-    Calculates a distance dictionary of neighbor atoms to the center atoms.
+    Calculates a distance dictionary of neighbor atoms to the {center_atom}.
 
     Args:
         nvt_run: An Universe object of wrapped trajectory.
@@ -46,7 +46,7 @@ def neighbor_distance(
         distance: The neighbor cutoff distance.
 
     Returns:
-        A dictionary of distance of neighbor atoms to the center atom.
+        A dictionary of distance of neighbor atoms to the {center_atom}.
     """
     dist_dict = dict()
     time_count = 0
@@ -79,9 +79,9 @@ def find_nearest(
     hopping_cutoff: float,
     smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to,
-    and calculates the frequency of hopping between each neighbor, and steps when each binding site exhibits
-    the closest distance to the central atom.
+    """According to the dictionary of neighbor distance, finds the nearest neighbor {sites} that the {central_atom}
+    binds to, and calculates the {frequency} of hopping between each neighbor, and {steps} when each binding site
+    exhibits the closest distance to the {central_atom}.
 
     Args:
         trj: A python dict of distances between central atom and selected atoms.
@@ -255,7 +255,7 @@ def find_nearest_free_only(
 def find_in_n_out(
     trj: Dict[str, np.ndarray], binding_cutoff: float, hopping_cutoff: float, smooth: int = 51, cool: int = 20
 ) -> Tuple[List[int], List[int]]:
-    """Gives the time steps when the central atom binds with the neighbor (binding) or hopping out (hopping)
+    """Finds the time steps when the central atom binds with the neighbor (binding) or hopping out (hopping)
     according to the dictionary of neighbor distance.
 
     Args:
@@ -341,7 +341,7 @@ def check_contiguous_steps(
     checkpoints: np.ndarray,
     lag: int = 20,
 ) -> Dict[str, np.ndarray]:
-    """Returns an array of distance between the center atom and the interested atom
+    """Calculates the distance between the center atom and the interested atom
     in the checkpoint +/- lag time range.
 
     Args:
@@ -353,6 +353,10 @@ def check_contiguous_steps(
         run_end: End time step.
         checkpoints: The time step of interest to check for contiguous steps
         lag: The range (+/- lag) of the contiguous steps
+
+    Returns:
+        An array of distance between the center atom and the interested atom
+        in the checkpoint +/- lag time range
     """
     coord_num: Dict[str, Union[List[List[int]], np.ndarray]] = {
         x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict.keys()
@@ -390,6 +394,8 @@ def heat_map(
     run_end: int,
 ) -> np.ndarray:
     """
+    Calculates the heat map of the floating atom around the cluster. The coordinates are normalized to
+    a cartesian coordinate system where the cluster_center_sites atom is the origin.
 
     Args:
         nvt_run:
@@ -401,7 +407,7 @@ def heat_map(
         run_end:
 
     Returns:
-
+        The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
@@ -461,7 +467,9 @@ def process_evol(
     binding_site: str,
     center_atom: str,
 ):
-    """
+    """Calculates the coordination number evolution of species around {center_atom} as a function of time,
+    the coordination numbers are averaged over all time steps around events when the center_atom
+    hopping to and hopping out from the {binding_site}.
 
     Args:
         nvt_run:
@@ -478,9 +486,6 @@ def process_evol(
         cool:
         binding_site:
         center_atom:
-
-    Returns:
-
     """
     nvt_run = nvt_run
     center_atoms = nvt_run.select_atoms(select_dict.get(center_atom))
@@ -525,6 +530,8 @@ def get_full_coords(
     sample: Optional[int] = None,
 ) -> np.ndarray:
     """
+    A helper function for calculating the heatmap. It applies the {reflection}, {rotation} and {inversion}
+    symmetry operations to coords and take {sample} number of samples.
 
     Args:
         coords:
