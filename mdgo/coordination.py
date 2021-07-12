@@ -38,11 +38,11 @@ def neighbor_distance(
     Args:
         nvt_run: An Universe object of wrapped trajectory.
         center_atom: the interested central atom object.
-        run_start: Start time step.
-        run_end: End time step.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         species: The interested neighbor species in the select_dict.
-        select_dict: A dictionary of atom species, where each atom species name is a key
-                and the corresponding values are the selection language.
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
         distance: The neighbor cutoff distance.
 
     Returns:
@@ -348,9 +348,10 @@ def check_contiguous_steps(
         nvt_run: An Universe object of wrapped trajectory.
         center_atom: the interested central atom object.
         distance_dict: Dict of Cutoff distance of neighbor for each species.
-        select_dict: A dictionary of selection language of atom species.
-        run_start: Start time step.
-        run_end: End time step.
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         checkpoints: The time step of interest to check for contiguous steps
         lag: The range (+/- lag) of the contiguous steps
 
@@ -403,8 +404,8 @@ def heat_map(
         cluster_center_sites:
         cluster_terminal:
         cartesian_by_ref:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
         The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
@@ -473,12 +474,13 @@ def process_evol(
 
     Args:
         nvt_run:
-        select_dict:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
         in_list:
         out_list:
         distance_dict:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         lag_step:
         distance:
         hopping_cutoff:
@@ -577,9 +579,10 @@ def cluster_coordinates(
 
     Args:
         nvt_run:
-        select_dict:
-        run_start:
-        run_end:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         species:
         distance:
         basis_vectors:
@@ -650,9 +653,10 @@ def num_of_neighbor(
         nvt_run:
         center_atom:
         distance_dict:
-        select_dict:
-        run_start:
-        run_end:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
         write:
         structure_code:
         write_freq:
@@ -717,9 +721,10 @@ def num_of_neighbor_simple(
         nvt_run:
         center_atom:
         distance_dict:
-        select_dict:
-        run_start:
-        run_end:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
 
@@ -770,10 +775,11 @@ def num_of_neighbor_one_li_simple_extra(
         nvt_run:
         center_atom:
         species:
-        select_dict:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
         distance:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
 
@@ -835,10 +841,11 @@ def num_of_neighbor_one_li_simple_extra_two(
         nvt_run:
         center_atom:
         species_list:
-        select_dict:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
         distance_dict:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
 
@@ -911,10 +918,11 @@ def num_of_neighbor_one_li_complex(
         nvt_run:
         center_atom:
         species:
-        select_dict:
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
         distance:
-        run_start:
-        run_end:
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
 
     Returns:
 
@@ -971,11 +979,12 @@ def coord_shell_array(
         nvt_run: MDAnalysis Universe
         func: One of the neighbor statistical method (num_of_neighbor, num_of_neighbor_simple)
         center_atoms: Atom group of the center atoms.
-        distance_dict (dict): A dict of coordination cutoff distance
+        distance_dict: A dict of coordination cutoff distance
             of the interested species.
-        select_dict: A dictionary of species selection.
-        run_start (int): Start time step.
-        run_end (int): End time step.
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        run_start: Start frame of analysis.
+        run_end: End frame of analysis.
     """
     num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end)
     for atom in tqdm(center_atoms[1::]):

@@ -59,7 +59,7 @@ class MdRun:
         nvt_start: NVT start time step.
         time_step: LAMMPS timestep.
         name: Name of the MD run.
-        select_dict: A dictionary of atom species, where each atom species name is a key
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
                 and the corresponding values are the selection language. This dict is intended for
                 analyzing interested atoms.
         res_dict: A dictionary of resnames, where each resname is a key
@@ -326,8 +326,8 @@ class MdRun:
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The interested atom. Default to "cation".
 
         Return:
@@ -359,8 +359,8 @@ class MdRun:
         Args:
             distance_dict: A dict of coordination cutoff distance
                 of the interested species.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The center atom. Default to "cation".
 
         Return:
@@ -394,8 +394,8 @@ class MdRun:
 
         Args:
             distance_dict: A dict of coordination cutoff distance of interested species.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             structure_code: An integer code representing the solvation
                 structure, for example, 221 is two species A, two species B
                 and one species C.
@@ -434,8 +434,8 @@ class MdRun:
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The solvation structure center atom. Default to "cation".
 
         Return:
@@ -469,8 +469,8 @@ class MdRun:
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The solvation structure center atom. Default to "cation".
 
         Return:
@@ -502,8 +502,8 @@ class MdRun:
         Args:
             distance_dict: A dict of coordination cutoff distance
                 of interested species.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The center atom to calculate the radial distribution for. Default to "cation".
 
         Return:
@@ -529,8 +529,8 @@ class MdRun:
         Args:
             species: The interested species.
             distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
 
         Return:
              A dataframe of the solvation structure and percentage.
@@ -596,8 +596,8 @@ class MdRun:
 
         Args:
             distance: The coordination cutoff distance.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             largest: The largest time sequence to trace.
             center_atom: The interested atom. Default to "cation".
 
@@ -657,8 +657,8 @@ class MdRun:
         Args:
             distance_dict: Dict of Cutoff distance of neighbor
                 for each species.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
 
         Return:
              An array of the time series and a dict of ACFs of each species.
@@ -700,8 +700,8 @@ class MdRun:
         """Returns the distance between one center atom and neighbors as a function of time
 
         Args:
-            run_start: start time step.
-            run_end: end time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             center_atom: The interested atom. Default to "cation".
             species: The interested neighbor species.
             neighbor_cutoff: The neighbor cutoff distance.
@@ -735,8 +735,8 @@ class MdRun:
         """Calculates the cation hopping rate and hopping distance.
 
         Args:
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             binding_site: Floating ion binding site species.
             distance: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
@@ -796,8 +796,8 @@ class MdRun:
 
         Args:
             distance_dict: A dict of coordination cutoff distance of interested species.
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             lag_step: time steps to track before and after the hopping event
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
@@ -881,11 +881,11 @@ class MdRun:
         """Calculates the heatmap matrix of floating ion around a cluster
 
         Args:
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             cluster_center: The center atom species of the cluster.
             cluster_terminal: The terminal atom species of the cluster
-                (typically the binding site for the ion).
+                (typically the binding site for the floating ion).
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
             floating_atom: The species of the floating ion.
@@ -932,8 +932,8 @@ class MdRun:
         """Calculates the average distance of the center of clusters/molecules
 
         Args:
-            run_start: Start time step.
-            run_end: End time step.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
             neighbor_cutoff: Upper limit of first nearest neighbor.
             cluster_center: species name of cluster center. Default to "center".
 

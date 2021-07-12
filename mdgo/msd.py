@@ -31,14 +31,16 @@ def total_msd(
     nvt_run: Universe, start: int, stop: int, select: str = "all", msd_type: str = "xyz", fft: bool = True
 ) -> np.ndarray:
     """
+    From a MD Universe, calculates the MSD array of a group of atoms defined by select.
 
     Args:
-        nvt_run:
-        start:
-        stop:
-        select:
-        msd_type:
-        fft:
+        nvt_run: The Universe containing the trajectory and topology information.
+        start: Start frame of analysis.
+        stop: End frame of analysis.
+        select: A selection string. Defaults to “all” in which case all atoms are selected.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        fft: Whether to use FFT to accelerate the calculation. Default to True.
+            Note that the built in FFT method is under construction.
 
     Returns:
 
