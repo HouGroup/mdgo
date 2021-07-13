@@ -33,7 +33,7 @@ def neighbor_distance(
     distance: float,
 ) -> Dict[str, np.ndarray]:
     """
-    Calculates a distance dictionary of neighbor atoms to the {center_atom}.
+    Calculates a dictionary of distances between the {center_atom} and neighbor atoms.
 
     Args:
         nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
@@ -166,8 +166,9 @@ def find_nearest_free_only(
     hopping_cutoff: float,
     smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to, and calculates the frequency of hopping
-    between each neighbor, and steps when each binding site exhibits the closest distance to the central atom.
+    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to, and
+    calculates the frequency of hopping between each neighbor, and steps when each binding site exhibits the closest
+    distance to the central atom.
     * Only hopping events with intermediate free state (no binded nearest neighbor) are counted.
 
     Args:
