@@ -71,10 +71,11 @@ def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
     Calculate auto-correlation function (ACF)
 
     Args:
-        a_values:
+        a_values: A dict of adjacency matrix with neighbor atom id as keys and arrays
+        of adjacent boolean (0/1) as values.
 
     Returns:
-        A list of auto-correlation functions for each neighbor.
+        A list of auto-correlation functions for each neighbor species.
     """
     acfs = []
     for atom_id, neighbors in a_values.items():
@@ -93,10 +94,10 @@ def exponential_func(
     An exponential decay function
 
     Args:
-        x:
-        a:
-        b:
-        c:
+        x: Independent variable.
+        a: Initial quantity.
+        b: Exponential decay constant.
+        c: Constant.
 
     Returns:
         The acf
@@ -111,9 +112,10 @@ def calc_neigh_corr(
     time_step: float,
     run_start: int,
     run_end: int,
-    center_atom_type: str = "cation",
+    center_atom: str = "cation",
 ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
-    """
+    """Calculates the neighbor auto-correlation function (ACF)
+    of selected species around center atom.
 
     Args:
         nvt_run: An MDAnalysis {Universe}.
@@ -122,15 +124,15 @@ def calc_neigh_corr(
         time_step:
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        center_atom_type:
+        center_atom: The center atom to calculate the ACF for. Default to "cation".
 
     Returns:
-
+        A tuple containing the time series, and a dict of acf of neighbor species.
     """
     # Set up times array
     times = []
     step = 0
-    center_atoms = nvt_run.select_atoms(select_dict[center_atom_type])
+    center_atoms = nvt_run.select_atoms(select_dict[center_atom])
     for ts in nvt_run.trajectory[run_start:run_end]:
         times.append(step * time_step)
         step += 1
@@ -166,13 +168,15 @@ def fit_residence_time(
     time_step: float,
 ) -> Dict[str, np.floating]:
     """
+    Use the ACF to fit the residence time (Exponential decay constant).
+    TODO: allow defining the residence time according to a threshold value of the decay
 
     Args:
-        times:
-        species_list:
-        acf_avg_dict:
-        cutoff_time:
-        time_step:
+        times: A time series.
+        species_list: A list of species to fit the residence time.
+        acf_avg_dict: A dict containing the ACFs of the species.
+        cutoff_time: Fitting cutoff time.
+        time_step: The time step between each frame, in ps.
 
     Returns:
         A dict containing residence time of each species
