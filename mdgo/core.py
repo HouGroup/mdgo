@@ -92,7 +92,7 @@ class MdRun:
     ):
         """
         Base constructor. This is a low level constructor designed to work with
-         parsed data ({Universe}) or other bridging objects ({CombinedData}). Not
+         parsed data (``Universe``) or other bridging objects (``CombinedData``). Not
         recommended to use directly.
         """
 
@@ -321,7 +321,7 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> np.ndarray:
-        """Calculates the coordination number array of one {species} around the interested {center_atom}.
+        """Calculates the coordination number array of one ``species`` around the interested ``center_atom``.
 
         Args:
             species: The interested species.
@@ -354,7 +354,7 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> Dict[str, np.ndarray]:
-        """Calculates the coordination number array of multiple species around the interested {center_atom}.
+        """Calculates the coordination number array of multiple species around the interested ``center_atom``.
 
         Args:
             distance_dict: A dict of coordination cutoff distance
@@ -390,7 +390,7 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out a series of desired solvation structures as {.xyz} files
+        """Writes out a series of desired solvation structures as ``*.xyz`` files
 
         Args:
             distance_dict: A dict of coordination cutoff distance of interested species.
@@ -429,7 +429,7 @@ class MdRun:
         center_atom: str = "cation",
     ) -> np.ndarray:
         """Calculates the solvation structure type (1 for SSIP, 2 for CIP,
-        3 for AGG) array of the solvation structure {center_atom} (typically the cation).
+        3 for AGG) array of the solvation structure ``center_atom`` (typically the cation).
 
         Args:
             species: The interested species.
@@ -464,7 +464,7 @@ class MdRun:
         center_atom: str = "cation",
     ) -> pd.DataFrame:
         """Tabulates the coordination number distribution of one species
-        around the solvation structure {center_atom}.
+        around the solvation structure ``center_atom``.
 
         Args:
             species: The interested species.
@@ -497,7 +497,7 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> pd.DataFrame:
-        """Calculate the integral of the radial distribution function of selected species around the {center_atom}
+        """Calculate the integral of the radial distribution function of selected species around the ``center_atom``
 
         Args:
             distance_dict: A dict of coordination cutoff distance
@@ -591,9 +591,9 @@ class MdRun:
         binding_site: str = "anion",
     ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
         """
-        Calculates the mean square displacement (MSD) of the {center_atom} according to coordination states.
-        The returned {free_array} include the MSD when {center_atom} is not coordinated to {binding_site}.
-        The {attach_array} includes the MSD of {center_atom} is not coordinated to {binding_site}.
+        Calculates the mean square displacement (MSD) of the ``center_atom`` according to coordination states.
+        The returned ``free_array`` include the MSD when ``center_atom`` is not coordinated to ``binding_site``.
+        The ``attach_array`` includes the MSD of ``center_atom`` is not coordinated to ``binding_site``.
 
         Args:
             distance: The coordination cutoff distance.
@@ -601,7 +601,7 @@ class MdRun:
             run_end: End frame of analysis.
             largest: The largest time sequence to trace.
             center_atom: The interested atom. Default to "cation".
-            binding_site: The species the {center_atom} coordinates to. Default to "anion".
+            binding_site: The species the ``center_atom`` coordinates to. Default to "anion".
 
         Returns:
             Two arrays of MSD in the trajectory
@@ -797,9 +797,9 @@ class MdRun:
         center_atom: str = "cation",
         duplicate_run: Optional[List[MdRun]] = None,
     ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
-        """Calculates the coordination number evolution of species around {center_atom} as a function of time,
+        """Calculates the coordination number evolution of species around ``center_atom`` as a function of time,
         the coordination numbers are averaged over all time steps around events when the center_atom
-        hopping to and hopping out from the {binding_site}. If {duplicate_run} is given, it is also averaged over
+        hopping to and hopping out from the ``binding_site``. If ``duplicate_run`` is given, it is also averaged over
         all duplicate runs.
 
         Args:
