@@ -651,16 +651,21 @@ class MdRun:
                 print("NE Conductivity of all " + species + ":", sigma, "mS/cm")
 
     def get_neighbor_corr(
-        self, distance_dict: Dict[str, float], run_start: int, run_end: int
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
     ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """Calculates the neighbor auto-correlation function (ACF)
-        of selected species around cation
+        of selected species around center_atom.
 
         Args:
             distance_dict: Dict of Cutoff distance of neighbor
                 for each species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
+            center_atom: The center atom to calculate the ACF for. Default to "cation".
 
         Return:
              An array of the time series and a dict of ACFs of each species.
@@ -672,6 +677,7 @@ class MdRun:
             self.time_step,
             run_start,
             run_end,
+            center_atom=center_atom,
         )
 
     def get_residence_time(
