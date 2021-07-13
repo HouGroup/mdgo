@@ -33,10 +33,10 @@ def neighbor_distance(
     distance: float,
 ) -> Dict[str, np.ndarray]:
     """
-    Calculates a dictionary of distances between the {center_atom} and neighbor atoms.
+    Calculates a dictionary of distances between the `center_atom` and neighbor atoms.
 
     Args:
-        nvt_run: An MDAnalysis {Universe} containing wrapped trajectory.
+        nvt_run: An MDAnalysis `Universe` containing wrapped trajectory.
         center_atom: the interested central atom object.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
@@ -46,7 +46,7 @@ def neighbor_distance(
         distance: The neighbor cutoff distance.
 
     Returns:
-        A dictionary of distance of neighbor atoms to the {center_atom}.
+        A dictionary of distance of neighbor atoms to the `center_atom`.
     """
     dist_dict = dict()
     time_count = 0
