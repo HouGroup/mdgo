@@ -17,8 +17,8 @@ the cube is defined by the -xsize, -ysize and -zsize options.
 import sys
 import os
 import argparse
-from pymatgen.core import Molecule, Element
 from typing import Union, Optional, Tuple, Dict
+from pymatgen.core import Molecule, Element
 import numpy as np
 
 

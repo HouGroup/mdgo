@@ -22,9 +22,15 @@ For using the MaestroRunner class:
     https://www.schrodinger.com/kb/1842 for details.
 
 """
-
+import time
+import os
+import re
+import shutil
+import signal
+import subprocess
+from typing import Optional
+import numpy as np
 from pymatgen.io.lammps.data import LammpsData
-from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
 import pubchempy as pcp
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -37,16 +43,10 @@ from selenium.common.exceptions import (
 )
 from string import Template
 from urllib.parse import quote
-import time
-import os
-import re
-import shutil
-import signal
-import subprocess
-import numpy as np
-
-from typing import Optional
 from typing_extensions import Final
+
+from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
+
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

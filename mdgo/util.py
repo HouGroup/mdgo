@@ -6,23 +6,25 @@
 This module implements utility functions for other modules in the package.
 """
 
-import numpy as np
+
 import string
 from io import StringIO
 import os
 import re
-import pandas as pd
 import math
 import sys
 from typing import List, Dict, Union, Tuple, Optional, Any
 from typing_extensions import Final
-from mdgo.volume import molecular_volume
+import numpy as np
+import pandas as pd
 
 from pymatgen.core import Molecule
 from pymatgen.io.lammps.data import CombinedData
 
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom, Residue, AtomGroup
+
+from mdgo.volume import molecular_volume
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

@@ -6,6 +6,8 @@
 This module implements functions for coordination analysis.
 """
 
+from typing import Dict, List, Tuple, Union, Callable, Optional
+
 import numpy as np
 from tqdm.notebook import tqdm
 from MDAnalysis import Universe, AtomGroup
@@ -14,7 +16,6 @@ from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
 from mdgo.util import atom_vec, angle
 
-from typing import Dict, List, Tuple, Union, Callable, Optional
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

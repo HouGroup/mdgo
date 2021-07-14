@@ -5,20 +5,18 @@
 """
 This module implements functions for calculating meen square displacement (MSD).
 """
+from typing import List, Dict, Tuple, Union, Optional
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
     mda_msd = None
 
-
 import numpy as np
 from tqdm.notebook import trange
 
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom
-
-from typing import List, Dict, Tuple, Union, Optional
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -135,7 +133,8 @@ def states_coord_array(
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Cuts the trajectory of an atom into fragments. Each fragment contains consecutive timesteps of coordinates
     of the atom in either attached or free state. The Attached state is when the atom coordinates with the
-    ``binding_site`` species (distance < ``distance``), and vice versa for the free state. TODO: check if need wrapped trj
+    ``binding_site`` species (distance < ``distance``), and vice versa for the free state.
+    TODO: check if need wrapped trj
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
