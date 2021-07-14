@@ -7,11 +7,11 @@ This module implements two core class MdRun and MdJob
 for molecular dynamics simulation analysis and job setup.
 """
 from __future__ import annotations
+from typing import Union, Dict, Tuple, List, Optional
 import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Union, Dict, Tuple, List, Optional
 from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array

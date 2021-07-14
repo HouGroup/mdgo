@@ -29,9 +29,11 @@ import shutil
 import signal
 import subprocess
 from typing import Optional
+from string import Template
+from urllib.parse import quote
 import numpy as np
-from pymatgen.io.lammps.data import LammpsData
 import pubchempy as pcp
+from pymatgen.io.lammps.data import LammpsData
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -41,8 +43,6 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     WebDriverException,
 )
-from string import Template
-from urllib.parse import quote
 from typing_extensions import Final
 
 from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb

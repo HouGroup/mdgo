@@ -5,6 +5,7 @@
 """
 This module calculates species correlation lifetime (residence time).
 """
+from typing import List, Dict, Union, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,8 +15,6 @@ from tqdm.notebook import tqdm
 
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom
-
-from typing import List, Dict, Union, Tuple
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "1.0"
