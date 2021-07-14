@@ -757,7 +757,9 @@ class MdRun:
         freqs = []
         hopping_distance = []
         for ion in tqdm(floating_atoms[:]):
-            neighbor_trj = neighbor_distance(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
+            neighbor_trj = neighbor_distance(
+                nvt_run, ion, run_start, run_end, binding_site, self.select_dict, binding_cutoff
+            )
             if mode == "full":
                 sites, freq, steps = find_nearest(
                     neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
