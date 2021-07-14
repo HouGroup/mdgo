@@ -577,7 +577,7 @@ def cluster_coordinates(
     basis_vectors: Optional[Union[List[np.ndarray], np.ndarray]] = None,
     cluster_center: str = "center",
 ) -> np.ndarray:
-    """
+    """Calculates the average position of a cluster. TODO: rewrite the method.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
@@ -587,11 +587,11 @@ def cluster_coordinates(
         run_end: End frame of analysis.
         species: The species for analysis.
         distance: The coordination cutoff distance.
-        basis_vectors:
-        cluster_center:
+        basis_vectors: The basis vector for normalizing the coordinates of the cluster atoms.
+        cluster_center: Cluster center atom species.
 
     Returns:
-
+        A array of coordinates of the cluster atoms.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cluster_center_atom = nvt_run.select_atoms(select_dict.get(cluster_center), periodic=True)[0]

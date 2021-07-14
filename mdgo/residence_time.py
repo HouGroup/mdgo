@@ -37,10 +37,11 @@ def neighbors_one_atom(
 
     Args:
         nvt_run: An MDAnalysis ``Universe``.
-        center_atom:
-        species:
-        select_dict:
-        distance:
+        center_atom: The center atom object.
+        species: The neighbor species in the select_dict.
+        select_dict: A dictionary of atom species selection, where each atom species name is a key
+            and the corresponding values are the selection language.
+        distance: The neighbor cutoff distance.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
