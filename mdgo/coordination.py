@@ -648,7 +648,7 @@ def num_of_neighbor(
     write_freq=0,
     write_path=None,
     element_id_dict=None,
-):
+) -> Dict[str, np.ndarray]:
     """Calculates the coordination number of each specified neighbor species and the total coordination number
     in the specified frame range.
 
@@ -676,11 +676,7 @@ def num_of_neighbor(
     cn_values = dict()
     species = list(distance_dict.keys())
     for kw in species:
-        if kw in select_dict.keys():
-            cn_values[kw] = np.zeros(int(len(trj_analysis)))
-        else:
-            print("Invalid species selection")
-            return None
+        cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
     for ts in trj_analysis:
         digit_of_species = len(species) - 1
@@ -720,7 +716,7 @@ def num_of_neighbor_simple(
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
-):
+) -> Dict[str, np.ndarray]:
     """Calculates solvation structure type (1 for SSIP, 2 for CIP and 3 for AGG) with respect to the ``enter_atom``
     in the specified frame range.
 
@@ -741,12 +737,9 @@ def num_of_neighbor_simple(
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     center_selection = "same type as " + str(center_atom.id - 1)
+    assert len(distance_dict) == 1, "Please only specify the counter-ion species in the distance_dict"
     species = list(distance_dict.keys())[0]
-    if species in select_dict.keys():
-        cn_values = np.zeros(int(len(trj_analysis)))
-    else:
-        print("Invalid species selection")
-        return None
+    cn_values = np.zeros(int(len(trj_analysis)))
     for ts in trj_analysis:
         selection = select_shell(select_dict, distance_dict, center_atom, species)
         shell = nvt_run.select_atoms(selection, periodic=True)
@@ -768,73 +761,71 @@ def num_of_neighbor_simple(
     return cn_values
 
 
-def num_of_neighbor_one_li_simple_extra(
+def angular_dist_of_neighbor(
     nvt_run: Universe,
     center_atom: Atom,
-    species: str,
+    center_c: str,
+    neighbor_a: str,
+    neighbor_b: str,
     select_dict: Dict[str, str],
-    distance: float,
+    distance_dict: Dict[str, float],
     run_start: int,
     run_end: int,
+    cip: bool = True,
 ):
     """
+    Calculates the angle of atoms a-c-b in the specified frames.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         center_atom: The center atom object.
-        species: The neighbor species in the select_dict.
+        center_c: The center species in the select_dict.
+        neighbor_a: The neighbor species in the select_dict.
+        neighbor_b: The neighbor species in the select_dict.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance: The coordination cutoff distance.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
 
     Returns:
-
+        A array of angles of a-c-b occurrence in the specified frames.
     """
-
-    time_count = 0
-    emc_angle = list()
-    ec_angle = list()
+    acb_angle = list()
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    if species in select_dict.keys():
-        cn_values = np.zeros(int(len(trj_analysis)))
-    else:
-        print("Invalid species selection")
-        return None
     for ts in trj_analysis:
-        selection = select_shell(select_dict, str(distance), center_atom, species)
-        shell = nvt_run.select_atoms(selection, periodic=True)
-        shell_len = len(shell)
-        if shell_len == 0:
-            cn_values[time_count] = 1
-        elif shell_len == 1:
-            selection_species = select_shell(select_dict, str(distance), shell.atoms[0], "cation")
-            shell_species = nvt_run.select_atoms(selection_species, periodic=True)
-            shell_species_len = len(shell_species) - 1
+        a_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_a)
+        a_group = nvt_run.select_atoms(a_selection, periodic=True)
+        a_num = len(a_group)
+        if a_num == 0:
+            continue
+        elif a_num == 1:
+            c_selection = select_shell(select_dict, distance_dict, a_group.atoms[0], center_c)
+            c_atoms = nvt_run.select_atoms(c_selection, periodic=True)
+            shell_species_len = len(c_atoms) - 1
             if shell_species_len == 0:
-                cn_values[time_count] = 2
-                li_pos = center_atom.position
-                p_pos = shell.atoms[0].position
-                ec_select = select_shell(select_dict, str(3), center_atom, "EC")
-                emc_select = (select_dict, str(3), center_atom, "EMC")
-                ec_group = nvt_run.select_atoms(ec_select, periodic=True)
-                emc_group = nvt_run.select_atoms(emc_select, periodic=True)
-                for atom in ec_group.atoms:
-                    theta = angle(p_pos, li_pos, atom.position)
-                    ec_angle.append(theta)
-                for atom in emc_group.atoms:
-                    theta = angle(p_pos, li_pos, atom.position)
-                    emc_angle.append(theta)
+                shell_type = "cip"
             else:
-                cn_values[time_count] = 3
+                shell_type = "agg"
         else:
-            cn_values[time_count] = 3
-        time_count += 1
-    return cn_values, np.array(ec_angle), np.array(emc_angle)
+            shell_type = "agg"
+        if shell_type == "agg" and cip:
+            continue
+        else:
+            c_pos = center_atom.position
+            for a_atom in a_group.atoms:
+                a_pos = a_atom.position
+                b_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_b)
+                b_group = nvt_run.select_atoms(b_selection, periodic=True)
+                for b_atom in b_group.atoms:
+                    b_pos = b_atom.position
+                    theta = angle(a_pos, c_pos, b_pos)
+                    acb_angle.append(theta)
+    return np.array(acb_angle)
 
 
-def num_of_neighbor_one_li_simple_extra_two(
+def num_of_neighbor_specific(
     nvt_run: Universe,
     center_atom: Atom,
     species_list: List[str],
@@ -865,11 +856,7 @@ def num_of_neighbor_one_li_simple_extra_two(
     agg_step = list()
     cn_values = dict()
     for kw in species_list:
-        if kw in select_dict.keys():
-            cn_values[kw] = np.zeros(int(len(trj_analysis)))
-        else:
-            print("Invalid species selection")
-            return None
+        cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
     for ts in trj_analysis:
         digit_of_species = len(species_list) - 1
@@ -911,7 +898,7 @@ def num_of_neighbor_one_li_simple_extra_two(
 
 
 # Depth-first traversal
-def num_of_neighbor_one_li_complex(
+def full_solvation_shell(
     nvt_run: Universe,
     center_atom: Atom,
     species: str,
