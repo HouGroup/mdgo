@@ -57,7 +57,7 @@ class MdRun:
         wrapped_run: The Universe object of wrapped trajectory.
         unwrapped_run: The Universe object of unwrapped trajectory.
         nvt_start: NVT start time step.
-        time_step: LAMMPS timestep.
+        time_step: LAMMPS timestep in ps.
         name: Name of the MD run.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
                 and the corresponding values are the selection language. This dict is intended for
@@ -324,11 +324,11 @@ class MdRun:
         """Calculates the coordination number array of one ``species`` around the interested ``center_atom``.
 
         Args:
-            species: The interested species.
+            species: The neighbor species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
              An array of coordination number for each time in the trajectory.
@@ -357,11 +357,10 @@ class MdRun:
         """Calculates the coordination number array of multiple species around the interested ``center_atom``.
 
         Args:
-            distance_dict: A dict of coordination cutoff distance
-                of the interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
              The coordination numbers of each species as a python dict of arrays
@@ -393,7 +392,7 @@ class MdRun:
         """Writes out a series of desired solvation structures as ``*.xyz`` files
 
         Args:
-            distance_dict: A dict of coordination cutoff distance of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             structure_code: An integer code representing the solvation
@@ -401,7 +400,7 @@ class MdRun:
                 and one species C.
             write_freq: Probability to write out files.
             write_path: Path to write out files.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation shell atom. Default to "cation".
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -432,11 +431,11 @@ class MdRun:
         3 for AGG) array of the solvation structure ``center_atom`` (typically the cation).
 
         Args:
-            species: The interested species.
+            species: The neighbor counter-ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The solvation structure center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
             An array of the solvation structure type for each timestep in the trajectory.
@@ -467,11 +466,11 @@ class MdRun:
         around the solvation structure ``center_atom``.
 
         Args:
-            species: The interested species.
+            species: The neighbor species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The solvation structure center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
              A dataframe of the species coordination number and corresponding percentage.
@@ -500,11 +499,10 @@ class MdRun:
         """Calculate the integral of the radial distribution function of selected species around the ``center_atom``
 
         Args:
-            distance_dict: A dict of coordination cutoff distance
-                of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The center atom to calculate the radial distribution for. Default to "cation".
+            center_atom: The solvation shell center atom to calculate the radial distribution for. Default to "cation".
 
         Return:
              A dataframe of the species and the coordination number.
@@ -527,7 +525,7 @@ class MdRun:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            species: The interested species.
+            species: The neighbor counter-ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
@@ -565,7 +563,7 @@ class MdRun:
             start: Start time step.
             stop: End time step.
             fft: Whether to use fft to calculate msd. Default to True.
-            species: The select_dict key of the atom group to calculate. Default to "cation".
+            species: The species for analysis. Default to "cation".
 
         Return:
              An array of MSD values in the trajectory
@@ -600,7 +598,7 @@ class MdRun:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             largest: The largest time sequence to trace.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
             binding_site: The species the ``center_atom`` coordinates to. Default to "anion".
 
         Returns:
@@ -622,7 +620,7 @@ class MdRun:
             start: Start time step.
             stop: End time step.
             percentage: The percentage of the cation. Default to 1.
-            species: The select_dict key of the atom group to calculate. Default to "cation".
+            species: The species for analysis. Default to "cation".
         """
         a2 = 1e-20
         ps = 1e-12
@@ -661,11 +659,10 @@ class MdRun:
         of selected species around center_atom.
 
         Args:
-            distance_dict: Dict of Cutoff distance of neighbor
-                for each species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The center atom to calculate the ACF for. Default to "cation".
+            center_atom: The solvation shell center atom to calculate the ACF for. Default to "cation".
 
         Return:
              An array of the time series and a dict of ACFs of each species.
@@ -710,8 +707,8 @@ class MdRun:
         Args:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The interested atom. Default to "cation".
-            species: The interested neighbor species.
+            center_atom: The solvation shell center atom. Default to "cation".
+            species: The neighbor species.
             neighbor_cutoff: The neighbor cutoff distance.
             index: The index of the atom in the interested atom group.
 
@@ -734,7 +731,7 @@ class MdRun:
         run_start: int,
         run_end: int,
         binding_site: str,
-        distance: float,
+        binding_cutoff: float,
         hopping_cutoff: float,
         floating_atom: str = "cation",
         smooth: int = 51,
@@ -746,9 +743,9 @@ class MdRun:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             binding_site: Floating ion binding site species.
-            distance: Binding cutoff distance.
-            hopping_cutoff: Detaching cutoff distance.
-            floating_atom: Floating ion species.
+            binding_cutoff: Binding cutoff distance.
+            hopping_cutoff: Hopping out cutoff distance.
+            floating_atom: Floating atom species.
             smooth: The length of the smooth filter window. Default to 51.
             mode: The mode of treating hopping event. Default to "full".
 
@@ -762,10 +759,12 @@ class MdRun:
         for ion in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
             if mode == "full":
-                sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
+                sites, freq, steps = find_nearest(
+                    neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
+                )
             elif mode == "free":
                 sites, freq, steps = find_nearest_free_only(
-                    neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth
+                    neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
                 )
             else:
                 raise ValueError("invalid mode")
@@ -803,7 +802,7 @@ class MdRun:
         all duplicate runs.
 
         Args:
-            distance_dict: A dict of coordination cutoff distance of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             lag_step: time steps to track before and after the hopping event
@@ -811,7 +810,7 @@ class MdRun:
             hopping_cutoff: Detaching cutoff distance.
             smooth: The length of the smooth filter window. Default to 51.
             cool: The cool down timesteps between hopping in and hopping out.
-            center_atom:
+            center_atom: The solvation shell center atom. Default to "cation".
             binding_site: The select_dict key of the binding site. Default to "anion".
             duplicate_run: Default to None.
 
@@ -896,7 +895,7 @@ class MdRun:
                 (typically the binding site for the floating ion).
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
-            floating_atom: The species of the floating ion.
+            floating_atom: The floating atom species.
             cartesian_by_ref: Transformation matrix between cartesian
                 and reference coordinate systems. Default to None.
             sym_dict: Dictionary of symmetry operation dictionary. Default to None.

@@ -37,10 +37,10 @@ def neighbor_distance(
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom: the interested central atom object.
+        center_atom: The center atom object.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        species: The interested neighbor species in the select_dict.
+        species: The neighbor species in the select_dict.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         distance: The neighbor cutoff distance.
@@ -79,21 +79,21 @@ def find_nearest(
     hopping_cutoff: float,
     smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """According to the dictionary of neighbor distance, finds the nearest neighbor ``sites`` that the ``central_atom``
-    binds to, and calculates the ``frequency`` of hopping between each neighbor, and steps when each binding site
-    exhibits the closest distance to the ``central_atom``.
+    """Using the dictionary of neighbor distance ``trj``, finds the nearest neighbor ``sites`` that the center atom
+    binds to, and calculates the ``frequency`` of hopping between each neighbor, and ``steps`` when each binding site
+    exhibits the closest distance to the center atom.
 
     Args:
-        trj: A python dict of distances between central atom and selected atoms.
-        time_step: The time step of the simulation.
+        trj: A dictionary of distances between center atom and neighbor atoms.
+        time_step: The time step of the simulation in ps.
         binding_cutoff: Binding cutoff distance.
         hopping_cutoff: Detaching cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
 
     Returns:
-        Returns an array of nearest neighbors (unique on each timestep),
-        the frequency of hopping between sites, and steps when each binding site
-        exhibits the closest distance to the central atom.
+        Returns an array of nearest neighbor ``sites`` (unique on each frame),
+        the ``frequency`` of hopping between sites, and ``steps`` when each binding site
+        exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -166,22 +166,22 @@ def find_nearest_free_only(
     hopping_cutoff: float,
     smooth: int = 51,
 ) -> Tuple[List[int], Union[float, np.floating], List[int]]:
-    """According to the dictionary of neighbor distance, finds the nearest neighbor that the central_atom binds to, and
-    calculates the frequency of hopping between each neighbor, and steps when each binding site exhibits the closest
-    distance to the central atom.
+    """Using the dictionary of neighbor distance ``trj``, finds the nearest neighbor ``sites`` that the ``center_atom``
+    binds to, and calculates the ``frequency`` of hopping between each neighbor, and ``steps`` when each binding site
+    exhibits the closest distance to the center atom.
     * Only hopping events with intermediate free state (no binded nearest neighbor) are counted.
 
     Args:
-        trj: A python dict of distances between central atom and selected atoms.
-        time_step: The time step of the simulation.
+        trj: A dictionary of distances between center atom and neighbor atoms.
+        time_step: The time step of the simulation in ps.
         binding_cutoff: Binding cutoff distance.
         hopping_cutoff: Detaching cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
 
     Returns:
-        Returns an array of nearest neighbors (unique on each timestep),
-        the frequency of hopping between sites, and steps when each binding site
-        exhibits the closest distance to the central atom.
+        Returns an array of nearest neighbor ``sites`` (unique on each frame),
+        the ``frequency`` of hopping between sites, and ``steps`` when each binding site
+        exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -256,18 +256,18 @@ def find_nearest_free_only(
 def find_in_n_out(
     trj: Dict[str, np.ndarray], binding_cutoff: float, hopping_cutoff: float, smooth: int = 51, cool: int = 20
 ) -> Tuple[List[int], List[int]]:
-    """Finds the time steps when the central atom binds with the neighbor (binding) or hopping out (hopping)
+    """Finds the frames when the center atom binds with the neighbor (binding) or hopping out (hopping)
     according to the dictionary of neighbor distance.
 
     Args:
-        trj: A python dict of distances between central atom and selected atoms.
+        trj: A dictionary of distances between center atom and neighbor atoms.
         binding_cutoff: Binding cutoff distance.
-        hopping_cutoff: Detaching cutoff distance.
+        hopping_cutoff: Hopping out cutoff distance.
         smooth: The length of the smooth filter window. Default to 51.
-        cool: The cool down timesteps between hopping in and hopping out.
+        cool: The cool down frames between hopping in and hopping out. Default to 20.
 
     Returns:
-        Two arrays of time steps of hopping in and hopping out event.
+        Two arrays of numberings of frames with hopping in and hopping out event, respectively.
     """
     time_span = len(list(trj.values())[0])
     for kw in list(trj):
@@ -342,23 +342,23 @@ def check_contiguous_steps(
     checkpoints: np.ndarray,
     lag: int = 20,
 ) -> Dict[str, np.ndarray]:
-    """Calculates the distance between the center atom and the interested atom
+    """Calculates the distance between the center atom and the neighbor atom
     in the checkpoint +/- lag time range.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom: the interested central atom object.
-        distance_dict: Dict of Cutoff distance of neighbor for each species.
+        center_atom: The center atom object.
+        distance_dict: A dictionary of Cutoff distance of neighbor for each species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        checkpoints: The time step of interest to check for contiguous steps
-        lag: The range (+/- lag) of the contiguous steps
+        checkpoints: The frame numberings of interest to check for contiguous steps.
+        lag: The range (+/- lag) of the contiguous steps. Default to 20.
 
     Returns:
-        An array of distance between the center atom and the interested atom
-        in the checkpoint +/- lag time range
+        An array of distance between the center atom and the neighbor atoms
+        in the checkpoint +/- lag time range.
     """
     coord_num: Dict[str, Union[List[List[int]], np.ndarray]] = {
         x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict.keys()
@@ -401,10 +401,10 @@ def heat_map(
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        floating_atom:
-        cluster_center_sites:
-        cluster_terminal:
-        cartesian_by_ref:
+        floating_atom: Floating atom species.
+        cluster_center_sites: A list of nearest cluster center sites (atom id).
+        cluster_terminal: The terminal atom species of the cluster (typically the binding site for the floating ion).
+        cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
@@ -461,8 +461,8 @@ def process_evol(
     distance_dict: Dict[str, float],
     run_start: int,
     run_end: int,
-    lag_step: int,
-    distance: float,
+    lag: int,
+    binding_cutoff: float,
     hopping_cutoff: float,
     smooth: int,
     cool: int,
@@ -470,33 +470,33 @@ def process_evol(
     center_atom: str,
 ):
     """Calculates the coordination number evolution of species around ``center_atom`` as a function of time,
-    the coordination numbers are averaged over all time steps around events when the center_atom
+    the coordination numbers are averaged over all frames around events when the center_atom
     hopping to and hopping out from the ``binding_site``.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        in_list:
-        out_list:
-        distance_dict:
+        in_list: A list to store the distances for hopping in events.
+        out_list: A list to store the distances for hopping out events.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        lag_step:
-        distance:
-        hopping_cutoff:
-        smooth:
-        cool:
-        binding_site:
-        center_atom:
+        lag: The frame range (+/- lag) for check evolution.
+        binding_cutoff: Binding cutoff distance.
+        hopping_cutoff: Hopping out cutoff distance.
+        smooth: The length of the smooth filter window. Default to 51.
+        cool: The cool down frames between binding and hopping out.
+        binding_site: The binding site of binding and hopping out events.
+        center_atom: The solvation shell center atom.
     """
     nvt_run = nvt_run
     center_atoms = nvt_run.select_atoms(select_dict.get(center_atom))
     for atom in tqdm(center_atoms[::]):
         neighbor_trj = neighbor_distance(
-            nvt_run, atom, run_start + lag_step, run_end - lag_step, binding_site, select_dict, distance
+            nvt_run, atom, run_start + lag, run_end - lag, binding_site, select_dict, binding_cutoff
         )
-        hopping_in, hopping_out = find_in_n_out(neighbor_trj, distance, hopping_cutoff, smooth=smooth, cool=cool)
+        hopping_in, hopping_out = find_in_n_out(neighbor_trj, binding_cutoff, hopping_cutoff, smooth=smooth, cool=cool)
         if len(hopping_in) > 0:
             in_one = check_contiguous_steps(
                 nvt_run,
@@ -505,8 +505,8 @@ def process_evol(
                 select_dict,
                 run_start,
                 run_end,
-                np.array(hopping_in) + lag_step,
-                lag=lag_step,
+                np.array(hopping_in) + lag,
+                lag=lag,
             )
             for kw, value in in_one.items():
                 in_list[kw].append(value)
@@ -518,8 +518,8 @@ def process_evol(
                 select_dict,
                 run_start,
                 run_end,
-                np.array(hopping_out) + lag_step,
-                lag=lag_step,
+                np.array(hopping_out) + lag,
+                lag=lag,
             )
             for kw, value in out_one.items():
                 out_list[kw].append(value)
@@ -537,14 +537,14 @@ def get_full_coords(
     symmetry operations to ``coords`` and take ``sample`` number of samples.
 
     Args:
-        coords:
-        reflection:
-        rotation:
-        inversion:
-        sample:
+        coords: An array of coordinates.
+        reflection: A list of reflection symmetry operation matrix.
+        rotation: A list of rotation symmetry operation matrix.
+        inversion: A list of inversion symmetry operation matrix.
+        sample: Number of samples to take from ``coords``.
 
     Returns:
-
+        An array with ``sample`` number of coordinates.
     """
     coords_full = coords
     if reflection:
@@ -584,7 +584,7 @@ def cluster_coordinates(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        species:
+        species: The species for analysis.
         distance: The coordination cutoff distance.
         basis_vectors:
         cluster_center:
@@ -980,8 +980,7 @@ def coord_shell_array(
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         func: One of the neighbor statistical method (num_of_neighbor, num_of_neighbor_simple)
         center_atoms: Atom group of the center atoms.
-        distance_dict: A dict of coordination cutoff distance
-            of the interested species.
+        distance_dict: A dictionary of coordination cutoff distance of the neighbor species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
