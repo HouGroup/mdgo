@@ -173,7 +173,7 @@ class MdRun:
             wrapped_dir: Path to the wrapped dcd file.
             unwrapped_dir: Path to the unwrapped dcd file.
             nvt_start: NVT start time step.
-            time_step: LAMMPS timestep.
+            time_step: LAMMPS timestep in ps.
             name: Name of the MD run.
             select_dict: A dictionary of species selection.
             res_dict: A dictionary of resnames.
@@ -363,8 +363,8 @@ class MdRun:
             center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
-             The coordination numbers of each species as a python dict of arrays
-             for each timestep in the trajectory.
+             A diction containing the coordination number sequence of each specified neighbor species
+             and the total coordination number sequence in the specified frame range .
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -438,7 +438,7 @@ class MdRun:
             center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
-            An array of the solvation structure type for each timestep in the trajectory.
+            An array of the solvation structure type in the specified frame range.
         """
         nvt_run = self.wrapped_run
         distance_dict = {species: distance}
@@ -811,7 +811,7 @@ class MdRun:
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
             smooth: The length of the smooth filter window. Default to 51.
-            cool: The cool down timesteps between hopping in and hopping out.
+            cool: The cool down frames between hopping in and hopping out.
             center_atom: The solvation shell center atom. Default to "cation".
             binding_site: The select_dict key of the binding site. Default to "anion".
             duplicate_run: Default to None.

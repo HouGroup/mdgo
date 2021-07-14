@@ -585,7 +585,7 @@ def cluster_coordinates(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        species: The species for analysis.
+        species: The species in the cluster.
         distance: The coordination cutoff distance.
         basis_vectors: The basis vector for normalizing the coordinates of the cluster atoms.
         cluster_center: Cluster center atom species.
@@ -649,24 +649,27 @@ def num_of_neighbor(
     write_path=None,
     element_id_dict=None,
 ):
-    """
+    """Calculates the coordination number of each specified neighbor species and the total coordination number
+    in the specified frame range.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom:
-        distance_dict:
+        center_atom: The solvation shell center atom.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        write:
-        structure_code:
-        write_freq:
-        write_path:
-        element_id_dict:
+        write: Whether to writes out a series of desired solvation structures as ``*.xyz`` files.
+        structure_code: An integer code representing the solvation structure to write out.
+            For example, 221 is two species A, two species B and one species C.
+        write_freq: Probability to write out files.
+        write_path: Path to write out files.
+        element_id_dict: a dict for mapping atom type id to element name.
 
     Returns:
-
+        A diction containing the coordination number sequence of each specified neighbor species
+        and the total coordination number sequence in the specified frame range .
     """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -702,9 +705,10 @@ def num_of_neighbor(
                 assert cation_selection is not None
                 selection_write = "((" + selection_write + ")and not " + cation_selection + ")"
                 structure = nvt_run.select_atoms(selection_write, periodic=True)
-                li_pos = ts[(int(center_atom.id) - 1)]
+                center_pos = ts[(int(center_atom.id) - 1)]
+                center_type = element_id_dict.get(int(center_atom.type))
                 path = write_path + str(center_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
-                write_out(li_pos, structure, element_id_dict, path)
+                write_out(center_pos, center_type, structure, element_id_dict, path)
         time_count += 1
     return cn_values
 
@@ -717,19 +721,21 @@ def num_of_neighbor_simple(
     run_start: int,
     run_end: int,
 ):
-    """
+    """Calculates solvation structure type (1 for SSIP, 2 for CIP and 3 for AGG) with respect to the ``enter_atom``
+    in the specified frame range.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom:
-        distance_dict:
+        center_atom: The solvation shell center atom.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
     Returns:
-
+        A dict with "total" as the key and an array of the solvation structure type in the specified frame range
+        as the value.
     """
 
     time_count = 0
@@ -775,11 +781,11 @@ def num_of_neighbor_one_li_simple_extra(
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom:
-        species:
+        center_atom: The center atom object.
+        species: The neighbor species in the select_dict.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance:
+        distance: The coordination cutoff distance.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
@@ -841,11 +847,11 @@ def num_of_neighbor_one_li_simple_extra_two(
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom:
+        center_atom: The center atom object.
         species_list:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance_dict:
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
@@ -918,11 +924,11 @@ def num_of_neighbor_one_li_complex(
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
-        center_atom:
+        center_atom: The center atom object.
         species:
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance:
+        distance: The coordination cutoff distance.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
@@ -977,6 +983,9 @@ def coord_shell_array(
     run_end: int,
 ):
     """
+    A helper function to analyze the coordination number/structure of every atoms in an ``AtomGroup`` using the
+    specified function.
+
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         func: One of the neighbor statistical method (num_of_neighbor, num_of_neighbor_simple)
@@ -986,6 +995,10 @@ def coord_shell_array(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+
+    Returns:
+        A diction containing the coordination number sequence of each specified neighbor species
+        and the total coordination number sequence in the specified frame range.
     """
     num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end)
     for atom in tqdm(center_atoms[1::]):
@@ -995,28 +1008,29 @@ def coord_shell_array(
     return num_array
 
 
-def write_out(li_pos: np.ndarray, selection: AtomGroup, element_id_dict: Dict[int, str], path: str):
+def write_out(
+    center_pos: np.ndarray, center_type: str, neighbors: AtomGroup, element_id_dict: Dict[int, str], path: str
+):
     """
+    Helper function for solvation structure coordinates write out.
 
     Args:
-        li_pos:
-        selection:
-        element_id_dict:
-        path:
-
-    Returns:
-
+        center_pos: The coordinates of the center atom in the frame.
+        center_type: The element type of the center atom in the frame.
+        neighbors: The neighbor AtomGroup.
+        element_id_dict: A dictionary for mapping atom type id to element from the mass information.
+        path: The path to write out ``*.xyz`` file.
     """
     lines = list()
-    lines.append(str(len(selection) + 1))
+    lines.append(str(len(neighbors) + 1))
     lines.append("")
-    lines.append("Li 0.0000000 0.0000000 0.0000000")
-    box = selection.dimensions
+    lines.append("{} 0.0000000 0.0000000 0.0000000".format(center_type))
+    box = neighbors.dimensions
     half_box = np.array([box[0], box[1], box[2]]) / 2
-    for atom in selection:
+    for atom in neighbors:
         locs = list()
         for i in range(3):
-            loc = atom.position[i] - li_pos[i]
+            loc = atom.position[i] - center_pos[i]
             if loc > half_box[i]:
                 loc = loc - box[i]
             elif loc < -half_box[i]:
@@ -1033,28 +1047,33 @@ def write_out(li_pos: np.ndarray, selection: AtomGroup, element_id_dict: Dict[in
 
 
 def select_shell(
-    select: Union[Dict[str, str], str], distance: Union[Dict[str, float], str], atom: Atom, kw: str
+    select: Union[Dict[str, str], str], distance: Union[Dict[str, float], str], center_atom: Atom, kw: str
 ) -> str:
     """
-    Select a group of atoms that is within a distance of an atom.
+    Select a group of atoms that is within a distance of an ``center_atom``.
 
     Args:
-        select:
-        distance:
-        atom:
-        kw:
+        select: A selection string of neighbors or a dictionary of atom species selection, where each atom
+            species name is a key and the corresponding values are the selection string.
+        distance: A neighbor cutoff distance or a dict of cutoff distances of neighbor species.
+        center_atom: The solvation shell center ``Atom`` object
+        kw: The key for the select and/or distance dictionary if applicable.
 
     Returns:
-
+        A selection string specifying the neighbor species within a distance of the ``center_atom``.
     """
     if isinstance(select, dict):
         species_selection = select[kw]
+        if species_selection is None:
+            raise ValueError("Species specified does not match entries in the select dict.")
     else:
         species_selection = select
-    assert species_selection is not None
     if isinstance(distance, dict):
-        distance_str = str(distance[kw])
+        distance_value = distance[kw]
+        if distance_value is None:
+            raise ValueError("Species specified does not match entries in the distance dict.")
+        distance_str = str(distance_value)
     else:
         distance_str = distance
-    selection = "(" + species_selection + ") and (around " + distance_str + " index " + str(atom.id - 1) + ")"
+    selection = "(" + species_selection + ") and (around " + distance_str + " index " + str(center_atom.id - 1) + ")"
     return selection
