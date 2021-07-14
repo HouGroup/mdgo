@@ -346,7 +346,7 @@ class MaestroRunner:
             print("Maestro file generated.")
 
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr)) from e
         finally:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
@@ -361,7 +361,7 @@ class MaestroRunner:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr)) from e
         print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
@@ -774,4 +774,4 @@ if __name__ == "__main__":
     )
     long_name = "Ethyl Methyl Carbonate"
     short_name = "EMC"
-    cid = pcr.obtain_entry(long_name, short_name, "pdb")
+    obtained_cid = pcr.obtain_entry(long_name, short_name, "pdb")

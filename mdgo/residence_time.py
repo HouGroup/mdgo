@@ -25,7 +25,7 @@ __date__ = "Feb 9, 2021"
 
 def neighbors_one_atom(
     nvt_run: Universe,
-    atom: Atom,
+    center_atom: Atom,
     species: str,
     select_dict: Dict[str, str],
     distance: float,
@@ -37,7 +37,7 @@ def neighbors_one_atom(
 
     Args:
         nvt_run: An MDAnalysis ``Universe``.
-        atom:
+        center_atom:
         species:
         select_dict:
         distance:
@@ -52,7 +52,13 @@ def neighbors_one_atom(
     for ts in nvt_run.trajectory[run_start:run_end:]:
         if species in select_dict.keys():
             selection = (
-                "(" + select_dict[species] + ") and (around " + str(distance) + " index " + str(atom.id - 1) + ")"
+                "("
+                + select_dict[species]
+                + ") and (around "
+                + str(distance)
+                + " index "
+                + str(center_atom.id - 1)
+                + ")"
             )
             shell = nvt_run.select_atoms(selection)
         else:

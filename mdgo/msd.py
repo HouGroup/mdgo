@@ -55,11 +55,10 @@ def total_msd(
         msd_calculator.run(start=start, stop=stop)
         total_array = msd_calculator.timeseries
         return total_array
-    else:
-        if fft:
-            raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
-        else:
-            return _total_msd(nvt_run, start, stop, select=select)
+
+    if fft:
+        raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
+    return _total_msd(nvt_run, start, stop, select=select)
 
 
 def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "all") -> np.ndarray:
