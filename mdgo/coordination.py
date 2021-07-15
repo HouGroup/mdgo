@@ -491,7 +491,6 @@ def process_evol(
         binding_site: The binding site of binding and hopping out events.
         center_atom: The solvation shell center atom.
     """
-    nvt_run = nvt_run
     center_atoms = nvt_run.select_atoms(select_dict.get(center_atom))
     for atom in tqdm(center_atoms[::]):
         neighbor_trj = neighbor_distance(
