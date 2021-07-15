@@ -820,7 +820,7 @@ def concentration_matcher(
     if n != len(solvents):
         raise ValueError("solvents and solv_ratio must be the same length!")
 
-    if isinstance(salt, float) or isinstance(salt, int):
+    if isinstance(salt, (float, int)):
         salt_molar_volume = salt
     elif isinstance(salt, Molecule):
         salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula, radii_type=radii_type)
@@ -858,7 +858,7 @@ def concentration_matcher(
         n_all.insert(0, num_salt)
         volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
-    elif mode.lower().startswith("w"):
+    if mode.lower().startswith("w"):
         for i in range(n):
             n_solvent.append(solv_ratio[i] / solv_mass[i])  # type: ignore
         v_solv = np.divide(solv_ratio, solv_density).sum()
@@ -867,16 +867,8 @@ def concentration_matcher(
         n_all.insert(0, num_salt)
         volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
-    else:
-        mode = input("Volume or weight ratio? (w or v): ")
-        return concentration_matcher(
-            concentration,
-            salt_molar_volume,
-            solvents,
-            solv_ratio,
-            num_salt=num_salt,
-            mode=mode,
-        )
+    mode = input("Volume or weight ratio? (w or v): ")
+    return concentration_matcher(concentration, salt_molar_volume, solvents, solv_ratio, num_salt=num_salt, mode=mode)
 
 
 def sdf_to_pdb(
@@ -917,14 +909,12 @@ def sdf_to_pdb(
     for i, line in enumerate(sdf):
         if i == 0:
             title += line.strip() + " "
-            continue
         elif i in [1, 2]:
-            continue
+            pass
         elif i == 3:
             line_split = line.split()
             atoms = int(line_split[0])
             bonds = int(line_split[1])
-            continue
         elif line.startswith("M  END"):
             break
         elif i in list(range(4, 4 + atoms)):
@@ -960,7 +950,7 @@ def sdf_to_pdb(
                 orders.append([atom2, atom1])
                 order -= 1
         else:
-            continue
+            pass
 
     # write pdb file
     with open(pdb_file, "wt") as outp:
@@ -1005,10 +995,10 @@ def sdf_to_pdb(
             bond_lines[atom].append(atom2s[i])
         for i, atom in enumerate(atom2s):
             bond_lines[atom].append(atom1s[i])
-        for i in range(len(orders)):
+        for i, odr in enumerate(orders):
             for j, ln in enumerate(bond_lines):
-                if ln[0] == orders[i][0]:
-                    bond_lines.insert(j + 1, orders[i])
+                if ln[0] == odr[0]:
+                    bond_lines.insert(j + 1, odr)
                     break
         for i in range(1, len(bond_lines)):
             bond_lines[i][1:] = sorted(bond_lines[i][1:])
