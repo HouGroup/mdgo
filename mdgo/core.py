@@ -584,7 +584,7 @@ class MdRun:
         """
         Calculates the mean square displacement (MSD) of the ``center_atom`` according to coordination states.
         The returned ``free_array`` include the MSD when ``center_atom`` is not coordinated to ``binding_site``.
-        The ``attach_array`` includes the MSD of ``center_atom`` is not coordinated to ``binding_site``.
+        The ``attach_array`` includes the MSD when ``center_atom`` is coordinated to ``binding_site``.
 
         Args:
             distance: The coordination cutoff distance.
