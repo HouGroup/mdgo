@@ -772,7 +772,7 @@ class MdRun:
                 raise ValueError("invalid mode")
             coords = []
             for step in steps:
-                coord_ion = nvt_run.trajectory[step + run_start][ion.id - 1]
+                coord_ion = nvt_run.trajectory[step + run_start][ion.index]
                 coords.append(coord_ion)
             if len(coords) > 1:
                 dists = []
