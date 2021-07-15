@@ -736,7 +736,7 @@ def num_of_neighbor_simple(
 
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    center_selection = "same type as " + str(center_atom.id - 1)
+    center_selection = "same type as index " + str(center_atom.index)
     assert len(distance_dict) == 1, "Please only specify the counter-ion species in the distance_dict"
     species = list(distance_dict.keys())[0]
     cn_values = np.zeros(int(len(trj_analysis)))
@@ -877,7 +877,7 @@ def num_of_neighbor_specific(
         selection = select_shell(select_dict, distance_dict, center_atom, counter_ion)
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
-        center_selection = "same type as " + str(center_atom.id - 1)
+        center_selection = "same type as index " + str(center_atom.id - 1)
         if shell_len == 0:
             ssip_step.append(time_count)
         elif shell_len == 1:
