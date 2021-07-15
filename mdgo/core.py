@@ -109,14 +109,14 @@ class MdRun:
             assign_name(self.unwrapped_run, self.atom_names)
         if not hasattr(self.wrapped_run.atoms, "resnames") or not hasattr(self.unwrapped_run.atoms, "resnames"):
             if select_dict is None and res_dict is None:
-                self.res_dict = res_dict_from_lammpsdata(self.data)
+                res_dict = res_dict_from_lammpsdata(self.data)
             elif res_dict is None:
                 assert isinstance(select_dict, dict)
-                self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
+                res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
             else:
-                self.res_dict = res_dict
-            assign_resname(self.wrapped_run, self.res_dict)
-            assign_resname(self.unwrapped_run, self.res_dict)
+                pass
+            assign_resname(self.wrapped_run, res_dict)
+            assign_resname(self.unwrapped_run, res_dict)
         if select_dict is None:
             self.select_dict = select_dict_from_resname(self.wrapped_run)
         else:
