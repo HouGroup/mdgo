@@ -1078,5 +1078,5 @@ def select_shell(
         distance_str = str(distance_value)
     else:
         distance_str = distance
-    selection = "(" + species_selection + ") and (around " + distance_str + " index " + str(center_atom.id - 1) + ")"
+    selection = "(" + species_selection + ") and (around " + distance_str + " index " + str(center_atom.index) + ")"
     return selection
