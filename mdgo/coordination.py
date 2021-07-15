@@ -591,7 +591,7 @@ def cluster_coordinates(
         cluster_center: Cluster center atom species.
 
     Returns:
-        A array of coordinates of the cluster atoms.
+        An array of coordinates of the cluster atoms.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cluster_center_atom = nvt_run.select_atoms(select_dict.get(cluster_center), periodic=True)[0]
@@ -790,7 +790,7 @@ def angular_dist_of_neighbor(
         cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
 
     Returns:
-        A array of angles of a-c-b occurrence in the specified frames.
+        An array of angles of a-c-b occurrence in the specified frames.
     """
     acb_angle = list()
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -833,8 +833,10 @@ def num_of_neighbor_specific(
     distance_dict: Dict[str, float],
     run_start: int,
     run_end: int,
-):
+    counter_ion: str = "anion",
+) -> Tuple[Dict[str, np.floating], Dict[str, np.floating], Dict[str, np.floating]]:
     """
+    Calculates the coordination number of each specific solvation structure type (SSIP, CIP, AGG).
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
@@ -845,9 +847,11 @@ def num_of_neighbor_specific(
         distance_dict: A dict of coordination cutoff distance of the neighbor species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        counter_ion: The neighbor counter-ion species. Default to "anion".
 
     Returns:
-
+        A tuple containing three dictionary of the coordination number of each neighbor species
+        and total coordination number for the three solvation structure type, respectively.
     """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -870,14 +874,14 @@ def num_of_neighbor_specific(
                 cn_values["total"][time_count] += 10 ** digit_of_species
             digit_of_species = digit_of_species - 1
 
-        selection = select_shell(select_dict, distance_dict, center_atom, "anion")
+        selection = select_shell(select_dict, distance_dict, center_atom, counter_ion)
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
         center_selection = "same type as " + str(center_atom.id - 1)
         if shell_len == 0:
             ssip_step.append(time_count)
         elif shell_len == 1:
-            selection_species = select_shell(center_selection, distance_dict, shell.atoms[0], "anion")
+            selection_species = select_shell(center_selection, distance_dict, shell.atoms[0], counter_ion)
             shell_species = nvt_run.select_atoms(selection_species, periodic=True)
             shell_species_len = len(shell_species) - 1
             if shell_species_len == 0:
@@ -897,67 +901,79 @@ def num_of_neighbor_specific(
     return cn_ssip, cn_cip, cn_agg
 
 
-# Depth-first traversal
-def full_solvation_shell(
+def full_solvation_structure(
     nvt_run: Universe,
     center_atom: Atom,
-    species: str,
+    center_species: str,
+    counter_species: str,
     select_dict: Dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
-):
+    depth: int = 4,
+) -> np.ndarray:
     """
+    Obtain the solvation structure of a full connected ion network with depth-first traversal.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         center_atom: The center atom object.
-        species:
+        center_species: The center ion species. It should be the atom directly connect to the counter ion.
+        counter_species: The neighbor counter ion species. It should be the atom directly connect to the center ion.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         distance: The coordination cutoff distance.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        depth: The depth of the traversal. Default to 4
 
     Returns:
-
+        Return an array of full solvation structure of the specified frames. Each solvation structure is represented by
+        an array of the number of ions from the first to the n-th solvation shell with n=``depth``.
     """
+    center_selection = select_dict.get(center_species)
+    counter_selection = select_dict.get(counter_species)
+    assert (center_selection is not None) and (counter_selection is not None)
+
+    def select_counter_ion(selection, dist, atom):
+        return "(" + selection + " and around " + str(dist) + " same fragment as index " + str(atom.id - 1) + ")"
+
+    def center_shell(this_shell, this_layer, frame):
+        for counter in this_shell.atoms:
+            if counter.id not in counter_ion_list:
+                counter_ion_list.append(counter.id)
+                cn_values[frame][this_layer] += 1
+                if this_layer + 1 < depth:
+                    next_shell = nvt_run.select_atoms(
+                        select_counter_ion(center_selection, distance, counter),
+                        periodic=True,
+                    )
+                    counter_shell(next_shell, this_layer + 1, frame)
+
+    def counter_shell(this_shell, this_layer, frame):
+        for center in this_shell.atoms:
+            if center.id not in center_ion_list:
+                center_ion_list.append(center.id)
+                cn_values[frame][this_layer] += 1
+                if this_layer + 1 < depth:
+                    next_shell = nvt_run.select_atoms(
+                        select_counter_ion(counter_selection, distance, center),
+                        periodic=True,
+                    )
+                    center_shell(next_shell, this_layer + 1, frame)
+
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    cn_values = np.zeros((int(len(trj_analysis)), 4))
+    cn_values = np.zeros((int(len(trj_analysis)), depth))
     for ts in trj_analysis:
-        cation_list = [center_atom.id]
-        anion_list = []
-        selection = select_shell(select_dict, str(distance), center_atom, species)
-        shell = nvt_run.select_atoms(selection, periodic=True)
-        for anion_1 in shell.atoms:
-            if anion_1.resid not in anion_list:
-                anion_list.append(anion_1.resid)
-                cn_values[time_count][0] += 1
-                shell_anion_1 = nvt_run.select_atoms(
-                    "(type 17 and around 3 resid " + str(anion_1.resid) + ")",
-                    periodic=True,
-                )
-                for cation_2 in shell_anion_1:
-                    if cation_2.id not in cation_list:
-                        cation_list.append(cation_2.id)
-                        cn_values[time_count][1] += 1
-                        shell_cation_2 = nvt_run.select_atoms(
-                            "(type 15 and around 3 index " + str(cation_2.id - 1) + ")",
-                            periodic=True,
-                        )
-                        for anion_3 in shell_cation_2.atoms:
-                            if anion_3.resid not in anion_list:
-                                anion_list.append(anion_3.resid)
-                                cn_values[time_count][2] += 1
-                                shell_anion_3 = nvt_run.select_atoms(
-                                    "(type 17 and around 3 resid " + str(anion_3.resid) + ")",
-                                    periodic=True,
-                                )
-                                for cation_4 in shell_anion_3:
-                                    if cation_4.id not in cation_list:
-                                        cation_list.append(cation_4.id)
-                                        cn_values[time_count][3] += 1
+        center_ion_list = [center_atom.id]
+        counter_ion_list = []
+        first_shell = nvt_run.select_atoms(
+            select_counter_ion(counter_selection, distance, center_atom),
+            periodic=True,
+        )
+        center_shell(first_shell, 0, time_count)
+    return cn_values
 
 
 def coord_shell_array(
