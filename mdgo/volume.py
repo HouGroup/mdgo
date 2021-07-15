@@ -397,7 +397,7 @@ def get_radii(radii_type: str = "Bondi") -> Dict[str, float]:
             "I": 2.15,
         }
     elif radii_type == "pymatgen":
-        radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__.keys()}
+        radii = {Element(e).symbol: Element(e).van_der_waals_radius for e in Element.__members__}
     else:
         print("Wrong option for radii type: Choose Bondi, Lange, or pymatgen")
         sys.exit()
@@ -498,8 +498,7 @@ def get_occupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = No
         print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
     if molar_volume:
         return v * 0.60221409  # cm^3/mol
-    else:
-        return v  # Å^3
+    return v  # Å^3
 
 
 def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = None, molar_volume=True) -> float:
@@ -520,8 +519,7 @@ def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = 
         print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
     if molar_volume:
         return v * 0.60221409  # cm^3/mol
-    else:
-        return v  # Å^3
+    return v  # Å^3
 
 
 def molecular_volume(

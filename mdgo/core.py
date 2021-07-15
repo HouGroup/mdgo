@@ -501,7 +501,7 @@ class MdRun:
         item_name = "species in first solvation shell"
         item_list = []
         cn_list = []
-        for kw in cn_values.keys():
+        for kw in cn_values:
             if kw != "total":
                 shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
@@ -924,8 +924,7 @@ class MdRun:
         coord_list = coord_list[1:]
         if sym_dict:
             return get_full_coords(coord_list, sample=sample, **sym_dict)
-        else:
-            return get_full_coords(coord_list, sample=sample)
+        return get_full_coords(coord_list, sample=sample)
 
     def get_cluster_distance(
         self, run_start: int, run_end: int, neighbor_cutoff: float, cluster_center: str = "center"

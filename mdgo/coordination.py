@@ -596,7 +596,7 @@ def cluster_coordinates(
     cluster_center_atom = nvt_run.select_atoms(select_dict.get(cluster_center), periodic=True)[0]
     selection = (
         "("
-        + " or ".join([s for s in species])
+        + " or ".join(s for s in species)
         + ") and (around "
         + str(distance)
         + " index "
@@ -631,8 +631,7 @@ def cluster_coordinates(
         cluster_norm = np.linalg.solve(basis_xyz, cluster_array.T).T
         cluster_norm = cluster_norm - np.mean(cluster_norm, axis=0)
         return cluster_norm
-    else:
-        return cluster_array
+    return cluster_array
 
 
 def num_of_neighbor(
@@ -796,7 +795,7 @@ def angular_dist_of_neighbor(
         a_num = len(a_group)
         if a_num == 0:
             continue
-        elif a_num == 1:
+        if a_num == 1:
             c_selection = select_shell(select_dict, distance_dict, a_group.atoms[0], center_c)
             c_atoms = nvt_run.select_atoms(c_selection, periodic=True)
             shell_species_len = len(c_atoms) - 1
@@ -808,16 +807,15 @@ def angular_dist_of_neighbor(
             shell_type = "agg"
         if shell_type == "agg" and cip:
             continue
-        else:
-            c_pos = center_atom.position
-            for a_atom in a_group.atoms:
-                a_pos = a_atom.position
-                b_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_b)
-                b_group = nvt_run.select_atoms(b_selection, periodic=True)
-                for b_atom in b_group.atoms:
-                    b_pos = b_atom.position
-                    theta = angle(a_pos, c_pos, b_pos)
-                    acb_angle.append(theta)
+        c_pos = center_atom.position
+        for a_atom in a_group.atoms:
+            a_pos = a_atom.position
+            b_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_b)
+            b_group = nvt_run.select_atoms(b_selection, periodic=True)
+            for b_atom in b_group.atoms:
+                b_pos = b_atom.position
+                theta = angle(a_pos, c_pos, b_pos)
+                acb_angle.append(theta)
     return np.array(acb_angle)
 
 
