@@ -364,7 +364,7 @@ def angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.floating:
 
 def mass_to_name(masses: np.ndarray) -> np.ndarray:
     """
-    Create a dict for mapping atom type id to element from the mass information.
+    Map atom names to element names.
 
     Args:
         masses: The masses array of atoms in an ``Universe``.
@@ -379,6 +379,22 @@ def mass_to_name(masses: np.ndarray) -> np.ndarray:
                 names.append(item[0])
     assert len(masses) == len(names), "Invalid mass found."
     return np.array(names)
+
+
+def lmp_mass_to_name(df: pd.DataFrame) -> Dict[int, str]:
+    """
+    Create a dict for mapping atom type id to element from the mass information.
+    Args:
+        df: The masses attribute from LammpsData object
+    Return:
+        The element dict.
+    """
+    atoms = {}
+    for row in df.index:
+        for item in MM_of_Elements.items():
+            if math.isclose(df["mass"][row], item[1], abs_tol=0.01):
+                atoms[int(row)] = item[0]
+    return atoms
 
 
 def assign_name(u: Universe, names: np.ndarray):

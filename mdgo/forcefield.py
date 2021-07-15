@@ -45,7 +45,7 @@ from selenium.common.exceptions import (
 )
 from typing_extensions import Final
 
-from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
+from mdgo.util import lmp_mass_to_name, ff_parser, sdf_to_pdb
 
 
 __author__ = "Tingzheng Hou"
@@ -211,7 +211,7 @@ class FFcrawler:
         )
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
-            element_id_dict = mass_to_name(data_obj.masses)
+            element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
             lines = list()
             lines.append(str(len(coords.index)))

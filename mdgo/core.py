@@ -54,7 +54,7 @@ class MdRun:
         wrapped_run: The Universe object of wrapped trajectory.
         unwrapped_run: The Universe object of unwrapped trajectory.
         nvt_start: NVT start time step.
-        time_step: LAMMPS timestep in ps.
+        time_step: Timestep between each frame, in ps.
         name: Name of the MD run.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
                 and the corresponding values are the selection language. This dict is intended for
@@ -139,6 +139,7 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+        print("MD run loaded")
 
     @classmethod
     def from_output_full(
