@@ -66,8 +66,8 @@ def neighbor_distance(
         time_count += 1
     time_count = 0
     for ts in trj_analysis:
-        for atomid in dist_dict.keys():
             dist = distance_array(ts[center_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
+        for atomid in dist_dict:
             dist_dict[atomid][time_count] = dist
         time_count += 1
     return dist_dict
@@ -362,7 +362,7 @@ def check_contiguous_steps(
         in the checkpoint +/- lag time range.
     """
     coord_num: Dict[str, Union[List[List[int]], np.ndarray]] = {
-        x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict.keys()
+        x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict
     }
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     has = False
@@ -375,7 +375,7 @@ def check_contiguous_steps(
                 has = True
                 checkpoint = j
         if log:
-            for kw in distance_dict.keys():
+            for kw in distance_dict:
                 selection = select_shell(select_dict, distance_dict, center_atom, kw)
                 shell = nvt_run.select_atoms(selection, periodic=True)
                 coord_num[kw][i - checkpoint + lag].append(len(shell))
@@ -772,7 +772,7 @@ def angular_dist_of_neighbor(
     run_start: int,
     run_end: int,
     cip: bool = True,
-):
+) -> np.ndarray:
     """
     Calculates the angle of atoms a-c-b in the specified frames.
 
@@ -984,7 +984,7 @@ def coord_shell_array(
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
-):
+) -> Dict[str, np.ndarray]:
     """
     A helper function to analyze the coordination number/structure of every atoms in an ``AtomGroup`` using the
     specified function.
@@ -1006,7 +1006,7 @@ def coord_shell_array(
     num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end)
     for atom in tqdm(center_atoms[1::]):
         this_atom = func(nvt_run, atom, distance_dict, select_dict, run_start, run_end)
-        for kw in num_array.keys():
+        for kw in num_array:
             num_array[kw] = np.concatenate((num_array.get(kw), this_atom.get(kw)), axis=0)
     return num_array
 
