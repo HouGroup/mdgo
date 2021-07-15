@@ -966,8 +966,8 @@ def full_solvation_structure(
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = np.zeros((int(len(trj_analysis)), depth))
     for ts in trj_analysis:
-        center_ion_list = [center_atom.id]
-        counter_ion_list = []
+        center_ion_list: List[np.int_] = [center_atom.id]
+        counter_ion_list: List[np.int_] = []
         first_shell = nvt_run.select_atoms(
             select_counter_ion(counter_selection, distance, center_atom),
             periodic=True,
