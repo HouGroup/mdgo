@@ -647,7 +647,6 @@ def num_of_neighbor(
     structure_code=None,
     write_freq=0,
     write_path=None,
-    element_id_dict=None,
 ) -> Dict[str, np.ndarray]:
     """Calculates the coordination number of each specified neighbor species and the total coordination number
     in the specified frame range.
@@ -665,7 +664,6 @@ def num_of_neighbor(
             For example, 221 is two species A, two species B and one species C.
         write_freq: Probability to write out files.
         write_path: Path to write out files.
-        element_id_dict: a dict for mapping atom type id to element name.
 
     Returns:
         A diction containing the coordination number sequence of each specified neighbor species
@@ -701,9 +699,9 @@ def num_of_neighbor(
                 selection_write = "((" + selection_write + ") and not " + center_selection + ")"
                 structure = nvt_run.select_atoms(selection_write, periodic=True)
                 center_pos = ts[center_atom.index]
-                center_type = element_id_dict.get(int(center_atom.type))
+                center_name = center_atom.name
                 path = write_path + str(center_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
-                write_out(center_pos, center_type, structure, element_id_dict, path)
+                write_out(center_pos, center_name, structure, path)
         time_count += 1
     return cn_values
 
@@ -1010,23 +1008,20 @@ def coord_shell_array(
     return num_array
 
 
-def write_out(
-    center_pos: np.ndarray, center_type: str, neighbors: AtomGroup, element_id_dict: Dict[int, str], path: str
-):
+def write_out(center_pos: np.ndarray, center_name: str, neighbors: AtomGroup, path: str):
     """
     Helper function for solvation structure coordinates write out.
 
     Args:
         center_pos: The coordinates of the center atom in the frame.
-        center_type: The element type of the center atom in the frame.
+        center_name: The element name of the center atom in the frame.
         neighbors: The neighbor AtomGroup.
-        element_id_dict: A dictionary for mapping atom type id to element from the mass information.
         path: The path to write out ``*.xyz`` file.
     """
     lines = list()
     lines.append(str(len(neighbors) + 1))
     lines.append("")
-    lines.append("{} 0.0000000 0.0000000 0.0000000".format(center_type))
+    lines.append("{} 0.0000000 0.0000000 0.0000000".format(center_name))
     box = neighbors.dimensions
     half_box = np.array([box[0], box[1], box[2]]) / 2
     for atom in neighbors:
@@ -1040,7 +1035,7 @@ def write_out(
             else:
                 pass
             locs.append(loc)
-        element_name = element_id_dict.get(int(atom.type))
+        element_name = atom.name
         assert element_name is not None
         line = element_name + " " + " ".join(str(loc) for loc in locs)
         lines.append(line)

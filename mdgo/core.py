@@ -103,18 +103,20 @@ class MdRun:
         self.temp = temperature
         self.name = name
         self.data = lammps_data
-        self.element_id_dict = mass_to_name(self.data.masses)
-        assign_name(self.wrapped_run, self.element_id_dict)
-        assign_name(self.unwrapped_run, self.element_id_dict)
-        if select_dict is None and res_dict is None:
-            self.res_dict = res_dict_from_lammpsdata(self.data)
-        elif res_dict is None:
-            assert isinstance(select_dict, dict)
-            self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
-        else:
-            self.res_dict = res_dict
-        assign_resname(self.wrapped_run, self.res_dict)
-        assign_resname(self.unwrapped_run, self.res_dict)
+        self.atom_names = mass_to_name(self.wrapped_run.atoms.masses)
+        if not hasattr(self.wrapped_run.atoms, "names") or not hasattr(self.unwrapped_run.atoms, "names"):
+            assign_name(self.wrapped_run, self.atom_names)
+            assign_name(self.unwrapped_run, self.atom_names)
+        if not hasattr(self.wrapped_run.atoms, "resnames") or not hasattr(self.unwrapped_run.atoms, "resnames"):
+            if select_dict is None and res_dict is None:
+                self.res_dict = res_dict_from_lammpsdata(self.data)
+            elif res_dict is None:
+                assert isinstance(select_dict, dict)
+                self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
+            else:
+                self.res_dict = res_dict
+            assign_resname(self.wrapped_run, self.res_dict)
+            assign_resname(self.unwrapped_run, self.res_dict)
         if select_dict is None:
             self.select_dict = select_dict_from_resname(self.wrapped_run)
         else:
@@ -416,7 +418,6 @@ class MdRun:
                 structure_code=structure_code,
                 write_freq=write_freq,
                 write_path=write_path,
-                element_id_dict=self.element_id_dict,
             )
 
     def coord_num_array_simple(

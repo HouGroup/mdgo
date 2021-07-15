@@ -362,39 +362,34 @@ def angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.floating:
     return np.degrees(angle_in_radian)
 
 
-def mass_to_name(df: pd.DataFrame) -> Dict[int, str]:
+def mass_to_name(masses: np.ndarray) -> np.ndarray:
     """
     Create a dict for mapping atom type id to element from the mass information.
 
     Args:
-        df: The masses attribute from LammpsData object
+        masses: The masses array of atoms in an ``Universe``.
 
     Return:
-        The element dict.
+        The element name array.
     """
-    atoms = {}
-    for row in df.index:
+    names = list()
+    for mass in masses:
         for item in MM_of_Elements.items():
-            if math.isclose(df["mass"][row], item[1], abs_tol=0.01):
-                atoms[int(row)] = item[0]
-    return atoms
+            if math.isclose(mass, item[1], abs_tol=0.1):
+                names.append(item[0])
+    assert len(masses) == len(names), "Invalid mass found."
+    return np.array(names)
 
 
-def assign_name(u: Universe, element_id_dict: Dict[int, str]):
+def assign_name(u: Universe, names: np.ndarray):
     """
     Assign resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing names.
 
     Args:
         u: The universe object to assign resnames to.
-        element_id_dict: A dictionary of atom types, where each type is a key
-            and the corresponding values are the element names.
+        names: The element name array.
     """
-    u.add_TopologyAttr("name")
-    for key, val in element_id_dict.items():
-        atom_group = u.select_atoms("type {}".format(str(key)))
-        atom_names = atom_group.names
-        atom_names[atom_names == ""] = val
-        atom_group.names = atom_names
+    u.add_TopologyAttr("name", values=names)
 
 
 def assign_resname(u: Universe, res_dict: Dict[str, str]):
