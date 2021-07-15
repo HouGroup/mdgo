@@ -12,7 +12,6 @@ import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
@@ -21,7 +20,6 @@ from mdgo.util import (
     mass_to_name,
     assign_name,
     assign_resname,
-    res_dict_from_lammpsdata,
     res_dict_from_select_dict,
     res_dict_from_datafile,
     select_dict_from_resname,
@@ -53,7 +51,6 @@ class MdRun:
     A core class for MD results analysis.
 
     Args:
-        lammps_data: The LammpsData object that has the force field and topology information.
         wrapped_run: The Universe object of wrapped trajectory.
         unwrapped_run: The Universe object of unwrapped trajectory.
         nvt_start: NVT start time step.
@@ -75,7 +72,6 @@ class MdRun:
 
     def __init__(
         self,
-        lammps_data: Union[LammpsData, CombinedData],
         wrapped_run: Universe,
         unwrapped_run: Universe,
         nvt_start: int,
@@ -102,19 +98,14 @@ class MdRun:
         self.time_step = time_step
         self.temp = temperature
         self.name = name
-        self.data = lammps_data
         self.atom_names = mass_to_name(self.wrapped_run.atoms.masses)
         if not hasattr(self.wrapped_run.atoms, "names") or not hasattr(self.unwrapped_run.atoms, "names"):
             assign_name(self.wrapped_run, self.atom_names)
             assign_name(self.unwrapped_run, self.atom_names)
         if not hasattr(self.wrapped_run.atoms, "resnames") or not hasattr(self.unwrapped_run.atoms, "resnames"):
-            if select_dict is None and res_dict is None:
-                res_dict = res_dict_from_lammpsdata(self.data)
-            elif res_dict is None:
-                assert isinstance(select_dict, dict)
+            if res_dict is None:
+                assert select_dict is not None, "Either one of select_dict or res_dict should be given."
                 res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
-            else:
-                pass
             assign_resname(self.wrapped_run, res_dict)
             assign_resname(self.unwrapped_run, res_dict)
         if select_dict is None:
@@ -186,14 +177,12 @@ class MdRun:
             temperature: Temperature of the MD run. Default to 298.15.
             cond: Whether to calculate conductivity MSD. Default to True.
         """
-        lammps_data = LammpsData.from_file(data_dir)
         if res_dict is None:
             res_dict = res_dict_from_datafile(data_dir)
         wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
         unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
 
         return cls(
-            lammps_data,
             wrapped_run,
             unwrapped_run,
             nvt_start,
