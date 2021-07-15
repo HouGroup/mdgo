@@ -973,7 +973,7 @@ def full_solvation_structure(
     return cn_values
 
 
-def coord_shell_array(
+def concat_coord_array(
     nvt_run: Universe,
     func: Callable,
     center_atoms: AtomGroup,

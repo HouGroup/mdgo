@@ -26,7 +26,7 @@ from mdgo.util import (
 )
 from mdgo.conductivity import calc_cond, conductivity_calculator
 from mdgo.coordination import (
-    coord_shell_array,
+    concat_coord_array,
     num_of_neighbor,
     num_of_neighbor_simple,
     neighbor_distance,
@@ -304,7 +304,7 @@ class MdRun:
         cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end)
         return cond
 
-    def coord_num_array_one_species(
+    def coord_num_array_single_species(
         self,
         species: str,
         distance: float,
@@ -327,7 +327,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         distance_dict = {species: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array = concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -359,7 +359,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array = concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -370,7 +370,7 @@ class MdRun:
         )
         return num_array
 
-    def get_solvation_structure(
+    def write_solvation_structure(
         self,
         distance_dict: Dict[str, float],
         run_start: int,
@@ -388,7 +388,7 @@ class MdRun:
             run_end: End frame of analysis.
             structure_code: An integer code representing the solvation
                 structure, for example, 221 is two species A, two species B
-                and one species C.
+                and one species C with the same order as in the ``distance_dict``.
             write_freq: Probability to write out files.
             write_path: Path to write out files.
             center_atom: The solvation shell atom. Default to "cation".
@@ -409,7 +409,7 @@ class MdRun:
                 write_path=write_path,
             )
 
-    def coord_num_array_simple(
+    def coord_type_array(
         self,
         counter_ion: str,
         distance: float,
@@ -433,7 +433,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         distance_dict = {counter_ion: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array = concat_coord_array(
             nvt_run,
             num_of_neighbor_simple,
             center_atoms,
@@ -444,7 +444,7 @@ class MdRun:
         )["total"]
         return num_array
 
-    def coordination_one_species(
+    def coordination_single_species(
         self,
         species: str,
         distance: float,
@@ -465,7 +465,7 @@ class MdRun:
         Return:
              A dataframe of the species coordination number and corresponding percentage.
         """
-        num_array = self.coord_num_array_one_species(species, distance, run_start, run_end, center_atom=center_atom)
+        num_array = self.coord_num_array_single_species(species, distance, run_start, run_end, center_atom=center_atom)
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
@@ -486,7 +486,7 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> pd.DataFrame:
-        """Calculate the integral of the radial distribution function of selected species around the ``center_atom``
+        """Calculates the integral of the radial distribution function of selected species around the ``center_atom``.
 
         Args:
             distance_dict: A dict of coordination cutoff distance of the neighbor species.
@@ -511,7 +511,7 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def shell_simple(
+    def coordination_type(
         self, counter_ion: str, distance: float, run_start: int, run_end: int, center_atom: str = "cation"
     ) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
@@ -526,7 +526,7 @@ class MdRun:
         Return:
              A dataframe of the solvation structure and percentage.
         """
-        num_array = self.coord_num_array_simple(counter_ion, distance, run_start, run_end, center_atom=center_atom)
+        num_array = self.coord_type_array(counter_ion, distance, run_start, run_end, center_atom=center_atom)
 
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
