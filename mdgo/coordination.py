@@ -47,7 +47,7 @@ def neighbor_distance(
         distance: The neighbor cutoff distance.
 
     Returns:
-        A dictionary of distance of neighbor atoms to the ``center_atom``.
+        A dictionary of distance of neighbor atoms to the ``center_atom``. The keys are atom indexes in string type .
     """
     dist_dict = dict()
     time_count = 0
@@ -57,18 +57,18 @@ def neighbor_distance(
         raise ValueError("Invalid species selection")
     for ts in trj_analysis:
         selection = (
-            "(" + species_selection + ") and (around " + str(distance) + " index " + str(center_atom.id - 1) + ")"
+            "(" + species_selection + ") and (around " + str(distance) + " index " + str(center_atom.index) + ")"
         )
         shell = nvt_run.select_atoms(selection, periodic=True)
         for atom in shell.atoms:
-            if str(atom.id) not in dist_dict:
-                dist_dict[str(atom.id)] = np.full(run_end - run_start, 100.0)
+            if str(atom.index) not in dist_dict:
+                dist_dict[str(atom.index)] = np.full(run_end - run_start, 100.0)
         time_count += 1
     time_count = 0
     for ts in trj_analysis:
-        for atomid in dist_dict:
-            dist = distance_array(ts[center_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
-            dist_dict[atomid][time_count] = dist
+        for atom_index in dist_dict:
+            dist = distance_array(ts[center_atom.index], ts[int(atom_index)], ts.dimensions)
+            dist_dict[atom_index][time_count] = dist
         time_count += 1
     return dist_dict
 
@@ -419,9 +419,9 @@ def heat_map(
             pass
         else:
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i] - 1))[0]
-            selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.id - 1) + ")"
+            selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
-            distances = distance_array(ts[floating_atom.id - 1], bind_atoms.positions, ts.dimensions)
+            distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)
             vertex_atoms = bind_atoms[idx[:3]]
             vector_atom = atom_vec(floating_atom, center_atom, ts.dimensions)
@@ -601,7 +601,7 @@ def cluster_coordinates(
         + ") and (around "
         + str(distance)
         + " index "
-        + str(cluster_center_atom.id - 1)
+        + str(cluster_center_atom.index)
         + ")"
     )
     print(selection)
@@ -697,11 +697,10 @@ def num_of_neighbor(
                     "(same resid as " + select_shell(select_dict, distance_dict, center_atom, kw) + ")"
                     for kw in species
                 )
-                cation_selection = select_dict.get("cation")
-                assert cation_selection is not None
-                selection_write = "((" + selection_write + ")and not " + cation_selection + ")"
+                center_selection = "same type as index " + str(center_atom.index)
+                selection_write = "((" + selection_write + ") and not " + center_selection + ")"
                 structure = nvt_run.select_atoms(selection_write, periodic=True)
-                center_pos = ts[(int(center_atom.id) - 1)]
+                center_pos = ts[center_atom.index]
                 center_type = element_id_dict.get(int(center_atom.type))
                 path = write_path + str(center_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
                 write_out(center_pos, center_type, structure, element_id_dict, path)
@@ -877,7 +876,7 @@ def num_of_neighbor_specific(
         selection = select_shell(select_dict, distance_dict, center_atom, counter_ion)
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
-        center_selection = "same type as index " + str(center_atom.id - 1)
+        center_selection = "same type as index " + str(center_atom.index)
         if shell_len == 0:
             ssip_step.append(time_count)
         elif shell_len == 1:
@@ -936,7 +935,7 @@ def full_solvation_structure(
     assert (center_selection is not None) and (counter_selection is not None)
 
     def select_counter_ion(selection, dist, atom):
-        return "(" + selection + " and around " + str(dist) + " same fragment as index " + str(atom.id - 1) + ")"
+        return "(" + selection + " and around " + str(dist) + " same fragment as index " + str(atom.index) + ")"
 
     def center_shell(this_shell, this_layer, frame):
         for counter in this_shell.atoms:
