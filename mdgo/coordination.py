@@ -66,8 +66,8 @@ def neighbor_distance(
         time_count += 1
     time_count = 0
     for ts in trj_analysis:
-            dist = distance_array(ts[center_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
         for atomid in dist_dict:
+            dist = distance_array(ts[center_atom.id - 1], ts[(int(atomid) - 1)], ts.dimensions)
             dist_dict[atomid][time_count] = dist
         time_count += 1
     return dist_dict
