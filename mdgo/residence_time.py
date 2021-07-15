@@ -168,7 +168,6 @@ def calc_neigh_corr(
 
 def fit_residence_time(
     times: np.ndarray,
-    species_list: List[str],
     acf_avg_dict: Dict[str, np.ndarray],
     cutoff_time: int,
     time_step: float,
@@ -179,7 +178,6 @@ def fit_residence_time(
 
     Args:
         times: A time series.
-        species_list: A list of species to fit the residence time.
         acf_avg_dict: A dict containing the ACFs of the species.
         cutoff_time: Fitting cutoff time.
         time_step: The time step between each frame, in ps.
@@ -191,6 +189,7 @@ def fit_residence_time(
     popt = dict()
     pcov = dict()
     tau = dict()
+    species_list = list(acf_avg_dict.keys())
 
     # Exponential fit of solvent-Li ACF
     for kw in species_list:

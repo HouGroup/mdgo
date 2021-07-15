@@ -681,12 +681,11 @@ class MdRun:
         )
 
     def get_residence_time(
-        self, species_list: List[str], times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
+        self, times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
     ) -> Dict[str, np.floating]:
         """Calculates the residence time of selected species around cation
 
         Args:
-            species_list: List of species name.
             times: The time series.
             acf_avg_dict: A dict of ACFs of each species.
             cutoff_time: Cutoff time for fitting the exponential decay.
@@ -694,7 +693,7 @@ class MdRun:
         Return:
              The residence time of each species in a dict.
         """
-        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
+        return fit_residence_time(times, acf_avg_dict, cutoff_time, self.time_step)
 
     def get_neighbor_trj(
         self,
