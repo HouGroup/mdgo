@@ -421,7 +421,7 @@ class MdRun:
 
     def coord_num_array_simple(
         self,
-        species: str,
+        counter_ion: str,
         distance: float,
         run_start: int,
         run_end: int,
@@ -431,7 +431,7 @@ class MdRun:
         3 for AGG) array of the solvation structure ``center_atom`` (typically the cation).
 
         Args:
-            species: The neighbor counter-ion species.
+            counter_ion: The neighbor counter ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
@@ -441,7 +441,7 @@ class MdRun:
             An array of the solvation structure type in the specified frame range.
         """
         nvt_run = self.wrapped_run
-        distance_dict = {species: distance}
+        distance_dict = {counter_ion: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = coord_shell_array(
             nvt_run,
@@ -521,19 +521,22 @@ class MdRun:
         df = pd.DataFrame(df_dict)
         return df
 
-    def shell_simple(self, species: str, distance: float, run_start: int, run_end: int) -> pd.DataFrame:
+    def shell_simple(
+        self, counter_ion: str, distance: float, run_start: int, run_end: int, center_atom: str = "cation"
+    ) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            species: The neighbor counter-ion species.
+            counter_ion: The neighbor counter ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
              A dataframe of the solvation structure and percentage.
         """
-        num_array = self.coord_num_array_simple(species, distance, run_start, run_end)
+        num_array = self.coord_num_array_simple(counter_ion, distance, run_start, run_end, center_atom=center_atom)
 
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
