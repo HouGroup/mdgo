@@ -39,6 +39,9 @@ jobs:
     - name: pydocstyle
       run: |
         pydocstyle --count mdgo
+    - name: pylint
+      run: |
+        pylint mdgo
     - name: black
       run: |
         black --version
