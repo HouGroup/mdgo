@@ -446,8 +446,7 @@ class PubChemRunner:
         """
         if self.api:
             return self._obtain_entry_api(search_text, name, output_format=output_format)
-        else:
-            return self._obtain_entry_web(search_text, name, output_format=output_format)
+        return self._obtain_entry_web(search_text, name, output_format=output_format)
 
     def smiles_to_pdb(self, smiles: str):
         """
@@ -587,9 +586,8 @@ class Aqueous:
         signature = "".join(re.split(r"[\W|_]+", model)).lower()
         if DATA_MODELS["water"].get(signature):
             return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS["water"].get(signature)))
-        else:
-            print("Water model not found. Please specify a customized data path or try another water model.\n")
-            return None
+        print("Water model not found. Please specify a customized data path or try another water model.\n")
+        return None
 
     @staticmethod
     def get_ion(model: str = "jensen_jorgensen", water: str = "default", ion: str = "li+") -> Optional[LammpsData]:
@@ -615,7 +613,7 @@ class Aqueous:
         if signature in alias:
             signature = alias.get(model)
         ion_type = ion.capitalize()
-        for key in DATA_MODELS["ion"].keys():
+        for key in DATA_MODELS["ion"]:
             if key.startswith(signature):
                 ion_model = DATA_MODELS["ion"].get(key)
                 if water in ion_model:
@@ -625,12 +623,10 @@ class Aqueous:
                         file_path = os.path.join(data_path, "ion", key, water, ion_type + ".lmp")
                     if os.path.exists(file_path):
                         return LammpsData.from_file(file_path)
-                    else:
-                        print("Ion not found. Please try another ion.\n")
-                        return None
-                else:
-                    print("Water model not found. Please try another water model.\n")
+                    print("Ion not found. Please try another ion.\n")
                     return None
+                print("Water model not found. Please try another water model.\n")
+                return None
         print("Ion model not found. Please try another ion model.\n")
         return None
 
