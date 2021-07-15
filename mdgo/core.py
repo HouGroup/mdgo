@@ -139,7 +139,6 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
-        print("MD run loaded")
 
     @classmethod
     def from_output_full(
