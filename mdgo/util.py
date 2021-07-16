@@ -774,6 +774,7 @@ def concentration_matcher(
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
     solvent density, solvent ratio and total number of salt.
+    TODO: Auto box size according to Debye screening length
 
     Args:
         concentration: Salt concentration in mol/L.
