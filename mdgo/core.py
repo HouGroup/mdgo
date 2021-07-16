@@ -29,6 +29,7 @@ from mdgo.coordination import (
     concat_coord_array,
     num_of_neighbor,
     num_of_neighbor_simple,
+    angular_dist_of_neighbor,
     neighbor_distance,
     find_nearest,
     find_nearest_free_only,
@@ -322,7 +323,7 @@ class MdRun:
             center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
-             An array of coordination number for each time in the trajectory.
+             An array of coordination number in the frame range.
         """
         nvt_run = self.wrapped_run
         distance_dict = {species: distance}
@@ -443,6 +444,47 @@ class MdRun:
             run_end,
         )["total"]
         return num_array
+
+    def angle_array(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        cip=True,
+    ):
+        """
+        Calculates the angle of a-c-b in the specified frame range.
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+                The dictionary key must be in the order of a, b, where a is the neighbor species
+                used for determining coordination type, b is the other neighbor species, and the
+                corresponding values are cutoff distance of a->c and b->c, where c is the center species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The center atom species.
+            cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
+                Default to True.
+
+        Returns:
+            An array of angles of a-c-b in the specified frames.
+        """
+        nvt_run = self.wrapped_run
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        assert len(distance_dict) == 2, "Only distance a->c, b->c shoud be specified in the distance_dict."
+        distance_dict[center_atom] = list(distance_dict.values())[0]
+        ang_array = concat_coord_array(
+            nvt_run,
+            angular_dist_of_neighbor,
+            center_atoms,
+            distance_dict,
+            self.select_dict,
+            run_start,
+            run_end,
+            cip=cip,
+        )["total"]
+        return ang_array
 
     def coordination_single_species(
         self,
