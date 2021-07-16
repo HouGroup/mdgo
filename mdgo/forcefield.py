@@ -472,7 +472,7 @@ class PubChemRunner:
         self.web.find_element_by_xpath(download_xpath).click()
         print("Waiting for downloads.", end="")
         time.sleep(1)
-        while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+        while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
             time.sleep(1)
             print(".", end="")
         print("\nStructure file saved.")
@@ -515,7 +515,7 @@ class PubChemRunner:
                 )
                 print("Waiting for downloads.", end="")
                 time.sleep(1)
-                while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+                while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
                     time.sleep(1)
                     print(".", end="")
                 print("\nStructure file saved.")
