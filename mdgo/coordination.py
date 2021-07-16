@@ -758,34 +758,34 @@ def num_of_neighbor_simple(
 def angular_dist_of_neighbor(
     nvt_run: Universe,
     center_atom: Atom,
-    center_c: str,
-    neighbor_a: str,
-    neighbor_b: str,
-    select_dict: Dict[str, str],
     distance_dict: Dict[str, float],
+    select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
     cip: bool = True,
-) -> np.ndarray:
+) -> Dict[str, np.ndarray]:
     """
-    Calculates the angle of atoms a-c-b in the specified frames.
+    Calculates the angle of a-c-b of center atom c in the specified frames.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         center_atom: The center atom object.
-        center_c: The center species in the select_dict.
-        neighbor_a: The neighbor species in the select_dict.
-        neighbor_b: The neighbor species in the select_dict.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance_dict: A dict of coordination cutoff distance of the neighbor species.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species. The key must be
+            in the order of a, b, c, where a is the neighbor species used for determining coordination type,
+            b is the other neighbor species, and c is the center species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
         cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
+            Default to True.
 
     Returns:
         An array of angles of a-c-b occurrence in the specified frames.
     """
+    names = [k for k in distance_dict]
+    assert len(names) == 3, "Invalid number of keys in distance_dict, should be 3."
+    neighbor_a, neighbor_b, center_c = tuple(names)
     acb_angle = list()
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     for ts in trj_analysis:
@@ -815,7 +815,7 @@ def angular_dist_of_neighbor(
                 b_pos = b_atom.position
                 theta = angle(a_pos, c_pos, b_pos)
                 acb_angle.append(theta)
-    return np.array(acb_angle)
+    return {"total": np.array(acb_angle)}
 
 
 def num_of_neighbor_specific(
@@ -977,6 +977,7 @@ def concat_coord_array(
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
+    **kwargs: bool,
 ) -> Dict[str, np.ndarray]:
     """
     A helper function to analyze the coordination number/structure of every atoms in an ``AtomGroup`` using the
@@ -996,9 +997,9 @@ def concat_coord_array(
         A diction containing the coordination number sequence of each specified neighbor species
         and the total coordination number sequence in the specified frame range.
     """
-    num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end)
+    num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end, **kwargs)
     for atom in tqdm(center_atoms[1::]):
-        this_atom = func(nvt_run, atom, distance_dict, select_dict, run_start, run_end)
+        this_atom = func(nvt_run, atom, distance_dict, select_dict, run_start, run_end, **kwargs)
         for kw in num_array:
             num_array[kw] = np.concatenate((num_array.get(kw), this_atom.get(kw)), axis=0)
     return num_array
