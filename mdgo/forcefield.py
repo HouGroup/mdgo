@@ -321,9 +321,13 @@ class MaestroRunner:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
 
-    def get_mae(self):
+    def get_mae(self, wait: float = 30):
         """Write a Maestro command script and execute it to generate a
-        maestro file containing all the info needed."""
+        maestro file containing all the info needed.
+
+        Args:
+            wait: The time waiting for Maestro execution in seconds. Default to 30.
+        """
         with open(self.cmd, "w") as f:
             cmd_template = Template(self.cmd_template)
             cmd_script = cmd_template.substitute(file=self.structure, mae=self.mae, xyz=self.xyz)
@@ -341,8 +345,8 @@ class MaestroRunner:
             while not os.path.isfile(self.mae + ".mae"):
                 time.sleep(1)
                 counter += 1
-                if counter > 30:
-                    raise TimeoutError("Failed to generate Maestro file in 30 secs!")
+                if counter > wait:
+                    raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
             print("Maestro file generated.")
 
         except subprocess.CalledProcessError as e:
