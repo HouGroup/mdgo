@@ -571,7 +571,7 @@ def cluster_coordinates(
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
-    species: str,
+    species: List[str],
     distance: float,
     basis_vectors: Optional[Union[List[np.ndarray], np.ndarray]] = None,
     cluster_center: str = "center",
@@ -584,7 +584,7 @@ def cluster_coordinates(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        species: The species in the cluster.
+        species: A list of species in the cluster.
         distance: The coordination cutoff distance.
         basis_vectors: The basis vector for normalizing the coordinates of the cluster atoms.
         cluster_center: Cluster center atom species.
