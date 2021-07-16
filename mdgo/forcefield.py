@@ -340,19 +340,18 @@ class MaestroRunner:
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid,
             )
-
-            counter = 0
-            while not os.path.isfile(self.mae + ".mae"):
-                time.sleep(1)
-                counter += 1
-                if counter > wait:
-                    raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
-            print("Maestro file generated.")
-
         except subprocess.CalledProcessError as e:
             raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr)) from e
-        finally:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+
+        counter = 0
+        while not os.path.isfile(self.mae + ".mae"):
+            time.sleep(1)
+            counter += 1
+            if counter > wait:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
+        print("Maestro file generated!")
+        os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
     def get_ff(self):
         """Read the Maestro file and save the force field as LAMMPS data file."""
