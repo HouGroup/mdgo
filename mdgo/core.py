@@ -29,6 +29,7 @@ from mdgo.coordination import (
     concat_coord_array,
     num_of_neighbor,
     num_of_neighbor_simple,
+    num_of_neighbor_specific,
     angular_dist_of_neighbor,
     neighbor_distance,
     find_nearest,
@@ -356,11 +357,11 @@ class MdRun:
 
         Return:
              A diction containing the coordination number sequence of each specified neighbor species
-             and the total coordination number sequence in the specified frame range .
+             and the total coordination number sequence in the specified frame range.
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = concat_coord_array(
+        num_array_dict = concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -369,7 +370,43 @@ class MdRun:
             run_start,
             run_end,
         )
-        return num_array
+        return num_array_dict
+
+    def coord_num_array_specific(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
+    ) -> Dict[str, np.ndarray]:
+        """Calculates the coordination number array of multiple species of specific
+        coordination types (SSIP, CIP, AGG).
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
+
+        Return:
+             A diction containing the coordination number sequence of each specified neighbor species
+             and the total coordination number sequence in the specified frame range.
+        """
+        nvt_run = self.wrapped_run
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        num_array_dict = concat_coord_array(
+            nvt_run,
+            num_of_neighbor_specific,
+            center_atoms,
+            distance_dict,
+            self.select_dict,
+            run_start,
+            run_end,
+            counter_atom=counter_atom,
+        )
+        return num_array_dict
 
     def write_solvation_structure(
         self,
@@ -412,27 +449,27 @@ class MdRun:
 
     def coord_type_array(
         self,
-        counter_ion: str,
         distance: float,
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
+        counter_atom: str = "anion",
     ) -> np.ndarray:
         """Calculates the solvation structure type (1 for SSIP, 2 for CIP,
         3 for AGG) array of the solvation structure ``center_atom`` (typically the cation).
 
         Args:
-            counter_ion: The neighbor counter ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
 
         Return:
             An array of the solvation structure type in the specified frame range.
         """
         nvt_run = self.wrapped_run
-        distance_dict = {counter_ion: distance}
+        distance_dict = {counter_atom: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         num_array = concat_coord_array(
             nvt_run,
@@ -486,7 +523,7 @@ class MdRun:
         )["total"]
         return ang_array
 
-    def coordination_single_species(
+    def coordination(
         self,
         species: str,
         distance: float,
@@ -554,21 +591,28 @@ class MdRun:
         return df
 
     def coordination_type(
-        self, counter_ion: str, distance: float, run_start: int, run_end: int, center_atom: str = "cation"
+        self,
+        distance: float,
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
     ) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            counter_ion: The neighbor counter ion species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
 
         Return:
              A dataframe of the solvation structure and percentage.
         """
-        num_array = self.coord_type_array(counter_ion, distance, run_start, run_end, center_atom=center_atom)
+        num_array = self.coord_type_array(
+            distance, run_start, run_end, center_atom=center_atom, counter_atom=counter_atom
+        )
 
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
@@ -582,6 +626,43 @@ class MdRun:
             item_list.append(item_dict.get(item))
             percent_list.append(str("%.4f" % (combined[i, 1] / combined[:, 1].sum() * 100)) + "%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
+        df = pd.DataFrame(df_dict)
+        return df
+
+    def coordination_specific(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
+    ) -> pd.DataFrame:
+        """Calculates the integral of the coordiantion number of selected species
+        in each type of solvation structures (CIP/SSIP/AGG)
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
+
+        Return:
+             A dataframe of the solvation structure and percentage.
+        """
+        cn_values = self.coord_num_array_specific(
+            distance_dict, run_start, run_end, center_atom=center_atom, counter_atom=counter_atom
+        )
+        item_name = "species in first solvation shell"
+        item_list = []
+        cn_list = []
+        for kw in cn_values:
+            if kw != "total":
+                shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
+                cn = (shell_component * shell_count / shell_count.sum()).sum()
+                item_list.append(kw)
+                cn_list.append(cn)
+        df_dict = {item_name: item_list, self.name: cn_list}
         df = pd.DataFrame(df_dict)
         return df
 
