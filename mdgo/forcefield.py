@@ -333,7 +333,7 @@ class MaestroRunner:
             cmd_script = cmd_template.substitute(file=self.structure, mae=self.mae, xyz=self.xyz)
             f.write(cmd_script)
         try:
-            p = subprocess.Popen(
+            p = subprocess.Popen(  # pylint: disable=consider-using-with
                 f"{MAESTRO} -c {self.cmd}",
                 shell=True,
                 stdout=subprocess.PIPE,
