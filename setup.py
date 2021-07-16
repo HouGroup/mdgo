@@ -48,6 +48,7 @@ if __name__ == "__main__":
             "web": [
                 "sphinx",
                 "sphinx_rtd_theme",
+                "sphinx-autodoc-typehints",
             ],
         },
         python_requires=">=3.7",

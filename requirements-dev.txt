@@ -1,6 +1,7 @@
 sphinx
 doc2dash
 sphinx_rtd_theme
+sphinx-autodoc-typehints
 pytest==6.2.4
 pytest-cov==2.12.1
 coverage==5.5
