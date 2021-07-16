@@ -783,7 +783,7 @@ def angular_dist_of_neighbor(
     Returns:
         An array of angles of a-c-b occurrence in the specified frames.
     """
-    names = [k for k in distance_dict]
+    names = list(distance_dict.keys())
     assert len(names) == 3, "Invalid number of keys in distance_dict, should be 3."
     neighbor_a, neighbor_b, center_c = tuple(names)
     acb_angle = list()
