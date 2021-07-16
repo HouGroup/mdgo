@@ -544,7 +544,7 @@ def select_dict_from_resname(u: Universe) -> Dict[str, str]:
         if resname == "":
             continue
         residue = u.select_atoms("resname " + resname).residues[0]
-        if np.isclose(residue.charge, 0, atol=1e-5):
+        if np.isclose(residue.charge, 0, atol=1e-5):  # np.sum(residue.atoms.charges)
             if len(residue.atoms.fragments) == 2:
                 for i, frag in enumerate(residue.atoms.fragments):
                     charge = np.sum(frag.charges)

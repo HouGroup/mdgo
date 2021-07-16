@@ -603,7 +603,6 @@ def cluster_coordinates(
         + str(cluster_center_atom.index)
         + ")"
     )
-    print(selection)
     shell = nvt_run.select_atoms(selection, periodic=True)
     cluster = []
     for atom in shell:
