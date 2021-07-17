@@ -577,7 +577,7 @@ class MdRun:
              A dataframe of the species and the coordination number.
         """
         cn_values = self.coord_num_array_multi_species(distance_dict, run_start, run_end, center_atom=center_atom)
-        item_name = "species in first solvation shell"
+        item_name = "Species in first solvation shell"
         item_list = []
         cn_list = []
         for kw in cn_values:
@@ -586,7 +586,7 @@ class MdRun:
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
                 item_list.append(kw)
                 cn_list.append(cn)
-        df_dict = {item_name: item_list, self.name: cn_list}
+        df_dict = {item_name: item_list, "CN": cn_list}
         df = pd.DataFrame(df_dict)
         return df
 
@@ -617,7 +617,7 @@ class MdRun:
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
-        item_name = "solvation structure"
+        item_name = "Solvation structure"
         item_dict = {"1": "ssip", "2": "cip", "3": "agg"}
         item_list = []
         percent_list = []
@@ -653,16 +653,23 @@ class MdRun:
         cn_values = self.coord_num_array_specific(
             distance_dict, run_start, run_end, center_atom=center_atom, counter_atom=counter_atom
         )
-        item_name = "species in first solvation shell"
+        item_name = "Species in first solvation shell"
         item_list = []
-        cn_list = []
+        ssip_list = []
+        cip_list = []
+        agg_list = []
         for kw in cn_values:
             if kw != "total":
                 shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
-                item_list.append(kw)
-                cn_list.append(cn)
-        df_dict = {item_name: item_list, self.name: cn_list}
+                if kw.startswith("ssip_"):
+                    item_list.append(kw[5:])
+                    ssip_list.append(cn)
+                elif kw.startswith("cip_"):
+                    cip_list.append(cn)
+                else:
+                    agg_list.append(cn)
+        df_dict = {item_name: item_list, "CN in SSIP": ssip_list, "CN in CIP": cip_list, "CN in AGG": agg_list}
         df = pd.DataFrame(df_dict)
         return df
 
