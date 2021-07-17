@@ -403,8 +403,9 @@ def heat_map(
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         floating_atom: Floating atom species.
-        cluster_center_sites: A list of nearest cluster center sites (atom id).
-        cluster_terminal: The terminal atom species of the cluster (typically the binding site for the floating ion).
+        cluster_center_sites: A list of nearest cluster center sites (atom index).
+        cluster_terminal: The selection string for terminal atom species of the cluster
+            (typically the binding site for the floating ion).
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
@@ -418,7 +419,7 @@ def heat_map(
         if cluster_center_sites[i] == 0:
             pass
         else:
-            center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i] - 1))[0]
+            center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
             distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)

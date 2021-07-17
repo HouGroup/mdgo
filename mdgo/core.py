@@ -143,7 +143,7 @@ class MdRun:
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
 
     @classmethod
-    def from_output_full(
+    def from_lammps(
         cls,
         data_dir: str,
         wrapped_dir: str,
@@ -1024,6 +1024,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
+        terminal_atom_type = self.select_dict.get(cluster_terminal)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(
@@ -1038,7 +1039,7 @@ class MdRun:
                 nvt_run,
                 atom,
                 sites,
-                cluster_terminal,
+                terminal_atom_type,
                 cartesian_by_ref,
                 run_start,
                 run_end,
