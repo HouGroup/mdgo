@@ -1025,6 +1025,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         terminal_atom_type = self.select_dict.get(cluster_terminal)
+        assert terminal_atom_type is not None, "{} not defined in select_dict".format(cluster_terminal)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(
