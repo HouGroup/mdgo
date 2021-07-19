@@ -1036,14 +1036,14 @@ class MdRun:
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         if isinstance(cluster_terminal, str):
-            terminal_atom_type = self.select_dict.get(cluster_terminal)
+            terminal_atom_type: Union[str, List[str]] = self.select_dict.get(cluster_terminal)
             assert terminal_atom_type is not None, "{} not defined in select_dict".format(cluster_terminal)
         else:
-            terminal_atom_types = list()
+            terminal_atom_type = list()
             for species in cluster_terminal:
                 atom_type = self.select_dict.get(species)
                 assert atom_type is not None, "{} not defined in select_dict".format(species)
-                terminal_atom_types.append(atom_type)
+                terminal_atom_type.append(atom_type)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(
