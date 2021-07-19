@@ -541,6 +541,7 @@ def get_full_coords(
     rotation: Optional[List[np.ndarray]] = None,
     inversion: Optional[List[np.ndarray]] = None,
     sample: Optional[int] = None,
+    dim: str = "xyz",
 ) -> np.ndarray:
     """
     A helper function for calculating the heatmap. It applies the ``reflection``, ``rotation`` and ``inversion``
@@ -552,24 +553,48 @@ def get_full_coords(
         rotation: A list of rotation symmetry operation matrix.
         inversion: A list of inversion symmetry operation matrix.
         sample: Number of samples to take from ``coords``.
+        dim: The dimensions of the coordinates. Default to "xyz".
 
     Returns:
         An array with ``sample`` number of coordinates.
     """
+    dimension = len(dim)
     coords_full = coords
     if reflection:
-        for vec in reflection:
-            coords_full = np.concatenate((coords, coords * vec), axis=0)
+        coords_copy = coords_full
+        for mat in reflection:
+            if mat.shape == (3,) and dimension == 3 or mat.shape == (2,) and dimension == 2:
+                coords_full = np.concatenate((coords_full, coords_copy * mat), axis=0)
+            elif mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_ref = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_ref), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid reflection matrix. For {}-D system, the matrix should be"
+                    " {}x{} or a vector of length {}".format(dimension, dimension, dimension, dimension)
+                )
     if rotation:
         coords_copy = coords_full
         for mat in rotation:
-            coords_rot = np.dot(coords_copy, mat)
-            coords_full = np.concatenate((coords_full, coords_rot), axis=0)
+            if mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_rot = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_rot), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid rotation matrix. For {}-D system, the matrix "
+                    "should be {}x{}".format(dimension, dimension, dimension)
+                )
     if inversion:
         coords_copy = coords_full
         for mat in inversion:
-            coords_inv = np.dot(coords_copy, mat)
-            coords_full = np.concatenate((coords_full, coords_inv), axis=0)
+            if mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_inv = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_inv), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid inversion matrix. For {}-D system, the matrix "
+                    "should be {}x{}".format(dimension, dimension, dimension)
+                )
     if sample:
         index = np.random.choice(coords_full.shape[0], sample, replace=False)
         coords_full = coords_full[index]
