@@ -418,6 +418,7 @@ def heat_map(
     Returns:
         The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
     """
+    dimension = len(dim)
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
@@ -427,9 +428,9 @@ def heat_map(
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
-            assert len(bind_atoms) < len(dim), (
+            assert len(bind_atoms) >= dimension, (
                 "There should be at least {} cluster_terminal atoms in order to position the floating ion."
-                "Try broadening the cluster_terminal selection".format(len(dim))
+                "Try broadening the cluster_terminal selection".format(dimension)
             )
             distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)
