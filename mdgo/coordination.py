@@ -97,8 +97,9 @@ def find_nearest(
         exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
@@ -185,8 +186,9 @@ def find_nearest_free_only(
         exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
@@ -271,8 +273,9 @@ def find_in_n_out(
         Two arrays of numberings of frames with hopping in and hopping out event, respectively.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
