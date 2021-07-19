@@ -596,8 +596,11 @@ def get_full_coords(
                     "should be {}x{}".format(dimension, dimension, dimension)
                 )
     if sample:
-        index = np.random.choice(coords_full.shape[0], sample, replace=False)
-        coords_full = coords_full[index]
+        if coords_full.shape[0] > sample:
+            index = np.random.choice(coords_full.shape[0], sample, replace=False)
+            coords_full = coords_full[index]
+        else:
+            print("Warning: the number of coordinates < {}, will not perform sampling.".format(sample))
     return coords_full
 
 
