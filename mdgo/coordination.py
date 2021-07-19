@@ -428,13 +428,17 @@ def heat_map(
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
-            assert len(bind_atoms) >= dimension, (
-                "There should be at least {} cluster_terminal atoms in order to position the floating ion."
-                "Try broadening the cluster_terminal selection".format(dimension)
-            )
-            distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
-            idx = np.argpartition(distances[0], 3)
-            vertex_atoms = bind_atoms[idx[:3]]
+            if len(bind_atoms) == dimension:
+                vertex_atoms = bind_atoms
+            elif len(bind_atoms) > dimension:
+                distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
+                idx = np.argpartition(distances[0], 3)
+                vertex_atoms = bind_atoms[idx[:3]]
+            else:
+                raise ValueError(
+                    "There should be at least {} cluster_terminal atoms in order to position the floating ion."
+                    "Try broadening the cluster_terminal selection".format(dimension)
+                )
             vector_atom = atom_vec(floating_atom, center_atom, ts.dimensions)
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
