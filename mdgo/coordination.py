@@ -413,7 +413,7 @@ def heat_map(
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        dim: The dimensions to calculate heat map. TODO: 2d support or dimension selection.
+        dim: Desired dimensions to calculate heat map. TODO: 2d support or dimension selection.
 
     Returns:
         The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
