@@ -394,7 +394,7 @@ def heat_map(
     nvt_run: Universe,
     floating_atom: Atom,
     cluster_center_sites: List[int],
-    cluster_terminal: str,
+    cluster_terminal: Union[str, List[str]],
     cartesian_by_ref: np.ndarray,
     run_start: int,
     run_end: int,
@@ -409,7 +409,9 @@ def heat_map(
         floating_atom: Floating atom species.
         cluster_center_sites: A list of nearest cluster center sites (atom index).
         cluster_terminal: The selection string for terminal atom species of the cluster
-            (typically the binding site for the floating ion).
+            (typically the binding site for the floating ion). The argument could be a str if
+            all the terminal atoms have the same selection string and unordered, or could be
+            a list
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
@@ -419,6 +421,14 @@ def heat_map(
         The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
     """
     dimension = len(dim)
+    if isinstance(cluster_terminal, list):
+        mode = "ordered"
+        if len(cluster_terminal) != dimension:
+            raise ValueError(
+                "Please specify the cluster_terminal in the order of {}.".format(", ".join(c for c in dim))
+            )
+    else:
+        mode = "unordered"
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
@@ -426,23 +436,45 @@ def heat_map(
             pass
         else:
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
-            selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
-            bind_atoms = nvt_run.select_atoms(selection, periodic=True)
-            if len(bind_atoms) == dimension:
-                vertex_atoms = bind_atoms
-            elif len(bind_atoms) > dimension:
-                distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
-                idx = np.argpartition(distances[0], 3)
-                vertex_atoms = bind_atoms[idx[:3]]
+            if mode == "ordered":
+                selection = [
+                    "(" + species + ") and (same resid as index " + str(center_atom.index) + ")"
+                    for species in cluster_terminal
+                ]
+                bind_atoms = [nvt_run.select_atoms(sel, periodic=True) for sel in selection]
+                vertex_atoms: List[Atom] = list()
+                for atoms in bind_atoms:
+                    if len(atoms) == 1:
+                        vertex_atoms[i] = atoms[0]
+                    elif len(atoms) > 1:
+                        distances = distance_array(ts[floating_atom.index], atoms.positions, ts.dimensions)
+                        idx = np.argpartition(distances[0], 1)
+                        vertex_atoms[i] = atoms[idx[0]]
+                    else:
+                        raise ValueError(
+                            "There should be at least 1 cluster_terminal atom in the {} dimension."
+                            "Try broadening the selection at index {} of the cluster_terminal ".format(
+                                str(dim[i]), str(i + 1)
+                            )
+                        )
             else:
-                raise ValueError(
-                    "There should be at least {} cluster_terminal atoms in order to position the floating ion."
-                    "Try broadening the cluster_terminal selection".format(dimension)
-                )
-            vector_atom = atom_vec(floating_atom, center_atom, ts.dimensions)
+                selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
+                bind_atoms = nvt_run.select_atoms(selection, periodic=True)
+                if len(bind_atoms) == dimension:
+                    vertex_atoms = bind_atoms
+                elif len(bind_atoms) > dimension:
+                    distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
+                    idx = np.argpartition(distances[0], 3)
+                    vertex_atoms = bind_atoms[idx[:3]]
+                else:
+                    raise ValueError(
+                        "There should be at least {} cluster_terminal atoms in order to position the floating ion."
+                        "Try broadening the cluster_terminal selection".format(dimension)
+                    )
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
             vector_c = atom_vec(vertex_atoms[2], center_atom, ts.dimensions)
+            vector_atom = atom_vec(floating_atom, center_atom, ts.dimensions)
             basis_abc = np.transpose([vector_a, vector_b, vector_c])
             abc_atom = np.linalg.solve(basis_abc, vector_atom)
             unit_x = np.linalg.norm(
