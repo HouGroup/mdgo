@@ -409,9 +409,9 @@ def heat_map(
         floating_atom: Floating atom species.
         cluster_center_sites: A list of nearest cluster center sites (atom index).
         cluster_terminal: The selection string for terminal atom species of the cluster
-            (typically the binding site for the floating ion). The argument could be a str if
-            all the terminal atoms have the same selection string and unordered, or could be
-            a list
+            (typically the binding site for the floating ion). The argument can be a str if
+            all the terminal atoms have the same selection string and are equivalent, or a list
+            if the terminal atoms are distinct and have different selection strings.
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.

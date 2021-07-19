@@ -1000,7 +1000,7 @@ class MdRun:
         run_start: int,
         run_end: int,
         cluster_center: str,
-        cluster_terminal: str,
+        cluster_terminal: Union[str, List[str]],
         binding_cutoff: float,
         hopping_cutoff: float,
         floating_atom: str = "cation",
@@ -1016,8 +1016,10 @@ class MdRun:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             cluster_center: The center atom species of the cluster.
-            cluster_terminal: The terminal atom species of the cluster
-                (typically the binding site for the floating ion).
+            cluster_terminal: The selection string for terminal atom species of the cluster
+                (typically the binding site for the floating ion). The argument can be a str if
+                all the terminal atoms have the same selection string and are equivalent, or a list
+                if the terminal atoms are distinct and have different selection strings.
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
             floating_atom: The floating atom species.
@@ -1033,8 +1035,15 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
-        terminal_atom_type = self.select_dict.get(cluster_terminal)
-        assert terminal_atom_type is not None, "{} not defined in select_dict".format(cluster_terminal)
+        if isinstance(cluster_terminal, str):
+            terminal_atom_type = self.select_dict.get(cluster_terminal)
+            assert terminal_atom_type is not None, "{} not defined in select_dict".format(cluster_terminal)
+        else:
+            terminal_atom_types = list()
+            for species in cluster_terminal:
+                atom_type = self.select_dict.get(species)
+                assert atom_type is not None, "{} not defined in select_dict".format(species)
+                terminal_atom_types.append(atom_type)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(
