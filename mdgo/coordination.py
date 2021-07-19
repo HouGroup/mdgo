@@ -564,7 +564,8 @@ def get_full_coords(
         coords_copy = coords_full
         for mat in reflection:
             if mat.shape == (3,) and dimension == 3 or mat.shape == (2,) and dimension == 2:
-                coords_full = np.concatenate((coords_full, coords_copy * mat), axis=0)
+                coords_ref = coords_copy * mat
+                coords_full = np.concatenate((coords_full, coords_ref), axis=0)
             elif mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
                 coords_ref = np.dot(coords_copy, mat)
                 coords_full = np.concatenate((coords_full, coords_ref), axis=0)
