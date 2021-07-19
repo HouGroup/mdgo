@@ -1008,6 +1008,7 @@ class MdRun:
         sym_dict: Dict[str, List[np.ndarray]] = None,
         sample: Optional[int] = None,
         smooth: int = 51,
+        dim: str = "xyz",
     ) -> np.ndarray:
         """Calculates the heatmap matrix of floating ion around a cluster
 
@@ -1025,6 +1026,7 @@ class MdRun:
             sym_dict: Dictionary of symmetry operation dictionary. Default to None.
             sample: Number of samples desired. Default to None, which is no sampling.
             smooth: The length of the smooth filter window. Default to 51.
+            dim: Desired dimensions to calculate heat map
 
         Return:
             An array of coordinates.
@@ -1058,8 +1060,8 @@ class MdRun:
                 coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:
-            return get_full_coords(coord_list, sample=sample, **sym_dict)
-        return get_full_coords(coord_list, sample=sample)
+            return get_full_coords(coord_list, sample=sample, dim=dim, **sym_dict)
+        return get_full_coords(coord_list, sample=sample, dim=dim)
 
     def get_cluster_distance(
         self, run_start: int, run_end: int, neighbor_cutoff: float, cluster_center: str = "center"
