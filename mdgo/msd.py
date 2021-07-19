@@ -53,7 +53,10 @@ def total_msd(
     if mda_msd is not None:
         msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
         msd_calculator.run(start=start, stop=stop)
-        total_array = msd_calculator.timeseries
+        try:
+            total_array = msd_calculator.timeseries
+        except AttributeError:
+            total_array = msd_calculator.results.timeseries
         return total_array
 
     if fft:

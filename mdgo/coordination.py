@@ -403,8 +403,9 @@ def heat_map(
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         floating_atom: Floating atom species.
-        cluster_center_sites: A list of nearest cluster center sites (atom id).
-        cluster_terminal: The terminal atom species of the cluster (typically the binding site for the floating ion).
+        cluster_center_sites: A list of nearest cluster center sites (atom index).
+        cluster_terminal: The selection string for terminal atom species of the cluster
+            (typically the binding site for the floating ion).
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
@@ -418,7 +419,7 @@ def heat_map(
         if cluster_center_sites[i] == 0:
             pass
         else:
-            center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i] - 1))[0]
+            center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
             distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
@@ -566,7 +567,7 @@ def get_full_coords(
     return coords_full
 
 
-def cluster_coordinates(
+def cluster_coordinates(  # TODO: rewrite the method
     nvt_run: Universe,
     select_dict: Dict[str, str],
     run_start: int,
@@ -576,7 +577,7 @@ def cluster_coordinates(
     basis_vectors: Optional[Union[List[np.ndarray], np.ndarray]] = None,
     cluster_center: str = "center",
 ) -> np.ndarray:
-    """Calculates the average position of a cluster. TODO: rewrite the method.
+    """Calculates the average position of a cluster.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
@@ -758,34 +759,34 @@ def num_of_neighbor_simple(
 def angular_dist_of_neighbor(
     nvt_run: Universe,
     center_atom: Atom,
-    center_c: str,
-    neighbor_a: str,
-    neighbor_b: str,
-    select_dict: Dict[str, str],
     distance_dict: Dict[str, float],
+    select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
     cip: bool = True,
-) -> np.ndarray:
+) -> Dict[str, np.ndarray]:
     """
-    Calculates the angle of atoms a-c-b in the specified frames.
+    Calculates the angle of a-c-b of center atom c in the specified frames.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         center_atom: The center atom object.
-        center_c: The center species in the select_dict.
-        neighbor_a: The neighbor species in the select_dict.
-        neighbor_b: The neighbor species in the select_dict.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance_dict: A dict of coordination cutoff distance of the neighbor species.
+        distance_dict: A dict of coordination cutoff distance of the neighbor species. The key must be
+            in the order of a, b, c, where a is the neighbor species used for determining coordination type,
+            b is the other neighbor species, and c is the center species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
         cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
+            Default to True.
 
     Returns:
         An array of angles of a-c-b occurrence in the specified frames.
     """
+    names = list(distance_dict.keys())
+    assert len(names) == 3, "Invalid number of keys in distance_dict, should be 3."
+    neighbor_a, neighbor_b, center_c = tuple(names)
     acb_angle = list()
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     for ts in trj_analysis:
@@ -815,32 +816,30 @@ def angular_dist_of_neighbor(
                 b_pos = b_atom.position
                 theta = angle(a_pos, c_pos, b_pos)
                 acb_angle.append(theta)
-    return np.array(acb_angle)
+    return {"total": np.array(acb_angle)}
 
 
 def num_of_neighbor_specific(
     nvt_run: Universe,
     center_atom: Atom,
-    species_list: List[str],
-    select_dict: Dict[str, str],
     distance_dict: Dict[str, float],
+    select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
-    counter_ion: str = "anion",
-) -> Tuple[Dict[str, np.floating], Dict[str, np.floating], Dict[str, np.floating]]:
+    counter_atom: str = "anion",
+) -> Dict[str, np.ndarray]:
     """
     Calculates the coordination number of each specific solvation structure type (SSIP, CIP, AGG).
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing wrapped trajectory.
         center_atom: The center atom object.
-        species_list:
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
-        distance_dict: A dict of coordination cutoff distance of the neighbor species.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        counter_ion: The neighbor counter-ion species. Default to "anion".
+        counter_atom: The neighbor counter ion species. Default to "anion".
 
     Returns:
         A tuple containing three dictionary of the coordination number of each neighbor species
@@ -852,29 +851,24 @@ def num_of_neighbor_specific(
     ssip_step = list()
     agg_step = list()
     cn_values = dict()
-    for kw in species_list:
+    for kw in distance_dict:
         cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
     for ts in trj_analysis:
-        digit_of_species = len(species_list) - 1
-        for kw in species_list:
-            selection = select_shell(select_dict, distance_dict, center_atom, kw)
-            shell = nvt_run.select_atoms(selection, periodic=True)
-            # for each atom in shell, create/add to dictionary
-            # (key = atom id, value = list of values for step function)
-            for _ in shell.atoms:
-                cn_values[kw][time_count] += 1
-                cn_values["total"][time_count] += 10 ** digit_of_species
-            digit_of_species = digit_of_species - 1
+        for kw in distance_dict:
+            kw_selection = select_shell(select_dict, distance_dict, center_atom, kw)
+            kw_shell = nvt_run.select_atoms(kw_selection, periodic=True)
+            cn_values[kw][time_count] += len(kw_shell)
+            cn_values["total"][time_count] += len(kw_shell)
 
-        selection = select_shell(select_dict, distance_dict, center_atom, counter_ion)
+        selection = select_shell(select_dict, distance_dict, center_atom, counter_atom)
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
         center_selection = "same type as index " + str(center_atom.index)
         if shell_len == 0:
             ssip_step.append(time_count)
         elif shell_len == 1:
-            selection_species = select_shell(center_selection, distance_dict, shell.atoms[0], counter_ion)
+            selection_species = select_shell(center_selection, distance_dict, shell.atoms[0], counter_atom)
             shell_species = nvt_run.select_atoms(selection_species, periodic=True)
             shell_species_len = len(shell_species) - 1
             if shell_species_len == 0:
@@ -884,17 +878,15 @@ def num_of_neighbor_specific(
         else:
             agg_step.append(time_count)
         time_count += 1
-    cn_ssip = dict()
-    cn_cip = dict()
-    cn_agg = dict()
-    for kw in species_list:
-        cn_ssip[kw] = np.mean(cn_values[kw][ssip_step])
-        cn_cip[kw] = np.mean(cn_values[kw][cip_step])
-        cn_agg[kw] = np.mean(cn_values[kw][agg_step])
-    return cn_ssip, cn_cip, cn_agg
+    cn_dict = dict()
+    for kw in distance_dict:
+        cn_dict["ssip_" + kw] = cn_values[kw][ssip_step]
+        cn_dict["cip_" + kw] = cn_values[kw][cip_step]
+        cn_dict["agg_" + kw] = cn_values[kw][agg_step]
+    return cn_dict
 
 
-def full_solvation_structure(
+def full_solvation_structure(  # TODO: rewrite the method
     nvt_run: Universe,
     center_atom: Atom,
     center_species: str,
@@ -977,6 +969,7 @@ def concat_coord_array(
     select_dict: Dict[str, str],
     run_start: int,
     run_end: int,
+    **kwargs: Union[bool, str],
 ) -> Dict[str, np.ndarray]:
     """
     A helper function to analyze the coordination number/structure of every atoms in an ``AtomGroup`` using the
@@ -996,9 +989,9 @@ def concat_coord_array(
         A diction containing the coordination number sequence of each specified neighbor species
         and the total coordination number sequence in the specified frame range.
     """
-    num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end)
+    num_array = func(nvt_run, center_atoms[0], distance_dict, select_dict, run_start, run_end, **kwargs)
     for atom in tqdm(center_atoms[1::]):
-        this_atom = func(nvt_run, atom, distance_dict, select_dict, run_start, run_end)
+        this_atom = func(nvt_run, atom, distance_dict, select_dict, run_start, run_end, **kwargs)
         for kw in num_array:
             num_array[kw] = np.concatenate((num_array.get(kw), this_atom.get(kw)), axis=0)
     return num_array

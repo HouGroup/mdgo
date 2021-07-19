@@ -639,6 +639,9 @@ class Aqueous:
 class ChargeWriter:
     """
     A class for write, overwrite, scale charges of a LammpsData object.
+    TODO: Auto determine number of significant figures of charges
+    TODO: write to obj or write separate charge file
+    TODO: Read LammpsData or path
 
     Args:
         data: The provided LammpsData obj.
