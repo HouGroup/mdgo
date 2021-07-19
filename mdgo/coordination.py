@@ -97,8 +97,9 @@ def find_nearest(
         exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
@@ -185,8 +186,9 @@ def find_nearest_free_only(
         exhibits the closest distance to the center atom.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
@@ -271,8 +273,9 @@ def find_in_n_out(
         Two arrays of numberings of frames with hopping in and hopping out event, respectively.
     """
     time_span = len(list(trj.values())[0])
-    for kw in list(trj):
-        trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
+    if smooth > 0:
+        for kw in list(trj):
+            trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
     sites = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
@@ -395,6 +398,7 @@ def heat_map(
     cartesian_by_ref: np.ndarray,
     run_start: int,
     run_end: int,
+    dim: str = "xyz",
 ) -> np.ndarray:
     """
     Calculates the heat map of the floating atom around the cluster. The coordinates are normalized to
@@ -409,10 +413,12 @@ def heat_map(
         cartesian_by_ref: Transformation matrix between cartesian and reference coordinate systems.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        dim: The dimensions to calculate heat map. TODO: 2d support or dimension selection.
 
     Returns:
         The coordinates of the floating ion around clusters normalized to the desired cartesian coordinate system.
     """
+    dimension = len(dim)
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     coordinates = []
     for i, ts in enumerate(trj_analysis):
@@ -422,6 +428,10 @@ def heat_map(
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
             bind_atoms = nvt_run.select_atoms(selection, periodic=True)
+            assert len(bind_atoms) >= dimension, (
+                "There should be at least {} cluster_terminal atoms in order to position the floating ion."
+                "Try broadening the cluster_terminal selection".format(dimension)
+            )
             distances = distance_array(ts[floating_atom.index], bind_atoms.positions, ts.dimensions)
             idx = np.argpartition(distances[0], 3)
             vertex_atoms = bind_atoms[idx[:3]]
@@ -532,6 +542,7 @@ def get_full_coords(
     rotation: Optional[List[np.ndarray]] = None,
     inversion: Optional[List[np.ndarray]] = None,
     sample: Optional[int] = None,
+    dim: str = "xyz",
 ) -> np.ndarray:
     """
     A helper function for calculating the heatmap. It applies the ``reflection``, ``rotation`` and ``inversion``
@@ -543,27 +554,55 @@ def get_full_coords(
         rotation: A list of rotation symmetry operation matrix.
         inversion: A list of inversion symmetry operation matrix.
         sample: Number of samples to take from ``coords``.
+        dim: The dimensions of the coordinates. Default to "xyz".
 
     Returns:
         An array with ``sample`` number of coordinates.
     """
+    dimension = len(dim)
     coords_full = coords
     if reflection:
-        for vec in reflection:
-            coords_full = np.concatenate((coords, coords * vec), axis=0)
+        coords_copy = coords_full
+        for mat in reflection:
+            if mat.shape == (3,) and dimension == 3 or mat.shape == (2,) and dimension == 2:
+                coords_ref = coords_copy * mat
+                coords_full = np.concatenate((coords_full, coords_ref), axis=0)
+            elif mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_ref = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_ref), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid reflection matrix. For {}-D system, the matrix should be"
+                    " {}x{} or a vector of length {}".format(dimension, dimension, dimension, dimension)
+                )
     if rotation:
         coords_copy = coords_full
         for mat in rotation:
-            coords_rot = np.dot(coords_copy, mat)
-            coords_full = np.concatenate((coords_full, coords_rot), axis=0)
+            if mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_rot = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_rot), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid rotation matrix. For {}-D system, the matrix "
+                    "should be {}x{}".format(dimension, dimension, dimension)
+                )
     if inversion:
         coords_copy = coords_full
         for mat in inversion:
-            coords_inv = np.dot(coords_copy, mat)
-            coords_full = np.concatenate((coords_full, coords_inv), axis=0)
+            if mat.shape == (3, 3) and dimension == 3 or mat.shape == (2, 2) and dimension == 2:
+                coords_inv = np.dot(coords_copy, mat)
+                coords_full = np.concatenate((coords_full, coords_inv), axis=0)
+            else:
+                raise ValueError(
+                    "Invalid inversion matrix. For {}-D system, the matrix "
+                    "should be {}x{}".format(dimension, dimension, dimension)
+                )
     if sample:
-        index = np.random.choice(coords_full.shape[0], sample, replace=False)
-        coords_full = coords_full[index]
+        if coords_full.shape[0] > sample:
+            index = np.random.choice(coords_full.shape[0], sample, replace=False)
+            coords_full = coords_full[index]
+        else:
+            print("Warning: the number of coordinates < {}, will not perform sampling.".format(sample))
     return coords_full
 
 

@@ -50,7 +50,7 @@ __date__ = "Feb 9, 2021"
 
 class MdRun:
     """
-    A core class for MD results analysis.
+    A core class for MD results analysis. TODO: add support for 2d and dimension selection.
 
     Args:
         wrapped_run: The Universe object of wrapped trajectory.
@@ -1038,6 +1038,8 @@ class MdRun:
             neighbor_trj = neighbor_distance(
                 nvt_run, atom, run_start, run_end, cluster_center, self.select_dict, binding_cutoff
             )
+            if not bool(neighbor_trj):
+                continue
             sites, freq, steps = find_nearest(
                 neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
             )
@@ -1052,7 +1054,8 @@ class MdRun:
                 run_start,
                 run_end,
             )
-            coord_list = np.concatenate((coord_list, coords), axis=0)
+            if not coords.size == 0:
+                coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:
             return get_full_coords(coord_list, sample=sample, **sym_dict)
