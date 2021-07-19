@@ -437,13 +437,13 @@ def heat_map(
         else:
             center_atom = nvt_run.select_atoms("index " + str(cluster_center_sites[i]))[0]
             if mode == "ordered":
-                selection = [
+                selections = [
                     "(" + species + ") and (same resid as index " + str(center_atom.index) + ")"
                     for species in cluster_terminal
                 ]
-                bind_atoms = [nvt_run.select_atoms(sel, periodic=True) for sel in selection]
+                bind_atoms_xyz = [nvt_run.select_atoms(sel, periodic=True) for sel in selections]
                 vertex_atoms: List[Atom] = list()
-                for atoms in bind_atoms:
+                for atoms in bind_atoms_xyz:
                     if len(atoms) == 1:
                         vertex_atoms[i] = atoms[0]
                     elif len(atoms) > 1:
@@ -458,6 +458,7 @@ def heat_map(
                             )
                         )
             else:
+                assert isinstance(cluster_terminal, str)
                 selection = "(" + cluster_terminal + ") and (same resid as index " + str(center_atom.index) + ")"
                 bind_atoms = nvt_run.select_atoms(selection, periodic=True)
                 if len(bind_atoms) == dimension:
