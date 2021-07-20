@@ -445,11 +445,11 @@ def heat_map(
                 vertex_atoms: List[Atom] = list()
                 for atoms in bind_atoms_xyz:
                     if len(atoms) == 1:
-                        vertex_atoms[i] = atoms[0]
+                        vertex_atoms.append(atoms[0])
                     elif len(atoms) > 1:
                         distances = distance_array(ts[floating_atom.index], atoms.positions, ts.dimensions)
                         idx = np.argpartition(distances[0], 1)
-                        vertex_atoms[i] = atoms[idx[0]]
+                        vertex_atoms.append(atoms[idx[0]])
                     else:
                         raise ValueError(
                             "There should be at least 1 cluster_terminal atom in the {} dimension."
