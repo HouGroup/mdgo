@@ -22,34 +22,34 @@ For using the MaestroRunner class:
     https://www.schrodinger.com/kb/1842 for details.
 
 """
-import time
 import os
-import pandas as pd
 import re
 import shutil
 import signal
 import subprocess
-from typing import Optional, Union
+import time
 from string import Template
+from typing import Optional, Union
 from urllib.parse import quote
+
 import numpy as np
+import pandas as pd
 import pubchempy as pcp
 from pymatgen.core import Lattice, Structure
 from pymatgen.core.ion import Ion
-from pymatgen.io.lammps.data import LammpsData, ForceField, Topology, lattice_2_lmpbox
+from pymatgen.io.lammps.data import ForceField, LammpsData, Topology, lattice_2_lmpbox
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
-    TimeoutException,
     NoSuchElementException,
+    TimeoutException,
     WebDriverException,
 )
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from typing_extensions import Final
 
-from mdgo.util import lmp_mass_to_name, ff_parser, sdf_to_pdb
-
+from mdgo.util import ff_parser, lmp_mass_to_name, sdf_to_pdb
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
