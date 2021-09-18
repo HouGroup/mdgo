@@ -22,10 +22,18 @@ For using the MaestroRunner class:
     https://www.schrodinger.com/kb/1842 for details.
 
 """
-
-from pymatgen.io.lammps.data import LammpsData
-from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
+import time
+import os
+import re
+import shutil
+import signal
+import subprocess
+from typing import Optional
+from string import Template
+from urllib.parse import quote
+import numpy as np
 import pubchempy as pcp
+from pymatgen.io.lammps.data import LammpsData
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -35,18 +43,10 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     WebDriverException,
 )
-from string import Template
-from urllib.parse import quote
-import time
-import os
-import re
-import shutil
-import signal
-import subprocess
-import numpy as np
-
-from typing import Optional
 from typing_extensions import Final
+
+from mdgo.util import lmp_mass_to_name, ff_parser, sdf_to_pdb
+
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -87,15 +87,15 @@ class FFcrawler:
     server and download LAMMPS/GROMACS data file.
 
     Args:
-        write_dir (str): Directory for writing output.
-        chromedriver_dir (str): Directory to the ChromeDriver executable.
-        headless (bool): Whether to run Chrome in headless (silent) mode.
+        write_dir: Directory for writing output.
+        chromedriver_dir: Directory to the ChromeDriver executable.
+        headless: Whether to run Chrome in headless (silent) mode.
             Default to True.
-        xyz (bool): Whether to write the structure in the LigParGen
+        xyz: Whether to write the structure in the LigParGen
             generated data file as .xyz. Default to False. This is useful
             because the order and the name of the atoms could be
             different from the initial input.)
-        gromacs (bool): Whether to save GROMACS format data files.
+        gromacs: Whether to save GROMACS format data files.
             Default to False.
 
     Examples:
@@ -104,7 +104,14 @@ class FFcrawler:
         >>> lpg.data_from_pdb("/path/to/pdb")
     """
 
-    def __init__(self, write_dir, chromedriver_dir=None, headless=True, xyz=False, gromacs=False):
+    def __init__(
+        self,
+        write_dir: str,
+        chromedriver_dir: Optional[str] = None,
+        headless: bool = True,
+        xyz: bool = False,
+        gromacs: bool = False,
+    ):
         """Base constructor."""
         self.write_dir = write_dir
         self.xyz = xyz
@@ -142,14 +149,13 @@ class FFcrawler:
         """
         self.web.quit()
 
-    def data_from_pdb(self, pdb_dir):
+    def data_from_pdb(self, pdb_dir: str):
         """
         Use the LigParGen server to generate a LAMMPS data file from a pdb file.
-
-        Arg:
-            pdb_dir (str): The path to the input pdb structure file.
-
         Write out a LAMMPS data file.
+
+        Args:
+            pdb_dir: The path to the input pdb structure file.
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
@@ -169,13 +175,11 @@ class FFcrawler:
 
     def data_from_smiles(self, smiles_code):
         """
-        Use the LigParGen server to generate a LAMMPS data file
-        from a SMILES code.
-
-        Arg:
-            smiles_code (str): The SMILES code for the LigParGen input.
-
+        Use the LigParGen server to generate a LAMMPS data file from a SMILES code.
         Write out a LAMMPS data file.
+
+        Args:
+            smiles_code: The SMILES code for the LigParGen input.
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
@@ -190,12 +194,12 @@ class FFcrawler:
         finally:
             self.quit()
 
-    def download_data(self, lmp_name):
+    def download_data(self, lmp_name: str):
         """
         Helper function that download and write out the LAMMPS data file.
 
-        Arg:
-            lmp_name (str): Name of the LAMMPS data file.
+        Args:
+            lmp_name: Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
         self.wait.until(EC.presence_of_element_located((By.NAME, "go")))
@@ -209,13 +213,15 @@ class FFcrawler:
         )
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
-            element_id_dict = mass_to_name(data_obj.masses)
+            element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
             lines = list()
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
-                line = element_id_dict.get(int(r["type"])) + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
+                element_name = element_id_dict.get(int(r["type"]))
+                assert element_name is not None
+                line = element_name + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
                 lines.append(line)
 
             with open(os.path.join(self.write_dir, lmp_name + ".xyz"), "w") as xyz_file:
@@ -247,18 +253,18 @@ class MaestroRunner:
     force field parameter for a molecule.
 
     Args:
-        structure_dir (str): Path to the structure file.
+        structure_dir: Path to the structure file.
             Supported input format please check
             https://www.schrodinger.com/kb/1278
-        working_dir (str): Directory for writing intermediate
+        working_dir: Directory for writing intermediate
             and final output.
-        out (str): Force field output form. Default to "lmp",
+        out: Force field output form. Default to "lmp",
             the data file for LAMMPS. Other supported formats
             are under development.
-        cmd_template (str): String template for input script
+        cmd_template: String template for input script
             with placeholders. Default to None, i.e., using
             the default template.
-        assign_bond (bool): Whether to assign bond to the input
+        assign_bond: Whether to assign bond to the input
             structure. Default to None.
 
     Supported input format please check https://www.schrodinger.com/kb/1278
@@ -288,11 +294,11 @@ class MaestroRunner:
 
     def __init__(
         self,
-        structure_dir,
-        working_dir,
-        out="lmp",
-        cmd_template=None,
-        assign_bond=False,
+        structure_dir: str,
+        working_dir: str,
+        out: str = "lmp",
+        cmd_template: Optional[str] = None,
+        assign_bond: bool = False,
     ):
         """Base constructor."""
         self.structure = structure_dir
@@ -317,34 +323,37 @@ class MaestroRunner:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
 
-    def get_mae(self):
+    def get_mae(self, wait: float = 30):
         """Write a Maestro command script and execute it to generate a
-        maestro file containing all the info needed."""
+        maestro file containing all the info needed.
+
+        Args:
+            wait: The time waiting for Maestro execution in seconds. Default to 30.
+        """
         with open(self.cmd, "w") as f:
             cmd_template = Template(self.cmd_template)
             cmd_script = cmd_template.substitute(file=self.structure, mae=self.mae, xyz=self.xyz)
             f.write(cmd_script)
         try:
-            p = subprocess.Popen(
+            p = subprocess.Popen(  # pylint: disable=consider-using-with
                 f"{MAESTRO} -c {self.cmd}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid,
             )
-
-            counter = 0
-            while not os.path.isfile(self.mae + ".mae"):
-                time.sleep(1)
-                counter += 1
-                if counter > 30:
-                    raise TimeoutError("Failed to generate Maestro file in 30 secs!")
-            print("Maestro file generated.")
-
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr))
-        finally:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr)) from e
+
+        counter = 0
+        while not os.path.isfile(self.mae + ".mae"):
+            time.sleep(1)
+            counter += 1
+            if counter > wait:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
+        print("Maestro file generated!")
+        os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
     def get_ff(self):
         """Read the Maestro file and save the force field as LAMMPS data file."""
@@ -357,7 +366,7 @@ class MaestroRunner:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr)) from e
         print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
@@ -373,12 +382,12 @@ class PubChemRunner:
     structure and information.
 
     Args:
-        write_dir (str): Directory for writing output.
-        chromedriver_dir (str): Directory to the ChromeDriver executable.
-        api (bool): Whether to use the PUG REST web interface for accessing
+        write_dir: Directory for writing output.
+        chromedriver_dir: Directory to the ChromeDriver executable.
+        api: Whether to use the PUG REST web interface for accessing
             PubChem data. If None, then all search/download will be
             performed via web browser mode. Default to True.
-        headless (bool): Whether to run Chrome in headless (silent) mode.
+        headless: Whether to run Chrome in headless (silent) mode.
             Default to False.
 
     Examples:
@@ -389,10 +398,10 @@ class PubChemRunner:
 
     def __init__(
         self,
-        write_dir,
-        chromedriver_dir,
-        api=True,
-        headless=False,
+        write_dir: str,
+        chromedriver_dir: str,
+        api: bool = True,
+        headless: bool = False,
     ):
         """Base constructor."""
         self.write_dir = write_dir
@@ -429,28 +438,27 @@ class PubChemRunner:
         if not self.api:
             self.web.quit()
 
-    def obtain_entry(self, search_text, name, output_format="sdf"):
+    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> Optional[str]:
         """
         Search the PubChem database with a text entry and save the
         structure in desired format.
 
         Args:
-            search_text (str): The text to use as a search query.
-            name (str): The short name for the molecule.
-            output_format (str): The output format of the structure.
+            search_text: The text to use as a search query.
+            name: The short name for the molecule.
+            output_format: The output format of the structure.
                 Default to sdf.
         """
         if self.api:
             return self._obtain_entry_api(search_text, name, output_format=output_format)
-        else:
-            return self._obtain_entry_web(search_text, name, output_format=output_format)
+        return self._obtain_entry_web(search_text, name, output_format=output_format)
 
-    def smiles_to_pdb(self, smiles):
+    def smiles_to_pdb(self, smiles: str):
         """
         Obtain pdf file based on SMILES code.
 
         Args:
-            smiles (str): SMILES code.
+            smiles: SMILES code.
 
         Returns:
 
@@ -469,12 +477,12 @@ class PubChemRunner:
         self.web.find_element_by_xpath(download_xpath).click()
         print("Waiting for downloads.", end="")
         time.sleep(1)
-        while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+        while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
             time.sleep(1)
             print(".", end="")
         print("\nStructure file saved.")
 
-    def _obtain_entry_web(self, search_text, name, output_format):
+    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> Optional[str]:
         cid = None
 
         try:
@@ -512,7 +520,7 @@ class PubChemRunner:
                 )
                 print("Waiting for downloads.", end="")
                 time.sleep(1)
-                while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+                while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
                     time.sleep(1)
                     print(".", end="")
                 print("\nStructure file saved.")
@@ -528,7 +536,7 @@ class PubChemRunner:
             self.quit()
         return cid
 
-    def _obtain_entry_api(self, search_text, name, output_format):
+    def _obtain_entry_api(self, search_text, name, output_format) -> Optional[str]:
         cid = None
         cids = pcp.get_cids(search_text, "name", record_type="3d")
         if len(cids) == 0:
@@ -583,9 +591,8 @@ class Aqueous:
         signature = "".join(re.split(r"[\W|_]+", model)).lower()
         if DATA_MODELS["water"].get(signature):
             return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS["water"].get(signature)))
-        else:
-            print("Water model not found. Please specify a customized data path or try another water model.\n")
-            return None
+        print("Water model not found. Please specify a customized data path or try another water model.\n")
+        return None
 
     @staticmethod
     def get_ion(model: str = "jensen_jorgensen", water: str = "default", ion: str = "li+") -> Optional[LammpsData]:
@@ -599,10 +606,11 @@ class Aqueous:
                 models, the only choice is 'default'. For the joung_cheatham
                 model, valid choices are "spce", "tip3p", and "tip4pew".
             ion: Formula of the ion (e.g., "Li+").
+
         Returns:
-            LammpsData: Force field parameters for the chosen water model.
-                If the desired combination of force field and water model
-                for the given ion is not available, None is returned.
+            Force field parameters for the chosen water model.
+            If the desired combination of force field and water model
+            for the given ion is not available, None is returned.
         """
         data_path = DATA_DIR
         alias = DATA_MODELS.get("alias", {})
@@ -610,7 +618,7 @@ class Aqueous:
         if signature in alias:
             signature = alias.get(model)
         ion_type = ion.capitalize()
-        for key in DATA_MODELS["ion"].keys():
+        for key in DATA_MODELS["ion"]:
             if key.startswith(signature):
                 ion_model = DATA_MODELS["ion"].get(key)
                 if water in ion_model:
@@ -620,12 +628,10 @@ class Aqueous:
                         file_path = os.path.join(data_path, "ion", key, water, ion_type + ".lmp")
                     if os.path.exists(file_path):
                         return LammpsData.from_file(file_path)
-                    else:
-                        print("Ion not found. Please try another ion.\n")
-                        return None
-                else:
-                    print("Water model not found. Please try another water model.\n")
+                    print("Ion not found. Please try another ion.\n")
                     return None
+                print("Water model not found. Please try another water model.\n")
+                return None
         print("Ion model not found. Please try another ion model.\n")
         return None
 
@@ -633,26 +639,29 @@ class Aqueous:
 class ChargeWriter:
     """
     A class for write, overwrite, scale charges of a LammpsData object.
+    TODO: Auto determine number of significant figures of charges
+    TODO: write to obj or write separate charge file
+    TODO: Read LammpsData or path
 
     Args:
-        data (LammpsData): The provided LammpsData obj.
-        precision (int): Number of significant figures.
-
+        data: The provided LammpsData obj.
+        precision: Number of significant figures.
     """
 
-    def __init__(self, data, precision=10):
+    def __init__(self, data: LammpsData, precision: int = 10):
         """Base constructor."""
         self.data = data
         self.precision = precision
 
-    def scale(self, factor):
+    def scale(self, factor: float) -> LammpsData:
         """
+        Scales the charge in of the in self.data and returns a new one. TODO: check if non-destructive
 
         Args:
-            factor:
+            factor: The charge scaling factor
 
         Returns:
-
+            A recreated LammpsData obj
         """
         items = dict()
         items["box"] = self.data.box
@@ -675,18 +684,18 @@ class ChargeWriter:
         items["topology"] = self.data.topology
         return LammpsData(**items)
 
-    def count_significant_figures(self, number):
+    def count_significant_figures(self, number: float) -> int:
         """
         Count significant figures in a float.
 
         Args:
-            number (int or float): The number to count.
+            number: The number to count.
 
         Returns:
-
+            The number of significant figures.
         """
-        number = repr(float(number))
-        tokens = number.split(".")
+        number_str = repr(float(number))
+        tokens = number_str.split(".")
         if len(tokens) > 2:
             raise ValueError("Invalid number '{}' only 1 decimal allowed".format(number))
         if len(tokens) == 2:
@@ -769,4 +778,4 @@ if __name__ == "__main__":
     )
     long_name = "Ethyl Methyl Carbonate"
     short_name = "EMC"
-    cid = pcr.obtain_entry(long_name, short_name, "pdb")
+    obtained_cid = pcr.obtain_entry(long_name, short_name, "pdb")

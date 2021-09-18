@@ -9,6 +9,7 @@ selenium
 setuptools
 sphinx
 sphinx_rtd_theme
+sphinx-autodoc-typehints
 statsmodels
 tqdm
 typing-extensions

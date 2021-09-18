@@ -6,20 +6,25 @@
 This module implements utility functions for other modules in the package.
 """
 
-import numpy as np
+
 import string
 from io import StringIO
 import os
 import re
-import pandas as pd
 import math
 import sys
-from typing import List, Dict, Union, Tuple
+from typing import List, Dict, Union, Tuple, Optional, Any
 from typing_extensions import Final
-from mdgo.volume import molecular_volume
+import numpy as np
+import pandas as pd
 
 from pymatgen.core import Molecule
 from pymatgen.io.lammps.data import CombinedData
+
+from MDAnalysis import Universe
+from MDAnalysis.core.groups import Atom, Residue, AtomGroup
+
+from mdgo.volume import molecular_volume
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -149,7 +154,7 @@ MM_of_Elements: Final[Dict[str, float]] = {
     "ZERO": 0,
 }
 
-SECTION_SORTER: Final[Dict[str, dict]] = {
+SECTION_SORTER: Final[Dict[str, Dict[str, Any]]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -208,7 +213,7 @@ BOX: Final[
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
-MOLAR_VOLUME: Final[Dict[str, Union[float, int]]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[Dict[str, float]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
 ALIAS: Final[Dict[str, str]] = {
     "ethylene carbonate": "ec",
@@ -285,9 +290,17 @@ DENSITY: Final[Dict[str, float]] = {
 }
 
 
-def atom_vec(atom1, atom2, dimension):
+def atom_vec(atom1: Atom, atom2: Atom, dimension: np.ndarray) -> np.ndarray:
     """
     Calculate the vector of the positions from atom2 to atom1.
+
+    Args:
+        atom1: Atom obj 1.
+        atom2: Atom obj 2.
+        dimension: box dimension.
+
+    Return:
+        The obtained vector
     """
     vec = [0, 0, 0]
     for i in range(3):
@@ -301,11 +314,23 @@ def atom_vec(atom1, atom2, dimension):
     return np.array(vec)
 
 
-def position_vec(pos1, pos2, dimension):
+def position_vec(
+    pos1: Union[List[float], np.ndarray],
+    pos2: Union[List[float], np.ndarray],
+    dimension: Union[List[float], np.ndarray],
+) -> np.ndarray:
     """
     Calculate the vector from pos2 to pos2.
+
+    Args:
+        pos1: Array of 3d coordinates 1.
+        pos2: Array of 3d coordinates 2.
+        dimension: box dimension.
+
+    Return:
+        The obtained vector.
     """
-    vec = [0, 0, 0]
+    vec: List[Union[int, float, np.floating]] = [0, 0, 0]
     for i in range(3):
         diff = pos1[i] - pos2[i]
         if diff > dimension[i] / 2:
@@ -317,48 +342,80 @@ def position_vec(pos1, pos2, dimension):
     return np.array(vec)
 
 
-def mass_to_name(df):
+def angle(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.floating:
     """
-    Create a dict for mapping atom type id to element from the mass information.
+    Calculate the angle between three atoms.
 
     Args:
-        df (pandas.DataFrame): The masses attribute from LammpsData object
+        a: Coordinates of atom A.
+        b: Coordinates of atom B.
+        c: Coordinates of atom C.
+
+    Returns:
+        The degree A-B-C.
+    """
+    ba = a - b
+    bc = c - b
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    cosine_angle = np.clip(cosine_angle, -1.0, 1.0)
+    angle_in_radian = np.arccos(cosine_angle)
+    return np.degrees(angle_in_radian)
+
+
+def mass_to_name(masses: np.ndarray) -> np.ndarray:
+    """
+    Map atom names to element names.
+
+    Args:
+        masses: The masses array of atoms in an ``Universe``.
+
     Return:
-        dict: The element dict.
+        The element name array.
+    """
+    names = list()
+    for mass in masses:
+        for item in MM_of_Elements.items():
+            if math.isclose(mass, item[1], abs_tol=0.1):
+                names.append(item[0])
+    assert len(masses) == len(names), "Invalid mass found."
+    return np.array(names)
+
+
+def lmp_mass_to_name(df: pd.DataFrame) -> Dict[int, str]:
+    """
+    Create a dict for mapping atom type id to element from the mass information.
+    Args:
+        df: The masses attribute from LammpsData object
+    Return:
+        The element dict.
     """
     atoms = {}
     for row in df.index:
         for item in MM_of_Elements.items():
             if math.isclose(df["mass"][row], item[1], abs_tol=0.01):
-                atoms[row] = item[0]
+                atoms[int(row)] = item[0]
     return atoms
 
 
-def assign_name(u, element_id_dict):
+def assign_name(u: Universe, names: np.ndarray):
     """
-    Assgin resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing names.
+    Assign resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing names.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        element_id_dict (dict): A dictionary of atom types, where each type is a key
-                and the corresponding values are the element names.
+        u: The universe object to assign resnames to.
+        names: The element name array.
     """
-    u.add_TopologyAttr("name")
-    for key, val in element_id_dict.items():
-        atom_group = u.select_atoms("type {}".format(str(key)))
-        atom_names = atom_group.names
-        atom_names[atom_names == ""] = val
-        atom_group.names = atom_names
+    u.add_TopologyAttr("name", values=names)
 
 
-def assign_resname(u, res_dict):
+def assign_resname(u: Universe, res_dict: Dict[str, str]):
     """
-    Assgin resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing resnames.
+    Assign resnames to residues in a MDAnalysis.universe object. The function will not overwrite existing resnames.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        res_dict (dict): A dictionary of resnames, where each resname is a key
-                and the corresponding values are the selection language.
+        u: The universe object to assign resnames to.
+        res_dict: A dictionary of resnames, where each resname is a key
+            and the corresponding values are the selection language.
     """
     u.add_TopologyAttr("resname")
     for key, val in res_dict.items():
@@ -368,16 +425,17 @@ def assign_resname(u, res_dict):
         res_group.residues.resnames = res_names
 
 
-def res_dict_from_select_dict(u, select_dict):
+def res_dict_from_select_dict(u: Universe, select_dict: Dict[str, str]) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from select_dict (atom selection) in a MDAnalysis.universe object.
 
     Args:
-        u (MDAnalysis.universe): The universe object to assign resnames to.
-        select_dict (dict): A dictionary of atom species, where each atom species name is a key
+        u: The universe object to assign resnames to.
+        select_dict: A dictionary of atom species, where each atom species name is a key
                 and the corresponding values are the selection language.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     saved_select = list()
     res_dict = dict()
@@ -397,14 +455,15 @@ def res_dict_from_select_dict(u, select_dict):
     return res_dict
 
 
-def res_dict_from_datafile(filename):
+def res_dict_from_datafile(filename: str) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from a LAMMPS data file.
 
     Args:
-        filename (str): Path to the data file. The data file must be generated by a CombinedData object.
+        filename: Path to the data file. The data file must be generated by a CombinedData object.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     res_dict = dict()
     with open(filename, "r") as f:
@@ -429,18 +488,18 @@ def res_dict_from_datafile(filename):
                     end = idx
                     res_dict[name] = "resid " + str(start) + "-" + str(end - 1)
             return res_dict
-        else:
-            return None
+        raise ValueError("The LAMMPS data file should be generated by pymatgen.io.lammps.data.")
 
 
-def res_dict_from_lammpsdata(lammps_data):
+def res_dict_from_lammpsdata(lammps_data: CombinedData) -> Dict[str, str]:
     """
     Infer res_dict (residue selection) from a LAMMPS data file.
 
     Args:
-        lammps_data (CombinedData): A CombinedData object.
+        lammps_data: A CombinedData object.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of resnames.
     """
     assert isinstance(lammps_data, CombinedData)
     idx = 1
@@ -468,31 +527,48 @@ def res_dict_from_lammpsdata(lammps_data):
     return res_dict
 
 
-def select_dict_from_resname(u):
+def select_dict_from_resname(u: Universe) -> Dict[str, str]:
     """
     Infer select_dict (possibly interested atom species selection) from resnames in a MDAnalysis.universe object.
+    The resname must be pre-assigned already.
 
     Args:
-        u (MDAnalysis.universe): The universe object to work with.
+        u: The universe object to work with.
+
     return:
-        dict: A dictionary of resnames.
+        A dictionary of atom species.
     """
-    select_dict = dict()
+    select_dict: Dict[str, str] = dict()
     resnames = np.unique(u.residues.resnames)
     for resname in resnames:
         if resname == "":
             continue
         residue = u.select_atoms("resname " + resname).residues[0]
-        if np.isclose(residue.charge, 0, atol=1e-5):
+        if np.isclose(residue.charge, 0, atol=1e-5):  # np.sum(residue.atoms.charges)
             if len(residue.atoms.fragments) == 2:
-                for frag in residue.atoms.fragments:
+                for i, frag in enumerate(residue.atoms.fragments):
                     charge = np.sum(frag.charges)
-                    if charge > 0.01:
+                    if charge > 0.001:
                         extract_atom_from_ion(True, frag, select_dict)
-                    elif charge < -0.01:
+                    elif charge < -0.001:
                         extract_atom_from_ion(False, frag, select_dict)
                     else:
-                        extract_atom_from_molecule(resname, residue, select_dict)
+                        extract_atom_from_molecule(resname, frag, select_dict, number=i + 1)
+            elif len(residue.atoms.fragments) >= 2:
+                cation_number = 1
+                anion_number = 1
+                molecule_number = 1
+                for frag in residue.atoms.fragments:
+                    charge = np.sum(frag.charges)
+                    if charge > 0.001:
+                        extract_atom_from_ion(True, frag, select_dict, cation_number)
+                        cation_number += 1
+                    elif charge < -0.001:
+                        extract_atom_from_ion(False, frag, select_dict, anion_number)
+                        anion_number += 1
+                    else:
+                        extract_atom_from_molecule(resname, frag, select_dict, molecule_number)
+                        molecule_number += 1
             else:
                 extract_atom_from_molecule(resname, residue, select_dict)
         elif residue.charge > 0:
@@ -502,72 +578,91 @@ def select_dict_from_resname(u):
     return select_dict
 
 
-def extract_atom_from_ion(positive, residue, select_dict):
+def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select_dict: Dict[str, str], number: int = 0):
     """
+    Assign the most most charged atom and/or one unique atom in the ion into select_dict.
 
     Args:
-        positive:
-        residue:
-        select_dict:
-
-    Returns:
-
+        positive: Whether the charge of ion is positive. Otherwise negative. Default to True.
+        ion: Residue or AtomGroup
+        select_dict: A dictionary of atom species, where each atom species name is a key
+            and the corresponding values are the selection language.
+        number: The serial number of the ion.
     """
     if positive:
-        if len(residue.atoms.types) == 1:
-            select_dict["cation"] = "type " + residue.atoms.types[0]
+        if number == 0:
+            cation_name = "cation"
         else:
-            pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
-            unique_types = np.unique(residue.atoms.types, return_counts=True)
+            cation_name = "cation_" + str(number)
+        if len(ion.atoms.types) == 1:
+            select_dict[cation_name] = "type " + ion.atoms.types[0]
+        else:
+            # The most positively charged atom in the cation
+            pos_center = ion.atoms[np.argmax(ion.atoms.charges)]
+            unique_types = np.unique(ion.atoms.types, return_counts=True)
+            # One unique atom in the cation
             uni_center = unique_types[0][np.argmin(unique_types[1])]
             if pos_center.type == uni_center:
-                select_dict["cation"] = "type " + uni_center
+                select_dict[cation_name] = "type " + uni_center
             else:
-                select_dict["cation_" + pos_center.name + pos_center.type] = "type " + pos_center.type
-                select_dict["cation"] = "type " + uni_center
+                select_dict[cation_name + "_" + pos_center.name + pos_center.type] = "type " + pos_center.type
+                select_dict[cation_name] = "type " + uni_center
     else:
-        if len(residue.atoms.types) == 1:
-            select_dict["anion"] = "type " + residue.atoms.types[0]
+        if number == 0:
+            anion_name = "anion"
         else:
-            neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
-            unique_types = np.unique(residue.atoms.types, return_counts=True)
+            anion_name = "anion_" + str(number)
+        if len(ion.atoms.types) == 1:
+            select_dict[anion_name] = "type " + ion.atoms.types[0]
+        else:
+            # The most negatively charged atom in the anion
+            neg_center = ion.atoms[np.argmin(ion.atoms.charges)]
+            unique_types = np.unique(ion.atoms.types, return_counts=True)
+            # One unique atom in the anion
             uni_center = unique_types[0][np.argmin(unique_types[1])]
             if neg_center.type == uni_center:
-                select_dict["anion"] = "type " + uni_center
+                select_dict[anion_name] = "type " + uni_center
             else:
-                select_dict["anion_" + neg_center.name + neg_center.type] = "type " + neg_center.type
-                select_dict["anion"] = "type " + uni_center
+                select_dict[anion_name + "_" + neg_center.name + neg_center.type] = "type " + neg_center.type
+                select_dict[anion_name] = "type " + uni_center
 
 
-def extract_atom_from_molecule(resname, residue, select_dict):
+def extract_atom_from_molecule(
+    resname: str, molecule: Union[Residue, AtomGroup], select_dict: Dict[str, str], number: int = 0
+):
     """
+    Assign the most negatively charged atom in the molecule into select_dict
 
     Args:
-        resname:
-        residue:
-        select_dict:
-
-    Returns:
-
+        resname: The name of the molecule
+        molecule: The Residue or AtomGroup obj of the molecule.
+        select_dict: A dictionary of atom species, where each atom species name is a key
+            and the corresponding values are the selection language.
+        number: The serial number of the molecule under the name of resname.
     """
     # neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
     # select_dict[resname + "-" + neg_center.name + neg_center.type] = "type " + neg_center.type
     # pos_center = residue.atoms[np.argmax(residue.atoms.charges)]
     # select_dict[resname + "+" + pos_center.name + pos_center.type] = "type " + pos_center.type
-    neg_center = residue.atoms[np.argmin(residue.atoms.charges)]
+
+    # The most negatively charged atom in the anion
+    if number > 0:
+        resname = resname + "_" + str(number)
+    neg_center = molecule.atoms[np.argmin(molecule.atoms.charges)]
     select_dict[resname] = "type " + neg_center.type
 
 
-def ff_parser(ff_dir, xyz_dir):
+def ff_parser(ff_dir: str, xyz_dir: str) -> str:
     """
     A parser to convert a force field field from Maestro format
     to LAMMPS data format.
 
     Args:
-        ff_dir (str): The path to the Maestro force field file.
-        xyz_dir (str): The path to the xyz structure file.
+        ff_dir: The path to the Maestro force field file.
+        xyz_dir: The path to the xyz structure file.
+
     Return:
-        str: The output LAMMPS data string.
+        The output LAMMPS data string.
     """
     with open(xyz_dir, "r") as f_xyz:
         molecule = pd.read_table(f_xyz, skiprows=2, delim_whitespace=True, names=["atom", "x", "y", "z"])
@@ -581,7 +676,7 @@ def ff_parser(ff_dir, xyz_dir):
         dfs = dict()
         dfs["atoms"] = pd.read_csv(
             StringIO(atoms),
-            names=SECTION_SORTER.get("atoms").get("in_header"),
+            names=SECTION_SORTER.get("atoms", dict()).get("in_header"),
             delim_whitespace=True,
             usecols=[0, 4, 5, 6],
         )
@@ -669,7 +764,7 @@ def ff_parser(ff_dir, xyz_dir):
 def concentration_matcher(
     concentration: float,
     salt: Union[float, int, str, Molecule],
-    solvents: List[Union[str, Dict[str, Union[float, int]]]],
+    solvents: List[Union[str, Dict[str, float]]],
     solv_ratio: List[float],
     num_salt: int = 100,
     mode: str = "v",
@@ -679,6 +774,7 @@ def concentration_matcher(
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
     solvent density, solvent ratio and total number of salt.
+    TODO: Auto box size according to Debye screening length
 
     Args:
         concentration: Salt concentration in mol/L.
@@ -715,10 +811,9 @@ def concentration_matcher(
             the CRC handbook.
 
     Returns:
-        (list, float):
-            A list the number of molecules in the simulation box, starting with
-            the salt and followed by each solvent in 'solvents'. The list is followed
-            by a float of the approximate length of one side of the box in Å.
+        A list of number of molecules in the simulation box, starting with
+        the salt and followed by each solvent in 'solvents'.
+        The list is followed by a float of the approximate length of one side of the box in Å.
 
     """
     n_solvent = list()
@@ -726,7 +821,7 @@ def concentration_matcher(
     if n != len(solvents):
         raise ValueError("solvents and solv_ratio must be the same length!")
 
-    if isinstance(salt, float) or isinstance(salt, int):
+    if isinstance(salt, (float, int)):
         salt_molar_volume = salt
     elif isinstance(salt, Molecule):
         salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula, radii_type=radii_type)
@@ -764,7 +859,7 @@ def concentration_matcher(
         n_all.insert(0, num_salt)
         volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
-    elif mode.lower().startswith("w"):
+    if mode.lower().startswith("w"):
         for i in range(n):
             n_solvent.append(solv_ratio[i] / solv_mass[i])  # type: ignore
         v_solv = np.divide(solv_ratio, solv_density).sum()
@@ -773,32 +868,39 @@ def concentration_matcher(
         n_all.insert(0, num_salt)
         volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
         return n_all, volume ** (1 / 3) * 1e8
-    else:
-        mode = input("Volume or weight ratio? (w or v): ")
-        return concentration_matcher(
-            concentration,
-            salt_molar_volume,
-            solvents,
-            solv_ratio,
-            num_salt=num_salt,
-            mode=mode,
-        )
+    mode = input("Volume or weight ratio? (w or v): ")
+    return concentration_matcher(concentration, salt_molar_volume, solvents, solv_ratio, num_salt=num_salt, mode=mode)
 
 
-def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, pubchem=True):
+def sdf_to_pdb(
+    sdf_file: str,
+    pdb_file: str,
+    write_title: bool = True,
+    version: bool = True,
+    credit: bool = True,
+    pubchem: bool = True,
+):
     """
     Convert SDF file to PDB file.
+
+    Args:
+        sdf_file: Path to the input sdf file.
+        pdb_file: Path to the output pdb file.
+        write_title: Whether to write title in the pdb file. Default to True.
+        version: Whether to version line (remark 4) line in the pdb file. Default to True.
+        credit: Whether to credit line (remark 888) in the pdb file. Default to True.
+        pubchem: Whether the sdf is downloaded from PubChem. Default to True.
     """
 
     # parse sdf file file
     with open(sdf_file, "r") as inp:
-        sdf = inp.readlines()
-        sdf = map(str.strip, sdf)
+        sdf_lines = inp.readlines()
+        sdf = list(map(str.strip, sdf_lines))
     if pubchem:
         title = "cid_"
     else:
         title = ""
-    pdb_atoms = list()
+    pdb_atoms: List[Dict[str, Any]] = list()
     # create pdb list of dictionaries
     atoms = 0
     bonds = 0
@@ -808,41 +910,40 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
     for i, line in enumerate(sdf):
         if i == 0:
             title += line.strip() + " "
-            continue
         elif i in [1, 2]:
-            continue
+            pass
         elif i == 3:
-            line = line.split()
-            atoms = int(line[0])
-            bonds = int(line[1])
-            continue
+            line_split = line.split()
+            atoms = int(line_split[0])
+            bonds = int(line_split[1])
         elif line.startswith("M  END"):
             break
         elif i in list(range(4, 4 + atoms)):
-            line = line.split()
+            line_split = line.split()
             newline = {
                 "ATOM": "HETATM",
                 "serial": int(i - 3),
-                "name": str(line[3]),
+                "name": str(line_split[3]),
                 "resName": "UNK",
                 "resSeq": 900,
-                "x": float(line[0]),
-                "y": float(line[1]),
-                "z": float(line[2]),
+                "x": float(line_split[0]),
+                "y": float(line_split[1]),
+                "z": float(line_split[2]),
                 "occupancy": 1.00,
                 "tempFactor": 0.00,
                 "altLoc": str(""),
                 "chainID": str(""),
                 "iCode": str(""),
-                "element": str(line[3]),
+                "element": str(line_split[3]),
                 "charge": str(""),
                 "segment": str(""),
             }
             pdb_atoms.append(newline)
         elif i in list(range(4 + atoms, 4 + atoms + bonds)):
-            atom1 = int(line.split()[0])
-            atom2 = int(line.split()[1])
-            order = int(line.split()[2])
+            line_split = line.split()
+            atom1 = int(line_split[0])
+            atom2 = int(line_split[1])
+            order = int(line_split[2])
             atom1s.append(atom1)
             atom2s.append(atom2)
             while order > 1:
@@ -850,42 +951,42 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
                 orders.append([atom2, atom1])
                 order -= 1
         else:
-            continue
+            pass
 
     # write pdb file
     with open(pdb_file, "wt") as outp:
         if write_title:
             outp.write("TITLE     {:70s}\n".format(title))
-        if remark4:
+        if version:
             outp.write("REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n")
         if credit:
             outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
         for n in range(atoms):
-            line = pdb_atoms[n].copy()
-            if len(line["name"]) == 3:
-                line["name"] = " " + line["name"]
+            line_dict = pdb_atoms[n].copy()
+            if len(line_dict["name"]) == 3:
+                line_dict["name"] = " " + line_dict["name"]
             # format pdb
             formatted_line = (
                 "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
                 "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
                 "{:<4s}{:>2s}{:<2s}"
             ).format(
-                line["ATOM"],
-                line["serial"],
-                line["name"],
-                line["altLoc"],
-                line["resName"],
-                line["chainID"],
-                str(line["resSeq"]),
-                line["iCode"],
-                line["x"],
-                line["y"],
-                line["z"],
-                line["occupancy"],
-                line["tempFactor"],
-                line["segment"],
-                line["element"],
-                line["charge"],
+                line_dict["ATOM"],
+                line_dict["serial"],
+                line_dict["name"],
+                line_dict["altLoc"],
+                line_dict["resName"],
+                line_dict["chainID"],
+                str(line_dict["resSeq"]),
+                line_dict["iCode"],
+                line_dict["x"],
+                line_dict["y"],
+                line_dict["z"],
+                line_dict["occupancy"],
+                line_dict["tempFactor"],
+                line_dict["segment"],
+                line_dict["element"],
+                line_dict["charge"],
             )
             # write
             outp.write(formatted_line + "\n")
@@ -895,10 +996,10 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
             bond_lines[atom].append(atom2s[i])
         for i, atom in enumerate(atom2s):
             bond_lines[atom].append(atom1s[i])
-        for i in range(len(orders)):
-            for j, line in enumerate(bond_lines):
-                if line[0] == orders[i][0]:
-                    bond_lines.insert(j + 1, orders[i])
+        for i, odr in enumerate(orders):
+            for j, ln in enumerate(bond_lines):
+                if ln[0] == odr[0]:
+                    bond_lines.insert(j + 1, odr)
                     break
         for i in range(1, len(bond_lines)):
             bond_lines[i][1:] = sorted(bond_lines[i][1:])
@@ -907,14 +1008,15 @@ def sdf_to_pdb(sdf_file, pdb_file, write_title=True, remark4=True, credit=True, 
         outp.write("END\n")  # final 'END'
 
 
-def strip_zeros(items):
+def strip_zeros(items: Union[List[Union[str, float, int]], str]) -> Optional[List[int]]:
     """
+    Strip the trailing zeros of a sequence.
 
     Args:
-        items:
+        items: The sequence.
 
-    Returns:
-
+    Return:
+        A new list of numbers.
     """
     new_items = [int(i) for i in items]
     while new_items[-1] == 0:
