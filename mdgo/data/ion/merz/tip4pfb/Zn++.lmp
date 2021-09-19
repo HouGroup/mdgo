@@ -6,6 +6,10 @@ Zn++
 # the TIP4P-FB water model
 # all values in 'real' units (kcal/mol and Angstrom)
 
+# Note that LAMMPS requires the value sigma (the distance at which the potential equals
+# zero, rather than Rmin/2 which is reported in the paper. To convert, use
+# sigma = Rmin/2 * 2^(5/6)
+
        1 atoms
 
        1 atom types
@@ -18,9 +22,9 @@ Masses
 
       1    64.929
 
-Pair Coeffs #lj/cut/coul/long
+Pair Coeffs #lj/cut/tip4p/long 2 1 1 1 0.10527 9.0 7.0
 
-      1    0.01314367 1.383
+      1    0.01314367 2.4642
 
 Atoms
 
