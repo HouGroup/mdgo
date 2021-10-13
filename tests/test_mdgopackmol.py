@@ -75,7 +75,7 @@ class TestPackmolWrapper:
             pw = PackmolWrapper(
                 scratch_dir,
                 molecules=[
-                    {"name": "EMC", "number": 10, "coords": os.path.join(test_dir, "EMC.xyz")},
+                    {"name": "EMC", "number": 10, "coords": os.path.join(test_dir, "subdir with spaces", "EMC.xyz")},
                     {"name": "LiTFSi", "number": 20, "coords": os.path.join(test_dir, "LiTFSi.xyz")},
                 ],
             )
@@ -87,9 +87,9 @@ class TestPackmolWrapper:
 
     def test_packmol_with_path(self):
         """
-        Test coords input as Path
+        Test coords input as Path. Use a subdirectory with spaces.
         """
-        p1 = Path(os.path.join(test_dir, "EMC.xyz"))
+        p1 = Path(os.path.join(test_dir, "subdir with spaces", "EMC.xyz"))
         p2 = Path(os.path.join(test_dir, "LiTFSi.xyz"))
         with tempfile.TemporaryDirectory() as scratch_dir:
             pw = PackmolWrapper(
@@ -211,11 +211,13 @@ class TestPackmolWrapper:
 
     def test_arbitrary_filenames(self, water, ethanol):
         """
-        Make sure custom input and output filenames work
+        Make sure custom input and output filenames work.
+        Use a subdirectory with spaces.
         """
         with tempfile.TemporaryDirectory() as scratch_dir:
+            os.mkdir(os.path.join(scratch_dir, "subdirectory with spaces"))
             pw = PackmolWrapper(
-                scratch_dir,
+                os.path.join(scratch_dir, "subdirectory with spaces"),
                 molecules=[
                     {"name": "water", "number": 10, "coords": water},
                     {"name": "ethanol", "number": 20, "coords": ethanol},
@@ -224,8 +226,8 @@ class TestPackmolWrapper:
                 outputfile="output.xyz",
             )
             pw.make_packmol_input()
-            assert os.path.exists(os.path.join(scratch_dir, "input.in"))
+            assert os.path.exists(os.path.join(scratch_dir, "subdirectory with spaces", "input.in"))
             pw.run_packmol()
-            assert os.path.exists(os.path.join(scratch_dir, "output.xyz"))
-            out = Molecule.from_file(os.path.join(scratch_dir, "output.xyz"))
+            assert os.path.exists(os.path.join(scratch_dir, "subdirectory with spaces", "output.xyz"))
+            out = Molecule.from_file(os.path.join(scratch_dir, "subdirectory with spaces", "output.xyz"))
             assert out.composition.num_atoms == 10 * 3 + 20 * 9

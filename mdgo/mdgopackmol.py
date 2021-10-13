@@ -169,7 +169,7 @@ class PackmolWrapper:
 
             for i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
-                    out.write("structure {}\n".format(d["coords"]))
+                    out.write(f'structure "{d["coords"]}"\n')
                 elif isinstance(d["coords"], Path):
                     out.write(f'structure "{str(d["coords"])}"\n')
                 elif isinstance(d["coords"], Molecule):
