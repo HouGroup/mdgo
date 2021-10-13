@@ -657,9 +657,9 @@ class Aqueous:
         water_model = water_model.replace("-", "").replace("/", "").lower()
         if parameter_set:
             parameter_set = parameter_set.lower()
-            parameter_set = alias.get(parameter_set)
         else:
             parameter_set = default_sets.get(water_model)
+        parameter_set = alias.get(parameter_set)
 
         # Make the Ion object to get mass and charge
         if isinstance(ion, Ion):
@@ -709,10 +709,10 @@ class Aqueous:
 
             return LammpsData.from_ff_and_topologies(box, ff, [topo], atom_style="full")
 
-        else:
-            raise ValueError(
-                f"No {parameter_set} ion parameters for water model {water_model}. See documentation and try a different combination."
-            )
+        raise ValueError(
+            f"No {parameter_set} ion parameters for water model {water_model}. "
+             "See documentation and try a different combination."
+        )
 
 
 class ChargeWriter:
