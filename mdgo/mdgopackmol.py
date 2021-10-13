@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from pymatgen.core import Molecule
+from monty.os.path import which
 
 # from pymatgen.io.core import InputFile, InputSet, InputGenerator
 
@@ -103,6 +104,14 @@ class PackmolWrapper:
             ValueError if packmol does not succeed in packing the box.
             TimeoutExpiredError if packmold does not finish within the timeout.
         """
+        if not which("packmol"):
+            raise RuntimeError(
+                "PackmolWrapper requires the executable 'packmol' to be in "
+                "the path. Please download packmol from "
+                "https://github.com/leandromartinez98/packmol "
+                "and follow the instructions in the README to compile. "
+                "Don't forget to add the packmol binary to your path"
+            )
         try:
             p = subprocess.run(
                 "packmol < '{}'".format(self.input),
