@@ -68,9 +68,11 @@ DATA_MODELS: Final[dict] = {
         "spce": "water_spce.lmp",
         "tip3pew": "water_tip3p_ew.lmp",
         "tip3pfb": "water_tip3p_fb.lmp",
+        "opc3": "water_opc3.lmp",
         "tip4p2005": "water_tip4p_2005.lmp",
         "tip4pew": "water_tip4p_ew.lmp",
         "tip4pfb": "water_tip4p_fb.lmp",
+        "opc": "water_opc.lmp",
     },
 }
 
@@ -565,9 +567,11 @@ class Aqueous:
         2. SPC/E
         3. TIP3P-EW
         4. TIP3P-FB
-        5. TIP4P-EW
-        6. TIP4P-2005
-        7. TIP4P-FB
+        5. OPC3
+        6. TIP4P-EW
+        7. TIP4P-2005
+        8. TIP4P-FB
+        9. OPC
 
     Multiple sets of Lennard Jones parameters for ions are available as well.
     Not every set is available for every water model. The parameter sets included
@@ -591,8 +595,8 @@ class Aqueous:
         Retrieve water model parameters.
 
         Args:
-            model: Water model to use. Valid choices are "spc", "spce",
-                "tip3pew", "tip3pfb", "tip4p2005", "tip4pew", and "tip4pfb".
+            model: Water model to use. Valid choices are "spc", "spce", "opc3",
+                "tip3pew", "tip3pfb", "tip4p2005", "tip4pew", "tip4pfb", and "opc".
                 (Default: "spce")
         Returns:
             LammpsData: Force field parameters for the chosen water model.
@@ -623,11 +627,19 @@ class Aqueous:
                     2. SPC/E
                     3. TIP3P-EW
                     4. TIP3P-FB
-                    5. TIP4P-EW
-                    6. TIP4P-2005
-                    7. TIP4P-FB
-                The default water model is TIP4P-FB, the reparameterized TIP4P of
-                Wang, Martinez, and Pande (2014). See documentation.
+                    5. OPC3
+                    6. TIP4P-EW
+                    7. TIP4P-2005
+                    8. TIP4P-FB
+                    9. OPC
+                The default water model is SPC/E. See documentation.
+
+                For a systematic comparison of the performance of different water models, refer to
+
+                    Sachini et al., Systematic Comparison of the Structural and Dynamic Properties of
+                    Commonly Used Water Models for Molecular Dynamics Simulations. J. Chem. Inf. Model.
+                    2021, 61, 9, 4521–4536. https://doi.org/10.1021/acs.jcim.1c00794
+
             parameter_set: Force field parameters to use for ions.
                 Valid choices are:
                     1. "jj" for the Jensen and Jorgensen parameters (2006)"
@@ -649,10 +661,12 @@ class Aqueous:
             "tip3p": "jc",
             "tip3pew": None,
             "tip3pfb": "lm",
+            "opc3": "lm",
             "tip4p2005": None,
             "tip4p": "jj",
             "tip4pew": "jc",
             "tip4pfb": "lm",
+            "opc": "lm",
         }
         water_model = water_model.replace("-", "").replace("/", "").lower()
         if parameter_set:
@@ -711,7 +725,7 @@ class Aqueous:
 
         raise ValueError(
             f"No {parameter_set} ion parameters for water model {water_model}. "
-             "See documentation and try a different combination."
+            "See documentation and try a different combination."
         )
 
 
