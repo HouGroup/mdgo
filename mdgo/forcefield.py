@@ -28,13 +28,15 @@ import shutil
 import signal
 import subprocess
 import time
+from dataclasses import dataclass
 from string import Template
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 from urllib.parse import quote
 
 import numpy as np
-import pandas as pd
 import pubchempy as pcp
+from monty.json import MSONable
+from monty.serialization import loadfn
 from pymatgen.core import Lattice, Structure
 from pymatgen.core.ion import Ion
 from pymatgen.io.lammps.data import ForceField, LammpsData, Topology, lattice_2_lmpbox
@@ -558,6 +560,43 @@ class PubChemRunner:
         return cid
 
 
+@dataclass
+class IonLJData(MSONable):
+    """
+    A lightweight dataclass for storing ion force field parameters. The data
+    file ion_lj_params.json distributed with mdgo is a serialized list of these
+    objects.
+
+    Attributes:
+        name: The name of the parameter set
+        formula: formula of the ion, e.g. 'Li+'
+        combining_rule: the method used to compute pairwise interaction parameters
+            from single atom parameters. 'geometric' or 'LB' for Lorentz-Berthelot
+        water_model: The water model for which the ion parameters were optimized.
+        sigma: The Lennard Jones sigma value, in Å
+        epsilon: The Lennard Jones epsilon value, in kcal/mol
+    """
+
+    name: Literal["jensen_jorgensen", "joung_cheatham", "li_merz"]
+    formula: str
+    combining_rule: Literal["geometric", "LB"]
+    water_model: Literal[
+        "spc",
+        "spce",
+        "tip3p",
+        "tip3pew",
+        "tip3pfb",
+        "opc3",
+        "tip4p2005",
+        "tip4p",
+        "tip4pew",
+        "tip4pfb",
+        "opc",
+    ]
+    sigma: float
+    epsilon: float
+
+
 class Aqueous:
     """
     A class for retreiving water and ion force field parameters.
@@ -673,7 +712,8 @@ class Aqueous:
             parameter_set = parameter_set.lower()
         else:
             parameter_set = default_sets.get(water_model)
-        parameter_set = alias.get(parameter_set)
+        if parameter_set:
+            parameter_set = alias.get(parameter_set, parameter_set)
 
         # Make the Ion object to get mass and charge
         if isinstance(ion, Ion):
@@ -681,28 +721,27 @@ class Aqueous:
         else:
             ion_obj = Ion.from_formula(ion.capitalize())
 
-        # load ion data
-        # ion_data = pd.read_json(os.path.join(DATA_DIR, "ion_lj_data.json"))
-        ion_data = pd.read_excel(
-            "/Users/ryan/miniconda3/envs/md/code/mdgo/mdgo/data/ion_lj_data.xlsx", header=[0, 1, 2], index_col=0
-        )
+        # load ion data as a list of IonLJData objects
+        ion_data = loadfn(os.path.join(DATA_DIR, "ion_lj_params.json"))
 
         # make sure the ion is in the DataFrame
         key = ion_obj.reduced_formula
-        if key not in ion_data.index:
+        filtered_data = [d for d in ion_data if d.formula == key]
+        if len(filtered_data) == 0:
             raise ValueError(f"Ion {key} not found in database. Please try a different ion.")
 
         # make sure the parameter set is in the DataFrame
-        key = ion_obj.reduced_formula
-        if parameter_set not in ion_data.columns.levels[0]:
+        filtered_data = [d for d in filtered_data if d.name == parameter_set and d.water_model == water_model]
+        if len(filtered_data) == 0:
             raise ValueError(
-                f"Parameter set {parameter_set} not found in database. Please try a different parameter set."
+                f"No {parameter_set} parameters for water model {water_model} for ion {key}. "
+                "See documentation and try a different combination."
             )
 
-        # make sure the water model is in the DataFrame
-        key = ion_obj.reduced_formula
-        if water_model not in ion_data.columns.levels[1]:
-            raise ValueError(f"Water model {water_model} not found in database. Please try a different water model.")
+        if len(filtered_data) != 1:
+            raise ValueError(
+                f"Something is wrong: multiple ion data entries for {key}, {parameter_set}, and {water_model}"
+            )
 
         # we only consider monatomic ions at present
         # construct a cubic LammpsBox from a lattice
@@ -714,19 +753,12 @@ class Aqueous:
         topo = Topology(struct, charges=[ion_obj.charge])
 
         # retrieve Lennard-Jones parameters
-        # values may be np.nan if selected combination is not available
-        sigma = ion_data[parameter_set][water_model].loc[key, "σ (Å)"]
-        epsilon = ion_data[parameter_set][water_model].loc[key, "ε(kcal/mol)"]
-        if np.isfinite(sigma) and np.isfinite(epsilon):
-            # construct ForceField object
-            ff = ForceField([(str(e), e) for e in ion_obj.elements], nonbond_coeffs=[[epsilon, sigma]])
+        # construct ForceField object
+        sigma = filtered_data[0].sigma
+        epsilon = filtered_data[0].epsilon
+        ff = ForceField([(str(e), e) for e in ion_obj.elements], nonbond_coeffs=[[epsilon, sigma]])
 
-            return LammpsData.from_ff_and_topologies(box, ff, [topo], atom_style="full")
-
-        raise ValueError(
-            f"No {parameter_set} ion parameters for water model {water_model}. "
-            "See documentation and try a different combination."
-        )
+        return LammpsData.from_ff_and_topologies(box, ff, [topo], atom_style="full")
 
 
 class ChargeWriter:
