@@ -46,6 +46,7 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Prepare Packmol
         run: |
+          ls $HOME/tests/packmol
           echo "$HOME/tests/packmol" >> $GITHUB_PATH
       - name: Prepare Selenium
         # https://github.com/marketplace/actions/setup-chromedriver
