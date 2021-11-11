@@ -52,6 +52,7 @@ jobs:
           pip install -e .
       - name: Prepare Packmol
         run: |
+          ./configure
           make
           echo "$HOME/tests/packmol" >> $GITHUB_PATH
         working-directory: tests/packmol
