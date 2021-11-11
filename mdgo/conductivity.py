@@ -23,7 +23,7 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 
 
 def autocorr_fft(x: np.ndarray) -> np.ndarray:
-    """ Calculates the autocorrelation function using the fast Fourier transform.
+    """Calculates the autocorrelation function using the fast Fourier transform.
 
     Args:
         x (numpy.array): function on which to compute autocorrelation function
@@ -40,7 +40,7 @@ def autocorr_fft(x: np.ndarray) -> np.ndarray:
 
 
 def msd_fft(r: np.ndarray) -> np.ndarray:
-    """ Calculates mean square displacement of the array r using the fast Fourier transform.
+    """Calculates mean square displacement of the array r using the fast Fourier transform.
 
     Args:
         r (numpy.array): atom positions over time
@@ -64,12 +64,12 @@ from MDAnalysis import Universe, AtomGroup
 
 
 def calc_cond_msd(
-        u: Universe,
-        anions: AtomGroup,
-        cations: AtomGroup,
-        run_start: int,
-        cation_charge: Union[int, float] = 1,
-        anion_charge: Union[int, float] = -1,
+    u: Universe,
+    anions: AtomGroup,
+    cations: AtomGroup,
+    run_start: int,
+    cation_charge: Union[int, float] = 1,
+    anion_charge: Union[int, float] = -1,
 ) -> np.ndarray:
     """Calculates the conductivity "mean square displacement" over time
 
@@ -89,8 +89,8 @@ def calc_cond_msd(
     Returns a numpy.array containing conductivity "MSD" over time
     """
     # convert AtomGroup into list of molecules
-    cation_list = cations.split('residue')
-    anion_list = anions.split('residue')
+    cation_list = cations.split("residue")
+    anion_list = anions.split("residue")
     # compute sum over all charges and positions
     qr = []
     for ts in tqdm(u.trajectory[run_start:]):
@@ -105,12 +105,12 @@ def calc_cond_msd(
 
 
 def get_beta(
-        msd: np.ndarray,
-        time_array: np.ndarray,
-        start: int,
-        end: int,
+    msd: np.ndarray,
+    time_array: np.ndarray,
+    start: int,
+    end: int,
 ) -> tuple:
-    """Fits the MSD to the form t^(\beta) and returns \beta. \beta = 1 corresponds
+    """Fits the MSD to the form t^(beta) and returns beta. beta = 1 corresponds
     to the diffusive regime.
 
     Args:
@@ -128,17 +128,17 @@ def get_beta(
 
 
 def choose_msd_fitting_region(
-        msd: np.ndarray,
-        time_array: np.ndarray,
+    msd: np.ndarray,
+    time_array: np.ndarray,
 ) -> tuple:
     """Chooses the optimal fitting regime for a mean-squared displacement.
-    The MSD should be of the form t^(\beta), where \beta = 1 corresponds
+    The MSD should be of the form t^(beta), where beta = 1 corresponds
     to the diffusive regime; as a rule of thumb, the MSD should exhibit this
     linear behavior for at least a decade of time. Finds the region of the
-    MSD with the \beta value closest to 1.
+    MSD with the beta value closest to 1.
 
     Note:
-       If a \beta value great than 0.9 cannot be found, returns a warning
+       If a beta value great than 0.9 cannot be found, returns a warning
        that the computed conductivity may not be reliable, and that longer
        simulations or more replicates are necessary.
 
@@ -155,27 +155,29 @@ def choose_msd_fitting_region(
         start = int(i)
         end = int(i * 10)  # fit over one decade
         beta, beta_range = get_beta(msd, time_array, start, end)
-        slope_tolerance = 2 # acceptable level of noise in beta values
+        slope_tolerance = 2  # acceptable level of noise in beta values
         # check if beta in this region is better than regions tested so far
         if (np.abs(beta - 1) < np.abs(beta_best - 1) and beta_range < slope_tolerance) or beta_best == 0:
             beta_best = beta
             start_final = start
             end_final = end
     if beta_best < 0.9:
-        print("WARNING: MSD is not sufficiently linear (beta = {})." \
-              "Consider running simulations longer.".format(beta_best))
+        print(
+            "WARNING: MSD is not sufficiently linear (beta = {})."
+            "Consider running simulations longer.".format(beta_best)
+        )
     return start_final, end_final, beta_best
 
 
 def conductivity_calculator(
-        time_array: np.ndarray,
-        cond_array: np.ndarray,
-        v: Union[int, float],
-        name: str,
-        start: int,
-        end: int,
-        T: Union[int, float],
-        units: str = "real",
+    time_array: np.ndarray,
+    cond_array: np.ndarray,
+    v: Union[int, float],
+    name: str,
+    start: int,
+    end: int,
+    T: Union[int, float],
+    units: str = "real",
 ) -> float:
     """Calculates the overall conductivity of the system
 
@@ -191,17 +193,17 @@ def conductivity_calculator(
     Returns the overall ionic conductivity (float)
     """
     # Unit conversions
-    if units == 'real':
+    if units == "real":
         A2cm = 1e-8  # Angstroms to cm
         ps2s = 1e-12  # picoseconds to seconds
         e2c = 1.60217662e-19  # elementary charge to Coulomb
         kb = 1.38064852e-23  # Boltzmann Constant, J/K
         convert = e2c * e2c / ps2s / A2cm * 1000
-        cond_units = 'mS/cm'
-    elif units == 'lj':
+        cond_units = "mS/cm"
+    elif units == "lj":
         kb = 1
         convert = 1
-        cond_units = 'q^2/(tau sigma epsilon)'
+        cond_units = "q^2/(tau sigma epsilon)"
     else:
         raise ValueError("units selection not supported")
 
