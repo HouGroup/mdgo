@@ -50,6 +50,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install -e .
+      - name: Prepare Packmol
+        run: |
+          make
+          echo "$HOME/tests/packmol" >> $GITHUB_PATH
+        working-directory: dart_project
       - name: Prepare Selenium
         # https://github.com/marketplace/actions/setup-chromedriver
         uses: nanasess/setup-chromedriver@master
