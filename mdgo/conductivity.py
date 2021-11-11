@@ -5,10 +5,12 @@
 """
 This module implements functions to calculate the ionic conductivity.
 """
+from typing import Union
 
 import numpy as np
 from tqdm.notebook import tqdm
 from scipy import stats
+from MDAnalysis import Universe, AtomGroup
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "1.0"
@@ -57,10 +59,6 @@ def msd_fft(r: np.ndarray) -> np.ndarray:
         Q = Q - D[m - 1] - D[N - m]
         S1[m] = Q / (N - m)
     return S1 - 2 * S2
-
-
-from typing import Union
-from MDAnalysis import Universe, AtomGroup
 
 
 def calc_cond_msd(
