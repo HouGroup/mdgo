@@ -44,18 +44,9 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip wheel
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          pip install -e .
       - name: Prepare Packmol
         run: |
-          ./configure
-          make
           echo "$HOME/tests/packmol" >> $GITHUB_PATH
-        working-directory: tests/packmol
       - name: Prepare Selenium
         # https://github.com/marketplace/actions/setup-chromedriver
         uses: nanasess/setup-chromedriver@master
