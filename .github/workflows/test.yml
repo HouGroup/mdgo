@@ -44,6 +44,12 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip wheel
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -e .
       - name: Prepare Packmol
         run: |
           echo $HOME
