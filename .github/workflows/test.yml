@@ -54,7 +54,7 @@ jobs:
         run: |
           make
           echo "$HOME/tests/packmol" >> $GITHUB_PATH
-        working-directory: dart_project
+        working-directory: tests/packmol
       - name: Prepare Selenium
         # https://github.com/marketplace/actions/setup-chromedriver
         uses: nanasess/setup-chromedriver@master
