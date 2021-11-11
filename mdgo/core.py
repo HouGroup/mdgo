@@ -7,12 +7,11 @@ This module implements two core class MdRun and MdJob
 for molecular dynamics simulation analysis and job setup.
 """
 from __future__ import annotations
+from typing import Union, Dict, Tuple, List, Optional
 import MDAnalysis
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Union, Dict, Tuple, List, Optional
-from pymatgen.io.lammps.data import LammpsData, CombinedData
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
@@ -21,16 +20,17 @@ from mdgo.util import (
     mass_to_name,
     assign_name,
     assign_resname,
-    res_dict_from_lammpsdata,
     res_dict_from_select_dict,
     res_dict_from_datafile,
     select_dict_from_resname,
 )
 from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region, get_beta
 from mdgo.coordination import (
-    coord_shell_array,
+    concat_coord_array,
     num_of_neighbor,
     num_of_neighbor_simple,
+    num_of_neighbor_specific,
+    angular_dist_of_neighbor,
     neighbor_distance,
     find_nearest,
     find_nearest_free_only,
@@ -50,14 +50,13 @@ __date__ = "Feb 9, 2021"
 
 class MdRun:
     """
-    A core class for MD results analysis.
+    A core class for MD results analysis. TODO: add support for 2d and dimension selection.
 
     Args:
-        lammps_data: The LammpsData object that has the force field and topology information.
         wrapped_run: The Universe object of wrapped trajectory.
         unwrapped_run: The Universe object of unwrapped trajectory.
         nvt_start: NVT start time step.
-        time_step: LAMMPS timestep.
+        time_step: Timestep between each frame, in ps.
         name: Name of the MD run.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
                 and the corresponding values are the selection language. This dict is intended for
@@ -76,7 +75,6 @@ class MdRun:
 
     def __init__(
         self,
-        lammps_data: Union[LammpsData, CombinedData],
         wrapped_run: Universe,
         unwrapped_run: Universe,
         nvt_start: int,
@@ -94,7 +92,7 @@ class MdRun:
     ):
         """
         Base constructor. This is a low level constructor designed to work with
-         parsed data ({Universe}) or other bridging objects ({CombinedData}). Not
+         parsed data (``Universe``) or other bridging objects (``CombinedData``). Not
         recommended to use directly.
         """
 
@@ -104,19 +102,16 @@ class MdRun:
         self.time_step = time_step
         self.temp = temperature
         self.name = name
-        self.data = lammps_data
-        self.element_id_dict = mass_to_name(self.data.masses)
-        assign_name(self.wrapped_run, self.element_id_dict)
-        assign_name(self.unwrapped_run, self.element_id_dict)
-        if select_dict is None and res_dict is None:
-            self.res_dict = res_dict_from_lammpsdata(self.data)
-        elif res_dict is None:
-            assert isinstance(select_dict, dict)
-            self.res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
-        else:
-            self.res_dict = res_dict
-        assign_resname(self.wrapped_run, self.res_dict)
-        assign_resname(self.unwrapped_run, self.res_dict)
+        self.atom_names = mass_to_name(self.wrapped_run.atoms.masses)
+        if not hasattr(self.wrapped_run.atoms, "names") or not hasattr(self.unwrapped_run.atoms, "names"):
+            assign_name(self.wrapped_run, self.atom_names)
+            assign_name(self.unwrapped_run, self.atom_names)
+        if not hasattr(self.wrapped_run.atoms, "resnames") or not hasattr(self.unwrapped_run.atoms, "resnames"):
+            if res_dict is None:
+                assert select_dict is not None, "Either one of select_dict or res_dict should be given."
+                res_dict = res_dict_from_select_dict(self.wrapped_run, select_dict)
+            assign_resname(self.wrapped_run, res_dict)
+            assign_resname(self.unwrapped_run, res_dict)
         if select_dict is None:
             self.select_dict = select_dict_from_resname(self.wrapped_run)
         else:
@@ -151,7 +146,7 @@ class MdRun:
         self.units = units
 
     @classmethod
-    def from_output_full(
+    def from_lammps(
         cls,
         data_dir: str,
         wrapped_dir: str,
@@ -177,7 +172,7 @@ class MdRun:
             wrapped_dir: Path to the wrapped dcd file.
             unwrapped_dir: Path to the unwrapped dcd file.
             nvt_start: NVT start time step.
-            time_step: LAMMPS timestep.
+            time_step: LAMMPS timestep in ps.
             name: Name of the MD run.
             select_dict: A dictionary of species selection.
             res_dict: A dictionary of resnames.
@@ -189,14 +184,12 @@ class MdRun:
             cond: Whether to calculate conductivity MSD. Default to True.
             units: unit system (currently 'real' and 'lj' are supported)
         """
-        lammps_data = LammpsData.from_file(data_dir)
         if res_dict is None:
             res_dict = res_dict_from_datafile(data_dir)
         wrapped_run = MDAnalysis.Universe(data_dir, wrapped_dir, format="LAMMPS")
         unwrapped_run = MDAnalysis.Universe(data_dir, unwrapped_dir, format="LAMMPS")
 
         return cls(
-            lammps_data,
             wrapped_run,
             unwrapped_run,
             nvt_start,
@@ -374,7 +367,7 @@ class MdRun:
         )
         return cond
 
-    def coord_num_array_one_species(
+    def coord_num_array_single_species(
         self,
         species: str,
         distance: float,
@@ -382,22 +375,22 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> np.ndarray:
-        """Calculates the coordination number array of one {species} around the interested {center_atom}.
+        """Calculates the coordination number array of one ``species`` around the interested ``center_atom``.
 
         Args:
-            species: The interested species.
+            species: The neighbor species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
-             An array of coordination number for each time in the trajectory.
+             An array of coordination number in the frame range.
         """
         nvt_run = self.wrapped_run
         distance_dict = {species: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array = concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -415,22 +408,21 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> Dict[str, np.ndarray]:
-        """Calculates the coordination number array of multiple species around the interested {center_atom}.
+        """Calculates the coordination number array of multiple species around the interested ``center_atom``.
 
         Args:
-            distance_dict: A dict of coordination cutoff distance
-                of the interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
-             The coordination numbers of each species as a python dict of arrays
-             for each timestep in the trajectory.
+             A diction containing the coordination number sequence of each specified neighbor species
+             and the total coordination number sequence in the specified frame range.
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array_dict = concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -439,9 +431,45 @@ class MdRun:
             run_start,
             run_end,
         )
-        return num_array
+        return num_array_dict
 
-    def get_solvation_structure(
+    def coord_num_array_specific(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
+    ) -> Dict[str, np.ndarray]:
+        """Calculates the coordination number array of multiple species of specific
+        coordination types (SSIP, CIP, AGG).
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
+
+        Return:
+             A diction containing the coordination number sequence of each specified neighbor species
+             and the total coordination number sequence in the specified frame range.
+        """
+        nvt_run = self.wrapped_run
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        num_array_dict = concat_coord_array(
+            nvt_run,
+            num_of_neighbor_specific,
+            center_atoms,
+            distance_dict,
+            self.select_dict,
+            run_start,
+            run_end,
+            counter_atom=counter_atom,
+        )
+        return num_array_dict
+
+    def write_solvation_structure(
         self,
         distance_dict: Dict[str, float],
         run_start: int,
@@ -451,18 +479,18 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out a series of desired solvation structures as {.xyz} files
+        """Writes out a series of desired solvation structures as ``*.xyz`` files
 
         Args:
-            distance_dict: A dict of coordination cutoff distance of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             structure_code: An integer code representing the solvation
                 structure, for example, 221 is two species A, two species B
-                and one species C.
+                and one species C with the same order as in the ``distance_dict``.
             write_freq: Probability to write out files.
             write_path: Path to write out files.
-            center_atom: The interested atom. Default to "cation".
+            center_atom: The solvation shell atom. Default to "cation".
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
@@ -478,34 +506,33 @@ class MdRun:
                 structure_code=structure_code,
                 write_freq=write_freq,
                 write_path=write_path,
-                element_id_dict=self.element_id_dict,
             )
 
-    def coord_num_array_simple(
+    def coord_type_array(
         self,
-        species: str,
         distance: float,
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
+        counter_atom: str = "anion",
     ) -> np.ndarray:
         """Calculates the solvation structure type (1 for SSIP, 2 for CIP,
-        3 for AGG) array of the solvation structure {center_atom} (typically the cation).
+        3 for AGG) array of the solvation structure ``center_atom`` (typically the cation).
 
         Args:
-            species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The solvation structure center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
 
         Return:
-            An array of the solvation structure type for each timestep in the trajectory.
+            An array of the solvation structure type in the specified frame range.
         """
         nvt_run = self.wrapped_run
-        distance_dict = {species: distance}
+        distance_dict = {counter_atom: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = coord_shell_array(
+        num_array = concat_coord_array(
             nvt_run,
             num_of_neighbor_simple,
             center_atoms,
@@ -516,7 +543,48 @@ class MdRun:
         )["total"]
         return num_array
 
-    def coordination_one_species(
+    def angle_array(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        cip=True,
+    ):
+        """
+        Calculates the angle of a-c-b in the specified frame range.
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+                The dictionary key must be in the order of a, b, where a is the neighbor species
+                used for determining coordination type, b is the other neighbor species, and the
+                corresponding values are cutoff distance of a->c and b->c, where c is the center species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The center atom species.
+            cip: Only includes contact ion pair structures with only one `a` and one `c` atoms.
+                Default to True.
+
+        Returns:
+            An array of angles of a-c-b in the specified frames.
+        """
+        nvt_run = self.wrapped_run
+        center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
+        assert len(distance_dict) == 2, "Only distance a->c, b->c shoud be specified in the distance_dict."
+        distance_dict[center_atom] = list(distance_dict.values())[0]
+        ang_array = concat_coord_array(
+            nvt_run,
+            angular_dist_of_neighbor,
+            center_atoms,
+            distance_dict,
+            self.select_dict,
+            run_start,
+            run_end,
+            cip=cip,
+        )["total"]
+        return ang_array
+
+    def coordination(
         self,
         species: str,
         distance: float,
@@ -525,19 +593,19 @@ class MdRun:
         center_atom: str = "cation",
     ) -> pd.DataFrame:
         """Tabulates the coordination number distribution of one species
-        around the solvation structure {center_atom}.
+        around the solvation structure ``center_atom``.
 
         Args:
-            species: The interested species.
+            species: The neighbor species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The solvation structure center atom. Default to "cation".
+            center_atom: The solvation shell center atom. Default to "cation".
 
         Return:
              A dataframe of the species coordination number and corresponding percentage.
         """
-        num_array = self.coord_num_array_one_species(species, distance, run_start, run_end, center_atom=center_atom)
+        num_array = self.coord_num_array_single_species(species, distance, run_start, run_end, center_atom=center_atom)
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
@@ -558,50 +626,59 @@ class MdRun:
         run_end: int,
         center_atom: str = "cation",
     ) -> pd.DataFrame:
-        """Calculate the integral of the radial distribution function of selected species around the {center_atom}
+        """Calculates the integral of the radial distribution function of selected species around the ``center_atom``.
 
         Args:
-            distance_dict: A dict of coordination cutoff distance
-                of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The center atom to calculate the radial distribution for. Default to "cation".
+            center_atom: The solvation shell center atom to calculate the radial distribution for. Default to "cation".
 
         Return:
              A dataframe of the species and the coordination number.
         """
         cn_values = self.coord_num_array_multi_species(distance_dict, run_start, run_end, center_atom=center_atom)
-        item_name = "species in first solvation shell"
+        item_name = "Species in first solvation shell"
         item_list = []
         cn_list = []
-        for kw in cn_values.keys():
+        for kw in cn_values:
             if kw != "total":
                 shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
                 item_list.append(kw)
                 cn_list.append(cn)
-        df_dict = {item_name: item_list, self.name: cn_list}
+        df_dict = {item_name: item_list, "CN": cn_list}
         df = pd.DataFrame(df_dict)
         return df
 
-    def shell_simple(self, species: str, distance: float, run_start: int, run_end: int) -> pd.DataFrame:
+    def coordination_type(
+        self,
+        distance: float,
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
+    ) -> pd.DataFrame:
         """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
 
         Args:
-            species: The interested species.
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
 
         Return:
              A dataframe of the solvation structure and percentage.
         """
-        num_array = self.coord_num_array_simple(species, distance, run_start, run_end)
+        num_array = self.coord_type_array(
+            distance, run_start, run_end, center_atom=center_atom, counter_atom=counter_atom
+        )
 
         shell_component, shell_count = np.unique(num_array.flatten(), return_counts=True)
         combined = np.vstack((shell_component, shell_count)).T
 
-        item_name = "solvation structure"
+        item_name = "Solvation structure"
         item_dict = {"1": "ssip", "2": "cip", "3": "agg"}
         item_list = []
         percent_list = []
@@ -610,6 +687,50 @@ class MdRun:
             item_list.append(item_dict.get(item))
             percent_list.append(str("%.4f" % (combined[i, 1] / combined[:, 1].sum() * 100)) + "%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
+        df = pd.DataFrame(df_dict)
+        return df
+
+    def coordination_specific(
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
+        counter_atom: str = "anion",
+    ) -> pd.DataFrame:
+        """Calculates the integral of the coordiantion number of selected species
+        in each type of solvation structures (CIP/SSIP/AGG)
+
+        Args:
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
+            run_start: Start frame of analysis.
+            run_end: End frame of analysis.
+            center_atom: The solvation shell center atom. Default to "cation".
+            counter_atom: The neighbor counter ion species. Default to "anion".
+
+        Return:
+             A dataframe of the solvation structure and percentage.
+        """
+        cn_values = self.coord_num_array_specific(
+            distance_dict, run_start, run_end, center_atom=center_atom, counter_atom=counter_atom
+        )
+        item_name = "Species in first solvation shell"
+        item_list = []
+        ssip_list = []
+        cip_list = []
+        agg_list = []
+        for kw in cn_values:
+            if kw != "total":
+                shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
+                cn = (shell_component * shell_count / shell_count.sum()).sum()
+                if kw.startswith("ssip_"):
+                    item_list.append(kw[5:])
+                    ssip_list.append(cn)
+                elif kw.startswith("cip_"):
+                    cip_list.append(cn)
+                else:
+                    agg_list.append(cn)
+        df_dict = {item_name: item_list, "CN in SSIP": ssip_list, "CN in CIP": cip_list, "CN in AGG": agg_list}
         df = pd.DataFrame(df_dict)
         return df
 
@@ -626,7 +747,7 @@ class MdRun:
             start: Start time step.
             stop: End time step.
             fft: Whether to use fft to calculate msd. Default to True.
-            species: The select_dict key of the atom group to calculate. Default to "cation".
+            species: The species for analysis. Default to "cation".
 
         Return:
              An array of MSD values in the trajectory
@@ -652,17 +773,17 @@ class MdRun:
         binding_site: str = "anion",
     ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
         """
-        Calculates the mean square displacement (MSD) of the {center_atom} according to coordination states.
-        The returned {free_array} include the MSD when {center_atom} is not coordinated to {binding_site}.
-        The {attach_array} includes the MSD of {center_atom} is not coordinated to {binding_site}.
+        Calculates the mean square displacement (MSD) of the ``center_atom`` according to coordination states.
+        The returned ``free_array`` include the MSD when ``center_atom`` is not coordinated to ``binding_site``.
+        The ``attach_array`` includes the MSD when ``center_atom`` is coordinated to ``binding_site``.
 
         Args:
             distance: The coordination cutoff distance.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             largest: The largest time sequence to trace.
-            center_atom: The interested atom. Default to "cation".
-            binding_site: The species the {center_atom} coordinates to. Default to "anion".
+            center_atom: The solvation shell center atom. Default to "cation".
+            binding_site: The species the ``center_atom`` coordinates to. Default to "anion".
 
         Returns:
             Two arrays of MSD in the trajectory
@@ -683,7 +804,7 @@ class MdRun:
             start: Start time step.
             stop: End time step.
             percentage: The percentage of the cation. Default to 1.
-            species: The select_dict key of the atom group to calculate. Default to "cation".
+            species: The species for analysis. Default to "cation".
         """
         a2 = 1e-20
         ps = 1e-12
@@ -712,16 +833,20 @@ class MdRun:
                 print("NE Conductivity of all " + species + ":", sigma, "mS/cm")
 
     def get_neighbor_corr(
-        self, distance_dict: Dict[str, float], run_start: int, run_end: int
+        self,
+        distance_dict: Dict[str, float],
+        run_start: int,
+        run_end: int,
+        center_atom: str = "cation",
     ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """Calculates the neighbor auto-correlation function (ACF)
-        of selected species around cation
+        of selected species around center_atom.
 
         Args:
-            distance_dict: Dict of Cutoff distance of neighbor
-                for each species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
+            center_atom: The solvation shell center atom to calculate the ACF for. Default to "cation".
 
         Return:
              An array of the time series and a dict of ACFs of each species.
@@ -733,15 +858,15 @@ class MdRun:
             self.time_step,
             run_start,
             run_end,
+            center_atom=center_atom,
         )
 
     def get_residence_time(
-        self, species_list: List[str], times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
+        self, times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
     ) -> Dict[str, np.floating]:
         """Calculates the residence time of selected species around cation
 
         Args:
-            species_list: List of species name.
             times: The time series.
             acf_avg_dict: A dict of ACFs of each species.
             cutoff_time: Cutoff time for fitting the exponential decay.
@@ -749,7 +874,7 @@ class MdRun:
         Return:
              The residence time of each species in a dict.
         """
-        return fit_residence_time(times, species_list, acf_avg_dict, cutoff_time, self.time_step)
+        return fit_residence_time(times, acf_avg_dict, cutoff_time, self.time_step)
 
     def get_neighbor_trj(
         self,
@@ -765,8 +890,8 @@ class MdRun:
         Args:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
-            center_atom: The interested atom. Default to "cation".
-            species: The interested neighbor species.
+            center_atom: The solvation shell center atom. Default to "cation".
+            species: The neighbor species.
             neighbor_cutoff: The neighbor cutoff distance.
             index: The index of the atom in the interested atom group.
 
@@ -789,7 +914,7 @@ class MdRun:
         run_start: int,
         run_end: int,
         binding_site: str,
-        distance: float,
+        binding_cutoff: float,
         hopping_cutoff: float,
         floating_atom: str = "cation",
         smooth: int = 51,
@@ -801,9 +926,9 @@ class MdRun:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             binding_site: Floating ion binding site species.
-            distance: Binding cutoff distance.
-            hopping_cutoff: Detaching cutoff distance.
-            floating_atom: Floating ion species.
+            binding_cutoff: Binding cutoff distance.
+            hopping_cutoff: Hopping out cutoff distance.
+            floating_atom: Floating atom species.
             smooth: The length of the smooth filter window. Default to 51.
             mode: The mode of treating hopping event. Default to "full".
 
@@ -815,18 +940,22 @@ class MdRun:
         freqs = []
         hopping_distance = []
         for ion in tqdm(floating_atoms[:]):
-            neighbor_trj = neighbor_distance(nvt_run, ion, run_start, run_end, binding_site, self.select_dict, distance)
+            neighbor_trj = neighbor_distance(
+                nvt_run, ion, run_start, run_end, binding_site, self.select_dict, binding_cutoff
+            )
             if mode == "full":
-                sites, freq, steps = find_nearest(neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth)
+                sites, freq, steps = find_nearest(
+                    neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
+                )
             elif mode == "free":
                 sites, freq, steps = find_nearest_free_only(
-                    neighbor_trj, self.time_step, distance, hopping_cutoff, smooth=smooth
+                    neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
                 )
             else:
                 raise ValueError("invalid mode")
             coords = []
             for step in steps:
-                coord_ion = nvt_run.trajectory[step + run_start][ion.id - 1]
+                coord_ion = nvt_run.trajectory[step + run_start][ion.index]
                 coords.append(coord_ion)
             if len(coords) > 1:
                 dists = []
@@ -852,21 +981,21 @@ class MdRun:
         center_atom: str = "cation",
         duplicate_run: Optional[List[MdRun]] = None,
     ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
-        """Calculates the coordination number evolution of species around {center_atom} as a function of time,
+        """Calculates the coordination number evolution of species around ``center_atom`` as a function of time,
         the coordination numbers are averaged over all time steps around events when the center_atom
-        hopping to and hopping out from the {binding_site}. If {duplicate_run} is given, it is also averaged over
+        hopping to and hopping out from the ``binding_site``. If ``duplicate_run`` is given, it is also averaged over
         all duplicate runs.
 
         Args:
-            distance_dict: A dict of coordination cutoff distance of interested species.
+            distance_dict: A dict of coordination cutoff distance of the neighbor species.
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             lag_step: time steps to track before and after the hopping event
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
             smooth: The length of the smooth filter window. Default to 51.
-            cool: The cool down timesteps between hopping in and hopping out.
-            center_atom:
+            cool: The cool down frames between hopping in and hopping out.
+            center_atom: The solvation shell center atom. Default to "cation".
             binding_site: The select_dict key of the binding site. Default to "anion".
             duplicate_run: Default to None.
 
@@ -932,7 +1061,7 @@ class MdRun:
         run_start: int,
         run_end: int,
         cluster_center: str,
-        cluster_terminal: str,
+        cluster_terminal: Union[str, List[str]],
         binding_cutoff: float,
         hopping_cutoff: float,
         floating_atom: str = "cation",
@@ -940,6 +1069,7 @@ class MdRun:
         sym_dict: Dict[str, List[np.ndarray]] = None,
         sample: Optional[int] = None,
         smooth: int = 51,
+        dim: str = "xyz",
     ) -> np.ndarray:
         """Calculates the heatmap matrix of floating ion around a cluster
 
@@ -947,27 +1077,41 @@ class MdRun:
             run_start: Start frame of analysis.
             run_end: End frame of analysis.
             cluster_center: The center atom species of the cluster.
-            cluster_terminal: The terminal atom species of the cluster
-                (typically the binding site for the floating ion).
+            cluster_terminal: The selection string for terminal atom species of the cluster
+                (typically the binding site for the floating ion). The argument can be a str if
+                all the terminal atoms have the same selection string and are equivalent, or a list
+                if the terminal atoms are distinct and have different selection strings.
             binding_cutoff: Binding cutoff distance.
             hopping_cutoff: Detaching cutoff distance.
-            floating_atom: The species of the floating ion.
+            floating_atom: The floating atom species.
             cartesian_by_ref: Transformation matrix between cartesian
                 and reference coordinate systems. Default to None.
             sym_dict: Dictionary of symmetry operation dictionary. Default to None.
             sample: Number of samples desired. Default to None, which is no sampling.
             smooth: The length of the smooth filter window. Default to 51.
+            dim: Desired dimensions to calculate heat map
 
         Return:
             An array of coordinates.
         """
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
+        if isinstance(cluster_terminal, str):
+            terminal_atom_type: Union[str, List[str]] = self.select_dict.get(cluster_terminal, "Not defined")
+            assert terminal_atom_type != "Not defined", "{} not defined in select_dict".format(cluster_terminal)
+        else:
+            terminal_atom_type = list()
+            for species in cluster_terminal:
+                atom_type = self.select_dict.get(species, "Not defined")
+                assert atom_type != "Not defined", "{} not defined in select_dict".format(species)
+                terminal_atom_type.append(atom_type)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):
             neighbor_trj = neighbor_distance(
                 nvt_run, atom, run_start, run_end, cluster_center, self.select_dict, binding_cutoff
             )
+            if not bool(neighbor_trj):
+                continue
             sites, freq, steps = find_nearest(
                 neighbor_trj, self.time_step, binding_cutoff, hopping_cutoff, smooth=smooth
             )
@@ -977,17 +1121,17 @@ class MdRun:
                 nvt_run,
                 atom,
                 sites,
-                cluster_terminal,
+                terminal_atom_type,
                 cartesian_by_ref,
                 run_start,
                 run_end,
             )
-            coord_list = np.concatenate((coord_list, coords), axis=0)
+            if not coords.size == 0:
+                coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:
-            return get_full_coords(coord_list, sample=sample, **sym_dict)
-        else:
-            return get_full_coords(coord_list, sample=sample)
+            return get_full_coords(coord_list, sample=sample, dim=dim, **sym_dict)
+        return get_full_coords(coord_list, sample=sample, dim=dim)
 
     def get_cluster_distance(
         self, run_start: int, run_end: int, neighbor_cutoff: float, cluster_center: str = "center"

@@ -22,10 +22,18 @@ For using the MaestroRunner class:
     https://www.schrodinger.com/kb/1842 for details.
 
 """
-
-from pymatgen.io.lammps.data import LammpsData
-from mdgo.util import mass_to_name, ff_parser, sdf_to_pdb
+import time
+import os
+import re
+import shutil
+import signal
+import subprocess
+from typing import Optional
+from string import Template
+from urllib.parse import quote
+import numpy as np
 import pubchempy as pcp
+from pymatgen.io.lammps.data import LammpsData
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -35,18 +43,10 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     WebDriverException,
 )
-from string import Template
-from urllib.parse import quote
-import time
-import os
-import re
-import shutil
-import signal
-import subprocess
-import numpy as np
-
-from typing import Optional
 from typing_extensions import Final
+
+from mdgo.util import lmp_mass_to_name, ff_parser, sdf_to_pdb
+
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -211,7 +211,7 @@ class FFcrawler:
         )
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
-            element_id_dict = mass_to_name(data_obj.masses)
+            element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
             lines = list()
             lines.append(str(len(coords.index)))
@@ -321,34 +321,37 @@ class MaestroRunner:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
 
-    def get_mae(self):
+    def get_mae(self, wait: float = 30):
         """Write a Maestro command script and execute it to generate a
-        maestro file containing all the info needed."""
+        maestro file containing all the info needed.
+
+        Args:
+            wait: The time waiting for Maestro execution in seconds. Default to 30.
+        """
         with open(self.cmd, "w") as f:
             cmd_template = Template(self.cmd_template)
             cmd_script = cmd_template.substitute(file=self.structure, mae=self.mae, xyz=self.xyz)
             f.write(cmd_script)
         try:
-            p = subprocess.Popen(
+            p = subprocess.Popen(  # pylint: disable=consider-using-with
                 f"{MAESTRO} -c {self.cmd}",
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 preexec_fn=os.setsid,
             )
-
-            counter = 0
-            while not os.path.isfile(self.mae + ".mae"):
-                time.sleep(1)
-                counter += 1
-                if counter > 30:
-                    raise TimeoutError("Failed to generate Maestro file in 30 secs!")
-            print("Maestro file generated.")
-
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr))
-        finally:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr)) from e
+
+        counter = 0
+        while not os.path.isfile(self.mae + ".mae"):
+            time.sleep(1)
+            counter += 1
+            if counter > wait:
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
+        print("Maestro file generated!")
+        os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
     def get_ff(self):
         """Read the Maestro file and save the force field as LAMMPS data file."""
@@ -361,7 +364,7 @@ class MaestroRunner:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr))
+            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr)) from e
         print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
@@ -446,8 +449,7 @@ class PubChemRunner:
         """
         if self.api:
             return self._obtain_entry_api(search_text, name, output_format=output_format)
-        else:
-            return self._obtain_entry_web(search_text, name, output_format=output_format)
+        return self._obtain_entry_web(search_text, name, output_format=output_format)
 
     def smiles_to_pdb(self, smiles: str):
         """
@@ -473,7 +475,7 @@ class PubChemRunner:
         self.web.find_element_by_xpath(download_xpath).click()
         print("Waiting for downloads.", end="")
         time.sleep(1)
-        while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+        while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
             time.sleep(1)
             print(".", end="")
         print("\nStructure file saved.")
@@ -516,7 +518,7 @@ class PubChemRunner:
                 )
                 print("Waiting for downloads.", end="")
                 time.sleep(1)
-                while any([filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)]):
+                while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
                     time.sleep(1)
                     print(".", end="")
                 print("\nStructure file saved.")
@@ -587,9 +589,8 @@ class Aqueous:
         signature = "".join(re.split(r"[\W|_]+", model)).lower()
         if DATA_MODELS["water"].get(signature):
             return LammpsData.from_file(os.path.join(data_path, "water", DATA_MODELS["water"].get(signature)))
-        else:
-            print("Water model not found. Please specify a customized data path or try another water model.\n")
-            return None
+        print("Water model not found. Please specify a customized data path or try another water model.\n")
+        return None
 
     @staticmethod
     def get_ion(model: str = "jensen_jorgensen", water: str = "default", ion: str = "li+") -> Optional[LammpsData]:
@@ -615,7 +616,7 @@ class Aqueous:
         if signature in alias:
             signature = alias.get(model)
         ion_type = ion.capitalize()
-        for key in DATA_MODELS["ion"].keys():
+        for key in DATA_MODELS["ion"]:
             if key.startswith(signature):
                 ion_model = DATA_MODELS["ion"].get(key)
                 if water in ion_model:
@@ -625,12 +626,10 @@ class Aqueous:
                         file_path = os.path.join(data_path, "ion", key, water, ion_type + ".lmp")
                     if os.path.exists(file_path):
                         return LammpsData.from_file(file_path)
-                    else:
-                        print("Ion not found. Please try another ion.\n")
-                        return None
-                else:
-                    print("Water model not found. Please try another water model.\n")
+                    print("Ion not found. Please try another ion.\n")
                     return None
+                print("Water model not found. Please try another water model.\n")
+                return None
         print("Ion model not found. Please try another ion model.\n")
         return None
 
@@ -638,6 +637,9 @@ class Aqueous:
 class ChargeWriter:
     """
     A class for write, overwrite, scale charges of a LammpsData object.
+    TODO: Auto determine number of significant figures of charges
+    TODO: write to obj or write separate charge file
+    TODO: Read LammpsData or path
 
     Args:
         data: The provided LammpsData obj.
@@ -774,4 +776,4 @@ if __name__ == "__main__":
     )
     long_name = "Ethyl Methyl Carbonate"
     short_name = "EMC"
-    cid = pcr.obtain_entry(long_name, short_name, "pdb")
+    obtained_cid = pcr.obtain_entry(long_name, short_name, "pdb")

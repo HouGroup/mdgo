@@ -5,20 +5,18 @@
 """
 This module implements functions for calculating meen square displacement (MSD).
 """
+from typing import List, Dict, Tuple, Union, Optional
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
     mda_msd = None
 
-
 import numpy as np
 from tqdm.notebook import trange
 
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom
-
-from typing import List, Dict, Tuple, Union, Optional
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"
@@ -34,7 +32,7 @@ def total_msd(
     From a MD Universe, calculates the MSD array of a group of atoms defined by select.
 
     Args:
-        nvt_run: An MDAnalysis {Universe} containing unwrapped trajectory.
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         start: Start frame of analysis.
         stop: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
@@ -50,18 +48,20 @@ def total_msd(
          The built in FFT method is under construction.
 
     Returns:
-        A {ndarray} of calculated MSD.
+        An array of calculated MSD.
     """
     if mda_msd is not None:
         msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
         msd_calculator.run(start=start, stop=stop)
-        total_array = msd_calculator.timeseries
+        try:
+            total_array = msd_calculator.timeseries
+        except AttributeError:
+            total_array = msd_calculator.results.timeseries
         return total_array
-    else:
-        if fft:
-            raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
-        else:
-            return _total_msd(nvt_run, start, stop, select=select)
+
+    if fft:
+        raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
+    return _total_msd(nvt_run, start, stop, select=select)
 
 
 def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "all") -> np.ndarray:
@@ -69,13 +69,13 @@ def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "a
     A native MSD calculator. Uses the conventional algorithm. TODO: add xyz dimension selection; use fft method
 
     Args:
-        nvt_run: An MDAnalysis {Universe} containing unwrapped trajectory.
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
 
     Returns:
-        A {ndarray} of calculated MSD.
+        An array of calculated MSD.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     li_atoms = nvt_run.select_atoms(select)
@@ -135,17 +135,18 @@ def states_coord_array(
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Cuts the trajectory of an atom into fragments. Each fragment contains consecutive timesteps of coordinates
     of the atom in either attached or free state. The Attached state is when the atom coordinates with the
-    {binding_site} species (distance < {distance}), and vice versa for the free state. TODO: check if need wrapped trj
+    ``binding_site`` species (distance < ``distance``), and vice versa for the free state.
+    TODO: check if need wrapped trj
 
     Args:
-        nvt_run: An MDAnalysis {Universe} containing unwrapped trajectory.
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         atom: The Atom object to analyze.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
             and the corresponding values are the selection language.
         distance: The coordination cutoff distance.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        binding_site: The species the {atom} coordinates to.
+        binding_site: The species the ``atom`` coordinates to.
 
     Returns:
         Two list of coordinates arrays containing where each coordinates array is a consecutive trajectory fragment
@@ -206,12 +207,12 @@ def partial_msd(
     run_end: int,
     binding_site: str = "anion",
 ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
-    """Calculates the mean square displacement (MSD) of the {atoms} according to coordination states.
-    The returned {free_data} include the MSD when {atoms} are not coordinated to {binding_site}.
-    The {attach_data} includes the MSD of {atoms} are not coordinated to {binding_site}.
+    """Calculates the mean square displacement (MSD) of the ``atoms`` according to coordination states.
+    The returned ``free_data`` include the MSD when ``atoms`` are not coordinated to ``binding_site``.
+    The ``attach_data`` includes the MSD of ``atoms`` are not coordinated to ``binding_site``.
 
     Args:
-        nvt_run: An MDAnalysis {Universe} containing unwrapped trajectory.
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         atoms: The AtomGroup for
         largest: The largest interval of time frame for calculating MSD.
         select_dict: A dictionary of atom species selection, where each atom species name is a key
@@ -219,7 +220,7 @@ def partial_msd(
         distance: The coordination cutoff distance between
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
-        binding_site: The species the {atoms} coordinates to.
+        binding_site: The species the ``atoms`` coordinates to.
 
     Returns:
         Two arrays of MSD in the trajectory
