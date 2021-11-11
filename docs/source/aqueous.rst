@@ -71,7 +71,7 @@ Ion Parameter Sets
 ==================
 
 ``mdgo`` contains a compilation of several sets of Lennard Jones
-parameters for ions in water. All values are reported as :math:`\sigma_i`
+paramters for ions in water. All values are reported as :math:`\sigma_i`
 and :math:`\epsilon_i` in the equation
 
 .. math::
