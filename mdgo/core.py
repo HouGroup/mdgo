@@ -329,7 +329,7 @@ class MdRun:
             ax.set_ylabel("MSD (A$^2$)")
             ax.set_xlabel("Time (ps)")
         elif self.units == "lj":
-            ax.set_ylabel("MSD ($\sigma^2$)")
+            ax.set_ylabel("MSD ($\\sigma^2$)")
             ax.set_xlabel("Time ($\\tau$)")
         else:
             raise ValueError("units selection not supported")
