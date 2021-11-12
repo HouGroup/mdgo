@@ -117,7 +117,7 @@ class MdRun:
         else:
             self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
-        self.time_array = [i * self.time_step for i in range(self.nvt_steps - self.nvt_start)]
+        self.time_array = np.array([i * self.time_step for i in range(self.nvt_steps - self.nvt_start)])
         self.cation_name = cation_name
         self.anion_name = anion_name
         self.cation_charge = cation_charge
@@ -361,7 +361,7 @@ class MdRun:
             time_units = "tau"
         print("Start of linear fitting regime: {} ({} {})".format(start, self.time_array[start], time_units))
         print("End of linear fitting regime: {} ({} {})".format(end, self.time_array[end], time_units))
-        print("Beta value (fit to MSD = t^beta): {} (beta = 1 in the diffusive regime)".format(beta))
+        print("Beta value (fit to MSD = t^\u03B2): {} (\u03B2 = 1 in the diffusive regime)".format(beta))
         cond = conductivity_calculator(
             self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp, self.units
         )
