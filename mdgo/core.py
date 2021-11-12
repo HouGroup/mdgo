@@ -24,7 +24,7 @@ from mdgo.util import (
     res_dict_from_datafile,
     select_dict_from_resname,
 )
-from mdgo.conductivity import calc_cond, conductivity_calculator
+from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region, get_beta
 from mdgo.coordination import (
     concat_coord_array,
     num_of_neighbor,
@@ -70,6 +70,7 @@ class MdRun:
         anion_charge: Charge of anion. Default to 1.
         temperature: Temperature of the MD run. Default to 298.15.
         cond: Whether to calculate conductivity MSD. Default to True.
+        units: unit system (currently 'real' and 'lj' are supported)
     """
 
     def __init__(
@@ -87,6 +88,7 @@ class MdRun:
         anion_charge: float = -1,
         temperature: float = 298.15,
         cond: bool = True,
+        units="real",
     ):
         """
         Base constructor. This is a low level constructor designed to work with
@@ -115,7 +117,7 @@ class MdRun:
         else:
             self.select_dict = select_dict
         self.nvt_steps = self.wrapped_run.trajectory.n_frames
-        self.time_array = [i * self.time_step for i in range(self.nvt_steps)]
+        self.time_array = np.array([i * self.time_step for i in range(self.nvt_steps - self.nvt_start)])
         self.cation_name = cation_name
         self.anion_name = anion_name
         self.cation_charge = cation_charge
@@ -141,6 +143,7 @@ class MdRun:
         faraday_constant_2 = 96485 * 96485
         self.c = (self.num_cation / (self.nvt_v * 1e-30)) / (6.022 * 1e23)
         self.d_to_sigma = self.c * faraday_constant_2 / (gas_constant * temp)
+        self.units = units
 
     @classmethod
     def from_lammps(
@@ -159,6 +162,7 @@ class MdRun:
         anion_charge: float = -1,
         temperature: float = 298.15,
         cond: bool = True,
+        units: str = "real",
     ):
         """
         Constructor from lammps data file and wrapped and unwrapped trajectory dcd file.
@@ -178,6 +182,7 @@ class MdRun:
             anion_charge: Charge of anion. Default to 1.
             temperature: Temperature of the MD run. Default to 298.15.
             cond: Whether to calculate conductivity MSD. Default to True.
+            units: unit system (currently 'real' and 'lj' are supported)
         """
         if res_dict is None:
             res_dict = res_dict_from_datafile(data_dir)
@@ -198,6 +203,7 @@ class MdRun:
             anion_charge=anion_charge,
             temperature=temperature,
             cond=cond,
+            units=units,
         )
 
     def get_init_dimension(self) -> np.ndarray:
@@ -248,7 +254,7 @@ class MdRun:
         nvt_run = self.unwrapped_run
         cations = nvt_run.select_atoms(self.select_dict.get("cation"))
         anions = nvt_run.select_atoms(self.select_dict.get("anion"))
-        cond_array = calc_cond(
+        cond_array = calc_cond_msd(
             nvt_run,
             anions,
             cations,
@@ -258,52 +264,107 @@ class MdRun:
         )
         return cond_array
 
-    def plot_cond_array(self, start: int, end: int, *runs: MdRun, reference: bool = True):
-        """Plots the conductivity MSD as a function of time.
+    def choose_cond_fit_region(self) -> tuple:
+        """Computes the optimal fitting region (linear regime) of conductivity MSD.
 
         Args:
-            start: Start time step.
-            end: End time step.
-            runs: Other runs to be compared in the same plot.
-            reference: Whether to plot reference line. Default to True.
+            msd (numpy.array): mean squared displacement
+
+        Returns at tuple with the start of the fitting regime (int), end of the
+        fitting regime (int), and the beta value of the fitting regime (float).
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
+        start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
+        return start, end, beta
+
+    def plot_cond_array(
+        self,
+        start: int = -1,
+        end: int = -1,
+        *runs: MdRun,
+        reference: bool = True,
+    ):
+        """Plots the conductivity MSD as a function of time.
+        If no fitting region (start, end) is provided, computes the optimal
+        fitting region based on the portion of the MSD with greatest
+        linearity.
+
+        Args:
+            start (int): Start time step for fitting.
+            end (int): End time step for fitting.
+            runs (MdRun): Other runs to be compared in the same plot.
+            reference (bool): Whether to plot reference line.
+                Default to True.
+            units (str): unit system (currently 'real' and 'lj' are supported)
+        """
+        if self.cond_array is None:
+            self.cond_array = self.get_cond_array()
+        if start == -1 and end == -1:
+            start, end, _ = choose_msd_fitting_region(self.cond_array, self.time_array)
         colors = ["g", "r", "c", "m", "y", "k"]
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.loglog(
-            self.time_array[start:end],
-            self.cond_array[start:end],
+            self.time_array,
+            self.cond_array,
             color="b",
             lw=2,
             label=self.name,
         )
         for i, run in enumerate(runs):
             ax.loglog(
-                run.time_array[start:end],
-                run.cond_array[start:end],
+                run.time_array,
+                run.cond_array,
                 color=colors[i],
                 lw=2,
                 label=run.name,
             )
         if reference:
-            ax.loglog((100000, 1000000), (1000, 10000))
-        ax.set_ylabel("MSD (A^2)")
-        ax.set_xlabel("Time (ps)")
-        ax.set_ylim([10, 1000000])
-        ax.set_xlim([100, 500000000])
+            slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
+                self.time_array[int(np.log(len(self.time_array)) / 2)] - self.time_array[5]
+            )
+            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2, "k--")
+        if self.units == "real":
+            ax.set_ylabel("MSD (A$^2$)")
+            ax.set_xlabel("Time (ps)")
+        elif self.units == "lj":
+            ax.set_ylabel("MSD ($\\sigma^2$)")
+            ax.set_xlabel("Time ($\\tau$)")
+        else:
+            raise ValueError("units selection not supported")
+        ax.set_ylim(min(np.abs(self.cond_array[1:])) * 0.9, max(np.abs(self.cond_array)) * 1.2)
         ax.legend()
         fig.show()
 
-    def get_conductivity(self, start: int, end: int) -> float:
-        """Calculates the Green-Kubo (GK) conductivity in mS/cm.
+    def get_conductivity(self, start: int = -1, end: int = -1) -> float:
+        """Calculates the Green-Kubo (GK) conductivity given fitting region.
+        If no fitting region (start, end) is provided, computes the optimal
+        fitting region based on the portion of the MSD with greatest
+        linearity.
 
         Args:
-            start: Start time step.
-            end: End time step.
+            start (int): Start time step for fitting MSD.
+            end (int): End time step for fitting MSD.
+
+        Print and return conductivity.
         """
-        cond = conductivity_calculator(self.time_array, self.cond_array, self.nvt_v, self.name, start, end)
+        if start == -1 and end == -1:
+            start, end, beta = choose_msd_fitting_region(self.cond_array, self.time_array)
+        else:
+            beta, _ = get_beta(self.cond_array, self.time_array, start, end)
+        # print info on fitting
+        time_units = ""
+        if self.units == "real":
+            time_units = "ps"
+        elif self.units == "lj":
+            time_units = "tau"
+        print("Start of linear fitting regime: {} ({} {})".format(start, self.time_array[start], time_units))
+        print("End of linear fitting regime: {} ({} {})".format(end, self.time_array[end], time_units))
+        print("Beta value (fit to MSD = t^\u03B2): {} (\u03B2 = 1 in the diffusive regime)".format(beta))
+        cond = conductivity_calculator(
+            self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp, self.units
+        )
         return cond
 
     def coord_num_array_single_species(
