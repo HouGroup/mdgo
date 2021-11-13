@@ -1,4 +1,4 @@
-# ![MDGO](docs/logo_mdgo.svg)
+# ![MDGO](https://github.com/HT-MD/mdgo/blob/main/docs/logo_mdgo.svg)
 
 ![Linting](https://github.com/HT-MD/mdgo/actions/workflows/lint.yml/badge.svg) ![Test](https://github.com/HT-MD/mdgo/actions/workflows/test.yml/badge.svg)
 
