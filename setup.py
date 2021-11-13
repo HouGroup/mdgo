@@ -32,7 +32,7 @@ if on_rtd:
 if __name__ == "__main__":
     setup(
         name="mdgo",
-        version="0.2.0",
+        version="0.2.1",
         description="A codebase for MD simulation setup and results analysis.",
         long_description=readme,
         long_description_content_type="text/markdown",
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         author_email="tingzheng_hou@berkeley.edu",
         maintainer="Tingzheng Hou",
         maintainer_email="tingzheng_hou@berkeley.edu",
-        url="https://github.com/htz1992213/mdgo",
+        url="https://github.com/HT-MD/mdgo",
         packages=find_packages(),
         install_requires=INSTALL_REQUIRES,
         extras_require={
