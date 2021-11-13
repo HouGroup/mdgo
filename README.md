@@ -1,6 +1,6 @@
-# ![MDGO](docs/logo_mdgo.svg)
+# ![MDGO](https://github.com/HT-MD/mdgo/blob/main/docs/logo_mdgo.svg)
 
-![Linting](https://github.com/htz1992213/mdgo/actions/workflows/lint.yml/badge.svg) ![Test](https://github.com/htz1992213/mdgo/actions/workflows/test.yml/badge.svg)
+![Linting](https://github.com/HT-MD/mdgo/actions/workflows/lint.yml/badge.svg) ![Test](https://github.com/HT-MD/mdgo/actions/workflows/test.yml/badge.svg)
 
 An all-in-one code base for the classical molecualr dynamics (MD) simulation setup and results analysis. 
 
