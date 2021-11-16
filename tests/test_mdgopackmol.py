@@ -207,7 +207,7 @@ class TestPackmolWrapper:
             out1 = Molecule.from_file(os.path.join(scratch_dir, "output.xyz"))
             pw.run_packmol()
             out2 = Molecule.from_file(os.path.join(scratch_dir, "output.xyz"))
-            assert not mm.fit(out1, out2)
+            assert not np.array_equal(out1.cart_coords, out2.cart_coords)
 
     def test_arbitrary_filenames(self, water, ethanol):
         """
