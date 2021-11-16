@@ -172,9 +172,7 @@ class PackmolWrapper:
             out.write("tolerance {}\n\n".format(self.tolerance))
 
             out.write("filetype xyz\n\n")
-            # NOTE - output filename MUST be enclosed in double quotes in order to work
-            # when there are spaces in the filename. Single quotes will not work.
-            out.write(f'output "{self.output}"\n\n')
+            out.write(f"output {self.output}\n\n")
 
             for i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
@@ -184,7 +182,7 @@ class PackmolWrapper:
                 elif isinstance(d["coords"], Molecule):
                     fname = os.path.join(self.path, f"packmol_{d['name']}.xyz")
                     d["coords"].to(filename=fname)
-                    out.write(f'structure "{fname}"\n')
+                    out.write(f"structure {fname}\n")
                 out.write("  number {}\n".format(str(d["number"])))
                 out.write("  inside box {}\n".format(box_list))
                 out.write("end structure\n\n")
