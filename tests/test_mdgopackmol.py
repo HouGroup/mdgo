@@ -4,7 +4,7 @@ from pathlib import Path
 from subprocess import TimeoutExpired
 
 import pytest
-from pymatgen.analysis.molecule_matcher import MoleculeMatcher
+import numpy as np
 from pymatgen.core import Molecule
 
 from mdgo.mdgopackmol import PackmolWrapper
