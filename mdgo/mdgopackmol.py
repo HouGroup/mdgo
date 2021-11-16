@@ -127,7 +127,7 @@ class PackmolWrapper:
             if "ERROR" in p.stdout.decode():
                 if "Could not open file." in p.stdout.decode():
                     raise ValueError(
-                        f"Your packmol might be too old to handle paths with spaces."
+                        "Your packmol might be too old to handle paths with spaces."
                         "Please try again with a newer version or use paths without spaces."
                     )
                 msg = p.stdout.decode().split("ERROR")[-1]
