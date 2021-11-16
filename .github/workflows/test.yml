@@ -50,6 +50,10 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install -e .
+      - name: Prepare Packmol
+        run: |
+          echo $HOME
+          echo "$HOME/work/mdgo/mdgo/tests/packmol" >> $GITHUB_PATH
       - name: Prepare Selenium
         # https://github.com/marketplace/actions/setup-chromedriver
         uses: nanasess/setup-chromedriver@master
