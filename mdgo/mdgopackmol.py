@@ -125,6 +125,11 @@ class PackmolWrapper:
             # a solution but still return a zero exit code
             # see https://github.com/m3g/packmol/issues/28
             if "ERROR" in p.stdout.decode():
+                if "Could not open file." in p.stdout.decode():
+                    raise ValueError(
+                        f"Your packmol might be too old to handle paths with spaces."
+                        "Please try again with a newer version or use paths without spaces."
+                    )
                 msg = p.stdout.decode().split("ERROR")[-1]
                 raise ValueError(f"Packmol failed with return code 0 and stdout: {msg}")
         except subprocess.CalledProcessError as e:
@@ -172,7 +177,10 @@ class PackmolWrapper:
             out.write("tolerance {}\n\n".format(self.tolerance))
 
             out.write("filetype xyz\n\n")
-            out.write(f"output {self.output}\n\n")
+            if " " in str(self.output):
+                out.write(f'output "{self.output}"\n\n')
+            else:
+                out.write(f"output {self.output}\n\n")
 
             for i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
@@ -182,7 +190,10 @@ class PackmolWrapper:
                 elif isinstance(d["coords"], Molecule):
                     fname = os.path.join(self.path, f"packmol_{d['name']}.xyz")
                     d["coords"].to(filename=fname)
-                    out.write(f"structure {fname}\n")
+                    if " " in str(fname):
+                        out.write(f'structure "{fname}"\n')
+                    else:
+                        out.write(f"structure {fname}\n")
                 out.write("  number {}\n".format(str(d["number"])))
                 out.write("  inside box {}\n".format(box_list))
                 out.write("end structure\n\n")
