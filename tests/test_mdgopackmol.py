@@ -169,8 +169,6 @@ class TestPackmolWrapper:
         Confirm that seed = -1 generates random structures
         while seed = 1 is deterministic
         """
-        mm = MoleculeMatcher()
-
         # deterministic output
         with tempfile.TemporaryDirectory() as scratch_dir:
             pw = PackmolWrapper(
