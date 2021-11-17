@@ -184,9 +184,15 @@ class PackmolWrapper:
 
             for i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
-                    out.write(f'structure "{d["coords"]}"\n')
+                    if " " in d["coords"]:
+                        out.write(f'structure "{d["coords"]}"\n')
+                    else:
+                        out.write("structure {}\n".format(d["coords"]))
                 elif isinstance(d["coords"], Path):
-                    out.write(f'structure "{str(d["coords"])}"\n')
+                    if " " in str(d["coords"]):
+                        out.write(f'structure "{str(d["coords"])}"\n')
+                    else:
+                        out.write("structure {}\n".format(str(d["coords"])))
                 elif isinstance(d["coords"], Molecule):
                     fname = os.path.join(self.path, f"packmol_{d['name']}.xyz")
                     d["coords"].to(filename=fname)
