@@ -125,12 +125,13 @@ class PackmolWrapper:
             # a solution but still return a zero exit code
             # see https://github.com/m3g/packmol/issues/28
             if "ERROR" in p.stdout.decode():
+                msg = p.stdout.decode().split("ERROR")[-1]
                 if "Could not open file." in p.stdout.decode():
                     raise ValueError(
                         "Your packmol might be too old to handle paths with spaces."
                         "Please try again with a newer version or use paths without spaces."
+                        f"Packmol failed with return code 0 and stdout: {msg}"
                     )
-                msg = p.stdout.decode().split("ERROR")[-1]
                 raise ValueError(f"Packmol failed with return code 0 and stdout: {msg}")
         except subprocess.CalledProcessError as e:
             raise ValueError("Packmol failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr)) from e
