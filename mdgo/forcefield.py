@@ -77,7 +77,19 @@ DATA_MODELS: Final[dict] = {
         "opc": "water_opc.lmp",
     },
 }
-
+WATER_SIGMA: Final[dict] = {
+    "spc": 3.16557,
+    "spce": 3.16557,
+    "tip3p": 3.1507,
+    "tip3pew": 3.188,
+    "tip3pfb": 3.178,
+    "opc": 3.16655,
+    "opc3": 3.17427,
+    "tip4p": 3.1536,
+    "tip4p2005": 3.1589,
+    "tip4pew": 3.16435,
+    "tip4pfb": 3.1655,
+}
 
 class FFcrawler:
     """
