@@ -651,6 +651,7 @@ class Aqueous:
         ion: Union[Ion, str] = "li+",
         water_model: str = "spce",
         parameter_set: Optional[str] = None,
+        mixing_rule: Optional[str] = None,
     ) -> LammpsData:
         """
         Retrieve force field parameters for an ion in water.
