@@ -136,7 +136,7 @@ def choose_msd_fitting_region(
     MSD with the beta value closest to 1.
 
     Note:
-       If a beta value great than 0.9 cannot be found, returns a warning
+       If a beta value greater than 0.9 cannot be found, returns a warning
        that the computed conductivity may not be reliable, and that longer
        simulations or more replicates are necessary.
 
