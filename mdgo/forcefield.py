@@ -757,6 +757,31 @@ class Aqueous:
         # construct ForceField object
         sigma = filtered_data[0].sigma
         epsilon = filtered_data[0].epsilon
+        if mixing_rule is None:
+            pass
+        else:
+            default_mixing = filtered_data[0].combining_rule
+            water_sigma = WATER_SIGMA.get(filtered_data[0].water_model)
+            if mixing_rule.lower() in ["lb", "arithmetic", "lorentz-berthelot", "lorentz berthelot"]:
+                mixing_rule = "LB"
+            elif mixing_rule.lower() == "geometric":
+                mixing_rule = "geometric"
+            else:
+                raise ValueError("Invalid mixing rule. Supported mixing rules are 'LB'(arithmetic) and 'geometric'. ")
+            if default_mixing == mixing_rule:
+                pass
+            elif default_mixing == "LB" and mixing_rule == "geometric":
+                sigma = ((water_sigma + sigma) / 2) ** 2 / water_sigma
+                print(
+                    "The parameter mixing rule has been converted from the original 'LB' to 'geometric'.\n"
+                    "Please use the parameter set with caution!"
+                )
+            else:
+                sigma = 2 * ((water_sigma * sigma) ** (1 / 2)) - water_sigma
+                print(
+                    "The parameter mixing rule has been converted from the original 'geometric' to 'LB'.\n"
+                    "Please use the parameter set with caution!"
+                )
         ff = ForceField([(str(e), e) for e in ion_obj.elements], nonbond_coeffs=[[epsilon, sigma]])
 
         return LammpsData.from_ff_and_topologies(box, ff, [topo], atom_style="full")
