@@ -660,9 +660,9 @@ class Aqueous:
 
     @staticmethod
     def get_ion(
-        ion: Union[Ion, str] = "li+",
-        water_model: str = "spce",
-        parameter_set: Optional[str] = None,
+        ion: Union[Ion, str],
+        parameter_set: str = "jc",
+        water_model: str = "auto",
         mixing_rule: Optional[str] = None,
     ) -> LammpsData:
         """
@@ -671,6 +671,12 @@ class Aqueous:
         Args:
             ion: Formula of the ion (e.g., "Li+"). Not case sensitive. May be
                 passed as either a string or an Ion object.
+            parameter_set: Force field parameters to use for ions.
+                Valid choices are:
+                    1. "jj" for the Jensen and Jorgensen parameters (2006)"
+                    2. "jc" for Joung-Cheatham parameters (2008)
+                    3. "lm" for the Li and Merz group parameters (2020-2021)"
+                The default parameter set is the Joung-Cheatham set. 
             water_model: Water model to use. Models must be given as a string
                 (not case sensitive). "-" and "/" are ignored. Hence "tip3pfb"
                 and "TIP3P-FB" are both valid inputs for the TIP3P-FB water model.
@@ -684,7 +690,9 @@ class Aqueous:
                     7. TIP4P-2005
                     8. TIP4P-FB
                     9. OPC
-                The default water model is SPC/E. See documentation.
+                The default water model is "auto", which assigns a recommended
+                water model that is compatible with the chosen ion parameters. Other
+                combinations are possible at your own risk. See documentation.
 
                 For a systematic comparison of the performance of different water models, refer to
 
@@ -692,41 +700,23 @@ class Aqueous:
                     Commonly Used Water Models for Molecular Dynamics Simulations. J. Chem. Inf. Model.
                     2021, 61, 9, 4521–4536. https://doi.org/10.1021/acs.jcim.1c00794
 
-            parameter_set: Force field parameters to use for ions.
-                Valid choices are:
-                    1. "jj" for the Jensen and Jorgensen parameters (2006)"
-                    2. "jc" for Joung-Cheatham parameters (2008)
-                    3. "lm" for the Li and Merz group parameters (2020-2021)"
-                If None (default), then the parameter set is automatically set
-                to the recommended choice for the given water model. Recommended
-                choices are based on the water models originally used to parameterize
-                the ion parameters, but other combinations are possible at your own
-                risk.
 
         Returns:
             Force field parameters for the chosen water model.
         """
         alias = {"aq": "aqvist", "jj": "jensen_jorgensen", "jc": "joung_cheatham", "lm": "li_merz"}
         default_sets = {
-            "spc": None,
-            "spce": "jc",
-            "tip3p": "jc",
-            "tip3pew": None,
-            "tip3pfb": "lm",
-            "opc3": "lm",
-            "tip4p2005": None,
-            "tip4p": "jj",
-            "tip4pew": "jc",
-            "tip4pfb": "lm",
-            "opc": "lm",
+            "jj": "tip4p",
+            "jc": "spce",
+            "lm": "tip4pfb",
         }
         water_model = water_model.replace("-", "").replace("/", "").lower()
-        if parameter_set:
-            parameter_set = parameter_set.lower()
-        else:
-            parameter_set = default_sets.get(water_model)
-        if parameter_set:
-            parameter_set = alias.get(parameter_set, parameter_set)
+        parameter_set = parameter_set.lower()
+
+        if water_model == 'auto':
+            water_model = default_sets.get(parameter_set, water_model)
+
+        parameter_set = alias.get(parameter_set, parameter_set)
 
         # Make the Ion object to get mass and charge
         if isinstance(ion, Ion):
