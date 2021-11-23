@@ -91,6 +91,7 @@ WATER_SIGMA: Final[dict] = {
     "tip4pfb": 3.1655,
 }
 
+
 class FFcrawler:
     """
     Web scrapper that can automatically upload structure to the LigParGen
@@ -676,7 +677,7 @@ class Aqueous:
                     1. "jj" for the Jensen and Jorgensen parameters (2006)"
                     2. "jc" for Joung-Cheatham parameters (2008)
                     3. "lm" for the Li and Merz group parameters (2020-2021)"
-                The default parameter set is the Joung-Cheatham set. 
+                The default parameter set is the Joung-Cheatham set.
             water_model: Water model to use. Models must be given as a string
                 (not case sensitive). "-" and "/" are ignored. Hence "tip3pfb"
                 and "TIP3P-FB" are both valid inputs for the TIP3P-FB water model.
@@ -713,7 +714,7 @@ class Aqueous:
         water_model = water_model.replace("-", "").replace("/", "").lower()
         parameter_set = parameter_set.lower()
 
-        if water_model == 'auto':
+        if water_model == "auto":
             water_model = default_sets.get(parameter_set, water_model)
 
         parameter_set = alias.get(parameter_set, parameter_set)
