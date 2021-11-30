@@ -717,13 +717,13 @@ class Aqueous:
         """
         alias = {"aq": "aqvist", "jj": "jensen_jorgensen", "jc": "joung_cheatham", "lm": "li_merz"}
         default_sets = {
-            "spc": None,
+            "spc": "N/A",
             "spce": "jc",
             "tip3p": "jc",
-            "tip3pew": None,
+            "tip3pew": "N/A",
             "tip3pfb": "lm",
             "opc3": "lm",
-            "tip4p2005": None,
+            "tip4p2005": "N/A",
             "tip4p": "jj",
             "tip4pew": "jc",
             "tip4pfb": "lm",
@@ -740,7 +740,7 @@ class Aqueous:
             parameter_set = "jc"
         elif parameter_set == "auto":
             parameter_set = default_sets.get(water_model, parameter_set)
-            if parameter_set is None:
+            if parameter_set == "N/A":
                 raise ValueError(
                     f"The {water_model} water model has no specifically parameterized ion parameter sets"
                     "Please try a different water model."
