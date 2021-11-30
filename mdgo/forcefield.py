@@ -662,7 +662,7 @@ class Aqueous:
     @staticmethod
     def get_ion(
         ion: Union[Ion, str],
-        parameter_set: str = "jc",
+        parameter_set: str = "auto",
         water_model: str = "auto",
         mixing_rule: Optional[str] = None,
     ) -> LammpsData:
@@ -677,7 +677,8 @@ class Aqueous:
                     1. "jj" for the Jensen and Jorgensen parameters (2006)"
                     2. "jc" for Joung-Cheatham parameters (2008)
                     3. "lm" for the Li and Merz group parameters (2020-2021)"
-                The default parameter set is the Joung-Cheatham set.
+                The default parameter set is "auto", which assigns a recommended
+                parameter set that is compatible with the chosen water model.
             water_model: Water model to use. Models must be given as a string
                 (not case sensitive). "-" and "/" are ignored. Hence "tip3pfb"
                 and "TIP3P-FB" are both valid inputs for the TIP3P-FB water model.
@@ -695,11 +696,20 @@ class Aqueous:
                 water model that is compatible with the chosen ion parameters. Other
                 combinations are possible at your own risk. See documentation.
 
+            When both the parameter_set and water_model are set to "auto", the function returns the
+            Joung-Cheatham parameters for the SPC/E water model.
+
                 For a systematic comparison of the performance of different water models, refer to
 
                     Sachini et al., Systematic Comparison of the Structural and Dynamic Properties of
                     Commonly Used Water Models for Molecular Dynamics Simulations. J. Chem. Inf. Model.
                     2021, 61, 9, 4521–4536. https://doi.org/10.1021/acs.jcim.1c00794
+
+            mixing_rule: The mixing rule to use for the ion parameter. Default to None, which does not
+                change the original mixing rule of the parameter set. Available choices are 'LB'
+                (Lorentz-Berthelot or arithmetic) and 'geometric'. If the specified mixing rule does not
+                match the default mixing rule of the parameter set, the output parameter will be converted
+                accordingly.
 
 
         Returns:
@@ -707,6 +717,17 @@ class Aqueous:
         """
         alias = {"aq": "aqvist", "jj": "jensen_jorgensen", "jc": "joung_cheatham", "lm": "li_merz"}
         default_sets = {
+            "spc": None,
+            "spce": "jc",
+            "tip3p": "jc",
+            "tip3pew": None,
+            "tip3pfb": "lm",
+            "opc3": "lm",
+            "tip4p2005": None,
+            "tip4p": "jj",
+            "tip4pew": "jc",
+            "tip4pfb": "lm",
+            "opc": "lm",
             "jj": "tip4p",
             "jc": "spce",
             "lm": "tip4pfb",
@@ -714,7 +735,17 @@ class Aqueous:
         water_model = water_model.replace("-", "").replace("/", "").lower()
         parameter_set = parameter_set.lower()
 
-        if water_model == "auto":
+        if water_model == "auto" and parameter_set == "auto":
+            water_model = "spce"
+            parameter_set = "jc"
+        elif parameter_set == "auto":
+            parameter_set = default_sets.get(water_model, parameter_set)
+            if parameter_set is None:
+                raise ValueError(
+                    f"The {water_model} water model has no specifically parameterized ion parameter sets"
+                    "Please try a different water model."
+                )
+        elif water_model == "auto":
             water_model = default_sets.get(parameter_set, water_model)
 
         parameter_set = alias.get(parameter_set, parameter_set)
