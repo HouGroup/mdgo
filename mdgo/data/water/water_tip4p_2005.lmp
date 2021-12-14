@@ -1,5 +1,7 @@
 This forcefield file sets a 13-Angstrom cutoff, recommended for liquid-vapor simulations 
-# [Vega & de Miguel, J Chem Phys 126:154707 (2007), Vega et al, Faraday Discuss 141:251 (2009)]. Note that the original TIP4P/2005 model was run with an 8.5 Angstrom cutoff [Abascal & Vega, J Chem Phys 123:234505 (2005)]. 
+# [Vega & de Miguel, J Chem Phys 126:154707 (2007), Vega et al, Faraday Discuss 141:251 (2009)]. Note that the original TIP4P/2005 model was run with an 8.5 Angstrom cutoff [Abascal & Vega, J Chem Phys 123:234505 (2005)].
+# Bond and angle coefficients of 1000 are added to keep the water molecule together
+# during e.g. energy minimization in LAMMPS when `fix shake` is not active. 
 
        3 atoms
        2 bonds
@@ -25,11 +27,11 @@ Pair Coeffs #lj/cut/tip4p/long 2 1 1 1 0.1546 13.0
 
 Bond Coeffs #harmonic
 
-      1    0.0 0.9572
+      1    1000 0.9572
 
 Angle Coeffs #harmonic
 
-      1    0.0 104.52 
+      1    1000 104.52 
 
 Atoms
 
