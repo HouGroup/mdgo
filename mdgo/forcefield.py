@@ -226,7 +226,7 @@ class FFcrawler:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
-            lines = list()
+            lines = []
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
@@ -354,7 +354,7 @@ class MaestroRunner:
                 preexec_fn=os.setsid,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {}  and stderr: {}".format(e.returncode, e.stderr)) from e
+            raise ValueError(f"Maestro failed with errorcode {e.returncode}  and stderr: {e.stderr}") from e
 
         counter = 0
         while not os.path.isfile(self.mae + ".mae"):
@@ -362,7 +362,7 @@ class MaestroRunner:
             counter += 1
             if counter > wait:
                 os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-                raise TimeoutError("Failed to generate Maestro file in {} secs!".format(wait))
+                raise TimeoutError(f"Failed to generate Maestro file in {wait} secs!")
         print("Maestro file generated!")
         os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
@@ -377,7 +377,7 @@ class MaestroRunner:
                 stderr=subprocess.PIPE,
             )
         except subprocess.CalledProcessError as e:
-            raise ValueError("Maestro failed with errorcode {} and stderr: {}".format(e.returncode, e.stderr)) from e
+            raise ValueError(f"Maestro failed with errorcode {e.returncode} and stderr: {e.stderr}") from e
         print("Maestro force field file generated.")
         if self.out:
             if self.out == "lmp":
@@ -848,7 +848,7 @@ class ChargeWriter:
         Returns:
             A recreated LammpsData obj
         """
-        items = dict()
+        items = {}
         items["box"] = self.data.box
         items["masses"] = self.data.masses
         atoms = self.data.atoms.copy(deep=True)
@@ -882,7 +882,7 @@ class ChargeWriter:
         number_str = repr(float(number))
         tokens = number_str.split(".")
         if len(tokens) > 2:
-            raise ValueError("Invalid number '{}' only 1 decimal allowed".format(number))
+            raise ValueError(f"Invalid number '{number}' only 1 decimal allowed")
         if len(tokens) == 2:
             decimal_num = tokens[1][: self.precision].rstrip("0")
             return len(decimal_num)
