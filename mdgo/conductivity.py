@@ -160,10 +160,7 @@ def choose_msd_fitting_region(
             start_final = start
             end_final = end
     if beta_best < 0.9:
-        print(
-            f"WARNING: MSD is not sufficiently linear (beta = {beta_best})."
-            "Consider running simulations longer."
-        )
+        print(f"WARNING: MSD is not sufficiently linear (beta = {beta_best}). Consider running simulations longer.")
     return start_final, end_final, beta_best
 
 
