@@ -202,7 +202,7 @@ class PackmolWrapper:
                     else:
                         out.write(f"structure {fname}\n")
                 out.write(f'  number {str(d["number"])}\n')
-                out.write("  inside box {box_list}\n")
+                out.write(f"  inside box {box_list}\n")
                 out.write("end structure\n\n")
 
 
