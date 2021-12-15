@@ -49,7 +49,7 @@ def neighbor_distance(
     Returns:
         A dictionary of distance of neighbor atoms to the ``center_atom``. The keys are atom indexes in string type .
     """
-    dist_dict = dict()
+    dist_dict = {}
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     species_selection = select_dict.get(species)
@@ -66,9 +66,9 @@ def neighbor_distance(
         time_count += 1
     time_count = 0
     for ts in trj_analysis:
-        for atom_index in dist_dict:
+        for atom_index, val in dist_dict.items():
             dist = distance_array(ts[center_atom.index], ts[int(atom_index)], ts.dimensions)
-            dist_dict[atom_index][time_count] = dist
+            val[time_count] = dist
         time_count += 1
     return dist_dict
 
@@ -309,8 +309,8 @@ def find_in_n_out(
     sites = [int(i) for i in sites]
 
     last = sites[0]
-    steps_in: List[int] = list()
-    steps_out: List[int] = list()
+    steps_in: List[int] = []
+    steps_out: List[int] = []
     in_cool = cool
     out_cool = cool
     for i, s in enumerate(sites):
@@ -382,7 +382,7 @@ def check_contiguous_steps(
                 selection = select_shell(select_dict, distance_dict, center_atom, kw)
                 shell = nvt_run.select_atoms(selection, periodic=True)
                 coord_num[kw][i - checkpoint + lag].append(len(shell))
-    one_atom_ave = dict()
+    one_atom_ave = {}
     if has:
         for kw in coord_num:
             np_arrays = np.array([np.array(time).mean() for time in coord_num[kw]])
@@ -424,9 +424,8 @@ def heat_map(
     if isinstance(cluster_terminal, list):
         mode = "ordered"
         if len(cluster_terminal) != dimension:
-            raise ValueError(
-                "Please specify the cluster_terminal in the order of {}.".format(", ".join(c for c in dim))
-            )
+            term_order = ", ".join(c for c in dim)
+            raise ValueError(f"Please specify the cluster_terminal in the order of {term_order}.")
     else:
         mode = "unordered"
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
@@ -442,7 +441,7 @@ def heat_map(
                     for species in cluster_terminal
                 ]
                 bind_atoms_xyz = [nvt_run.select_atoms(sel, periodic=True) for sel in selections]
-                vertex_atoms: List[Atom] = list()
+                vertex_atoms: List[Atom] = []
                 for atoms in bind_atoms_xyz:
                     if len(atoms) == 1:
                         vertex_atoms.append(atoms[0])
@@ -452,10 +451,8 @@ def heat_map(
                         vertex_atoms.append(atoms[idx[0]])
                     else:
                         raise ValueError(
-                            "There should be at least 1 cluster_terminal atom in the {} dimension."
-                            "Try broadening the selection at index {} of the cluster_terminal ".format(
-                                str(dim[i]), str(i + 1)
-                            )
+                            f"There should be at least 1 cluster_terminal atom in the {str(dim[i])} dimension."
+                            f"Try broadening the selection at index {str(i + 1)} of the cluster_terminal "
                         )
             else:
                 assert isinstance(cluster_terminal, str)
@@ -469,8 +466,8 @@ def heat_map(
                     vertex_atoms = bind_atoms[idx[:3]]
                 else:
                     raise ValueError(
-                        "There should be at least {} cluster_terminal atoms in order to position the floating ion."
-                        "Try broadening the cluster_terminal selection".format(dimension)
+                        f"There should be at least {dimension} cluster_terminal atoms in order to position "
+                        "the floating ion. Try broadening the cluster_terminal selection"
                     )
             vector_a = atom_vec(vertex_atoms[0], center_atom, ts.dimensions)
             vector_b = atom_vec(vertex_atoms[1], center_atom, ts.dimensions)
@@ -609,8 +606,8 @@ def get_full_coords(
                 coords_full = np.concatenate((coords_full, coords_ref), axis=0)
             else:
                 raise ValueError(
-                    "Invalid reflection matrix. For {}-D system, the matrix should be"
-                    " {}x{} or a vector of length {}".format(dimension, dimension, dimension, dimension)
+                    f"Invalid reflection matrix. For {dimension}-D system, the matrix should be"
+                    f" {dimension}x{dimension} or a vector of length {dimension}"
                 )
     if rotation:
         coords_copy = coords_full
@@ -620,8 +617,7 @@ def get_full_coords(
                 coords_full = np.concatenate((coords_full, coords_rot), axis=0)
             else:
                 raise ValueError(
-                    "Invalid rotation matrix. For {}-D system, the matrix "
-                    "should be {}x{}".format(dimension, dimension, dimension)
+                    f"Invalid rotation matrix. For {dimension}-D system, the matrix should be {dimension}x{dimension}."
                 )
     if inversion:
         coords_copy = coords_full
@@ -631,15 +627,14 @@ def get_full_coords(
                 coords_full = np.concatenate((coords_full, coords_inv), axis=0)
             else:
                 raise ValueError(
-                    "Invalid inversion matrix. For {}-D system, the matrix "
-                    "should be {}x{}".format(dimension, dimension, dimension)
+                    f"Invalid inversion matrix. For {dimension}-D system, the matrix should be {dimension}x{dimension}."
                 )
     if sample:
         if coords_full.shape[0] > sample:
             index = np.random.choice(coords_full.shape[0], sample, replace=False)
             coords_full = coords_full[index]
         else:
-            print("Warning: the number of coordinates < {}, will not perform sampling.".format(sample))
+            print(f"Warning: the number of coordinates < {sample}, will not perform sampling.")
     return coords_full
 
 
@@ -745,7 +740,7 @@ def num_of_neighbor(
     """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    cn_values = dict()
+    cn_values = {}
     species = list(distance_dict.keys())
     for kw in species:
         cn_values[kw] = np.zeros(int(len(trj_analysis)))
@@ -863,7 +858,7 @@ def angular_dist_of_neighbor(
     names = list(distance_dict.keys())
     assert len(names) == 3, "Invalid number of keys in distance_dict, should be 3."
     neighbor_a, neighbor_b, center_c = tuple(names)
-    acb_angle = list()
+    acb_angle = []
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     for ts in trj_analysis:
         a_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_a)
@@ -923,10 +918,10 @@ def num_of_neighbor_specific(
     """
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    cip_step = list()
-    ssip_step = list()
-    agg_step = list()
-    cn_values = dict()
+    cip_step = []
+    ssip_step = []
+    agg_step = []
+    cn_values = {}
     for kw in distance_dict:
         cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
@@ -954,7 +949,7 @@ def num_of_neighbor_specific(
         else:
             agg_step.append(time_count)
         time_count += 1
-    cn_dict = dict()
+    cn_dict = {}
     for kw in distance_dict:
         cn_dict["ssip_" + kw] = cn_values[kw][ssip_step]
         cn_dict["cip_" + kw] = cn_values[kw][cip_step]
@@ -1083,14 +1078,14 @@ def write_out(center_pos: np.ndarray, center_name: str, neighbors: AtomGroup, pa
         neighbors: The neighbor AtomGroup.
         path: The path to write out ``*.xyz`` file.
     """
-    lines = list()
+    lines = []
     lines.append(str(len(neighbors) + 1))
     lines.append("")
-    lines.append("{} 0.0000000 0.0000000 0.0000000".format(center_name))
+    lines.append(f"{center_name} 0.0000000 0.0000000 0.0000000")
     box = neighbors.dimensions
     half_box = np.array([box[0], box[1], box[2]]) / 2
     for atom in neighbors:
-        locs = list()
+        locs = []
         for i in range(3):
             loc = atom.position[i] - center_pos[i]
             if loc > half_box[i]:
