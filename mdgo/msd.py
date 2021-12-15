@@ -79,9 +79,9 @@ def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "a
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     li_atoms = nvt_run.select_atoms(select)
-    all_list = list()
+    all_list = []
     for li_atom in li_atoms:
-        coords = list()
+        coords = []
         for ts in trj_analysis:
             current_coord = ts[li_atom.id - 1]
             coords.append(current_coord)
@@ -101,7 +101,7 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
     Returns:
         The MSD series.
     """
-    msd_dict: Dict[Union[int, np.integer], np.ndarray] = dict()
+    msd_dict: Dict[Union[int, np.integer], np.ndarray] = {}
     for state in coord_list:
         n_frames = state.shape[0]
         lag_times = np.arange(1, min(n_frames, largest))
@@ -112,7 +112,7 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
                 msd_dict[lag] = np.concatenate((msd_dict[lag], sqdist), axis=0)
             else:
                 msd_dict[lag] = sqdist
-    timeseries = list()
+    timeseries = []
     time_range = len(msd_dict) + 1
     msds_by_state = np.zeros(time_range)
     for kw in range(1, time_range):
@@ -153,9 +153,9 @@ def states_coord_array(
         of atom in a certain state. One for the attached state, the other for the free state.
     """
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    attach_list = list()
-    free_list = list()
-    coords = list()
+    attach_list = []
+    free_list = []
+    coords = []
     prev_state = None
     prev_coord = None
     for ts in trj_analysis:
@@ -179,7 +179,7 @@ def states_coord_array(
                     else:
                         free_list.append(np.array(coords))
                 prev_state = current_state
-                coords = list()
+                coords = []
                 coords.append(prev_coord)
                 coords.append(current_coord)
                 prev_coord = current_coord
@@ -225,8 +225,8 @@ def partial_msd(
     Returns:
         Two arrays of MSD in the trajectory
     """
-    free_coords = list()
-    attach_coords = list()
+    free_coords = []
+    attach_coords = []
     for i in trange(len(atoms)):
         attach_coord, free_coord = states_coord_array(
             nvt_run, atoms[i], select_dict, distance, run_start, run_end, binding_site=binding_site

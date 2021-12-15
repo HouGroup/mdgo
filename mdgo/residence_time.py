@@ -48,7 +48,7 @@ def neighbors_one_atom(
     Returns:
         A neighbor dict with neighbor atom id as keys and arrays of adjacent boolean (0/1) as values.
     """
-    bool_values = dict()
+    bool_values = {}
     time_count = 0
     for ts in nvt_run.trajectory[run_start:run_end:]:
         if species in select_dict.keys():
@@ -144,9 +144,9 @@ def calc_neigh_corr(
         step += 1
     times = np.array(times)
 
-    acf_avg = dict()
+    acf_avg = {}
     for kw in distance_dict.keys():
-        acf_all = list()
+        acf_all = []
         for atom in tqdm(center_atoms[::]):
             distance = distance_dict.get(kw)
             assert distance is not None
@@ -185,10 +185,10 @@ def fit_residence_time(
     Returns:
         A dict containing residence time of each species
     """
-    acf_avg_norm = dict()
-    popt = dict()
-    pcov = dict()
-    tau = dict()
+    acf_avg_norm = {}
+    popt = {}
+    pcov = {}
+    tau = {}
     species_list = list(acf_avg_dict.keys())
 
     # Exponential fit of solvent-Li ACF

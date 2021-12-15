@@ -195,7 +195,7 @@ def parse_command_line():
         parser.print_help()
         sys.exit(1)
     if not os.path.exists(args.ixyz):
-        print("\nError: Input file '%s' not found.\n" % args.ixyz)
+        print(f"\nError: Input file '{args.ixyz}' not found.\n")
         sys.exit(1)
 
     return args
@@ -495,7 +495,7 @@ def get_occupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = No
     """
     v = np.count_nonzero(matrix) * res * res * res
     if name is not None:
-        print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
+        print(name + f" molar volume = {(v * 0.6022):5.1f} cm^3/mol")
     if molar_volume:
         return v * 0.60221409  # cm^3/mol
     return v  # Å^3
@@ -516,7 +516,7 @@ def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = 
     """
     v = np.count_nonzero(matrix == 0) * res * res * res
     if name is not None:
-        print(name + " molar volume = %5.1f cm^3/mol" % (v * 0.6022))
+        print(name + f" molar volume = {(v * 0.6022):5.1f} cm^3/mol")
     if molar_volume:
         return v * 0.60221409  # cm^3/mol
     return v  # Å^3

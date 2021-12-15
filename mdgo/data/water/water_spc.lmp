@@ -1,5 +1,7 @@
 SPC water model
 # Berendsen et al, in "Intermolecular forces", p. 331 (1981). Command 'fix shake' is needed.
+# Bond and angle coefficients of 1000 are added to keep the water molecule together
+# during e.g. energy minimization in LAMMPS when `fix shake` is not active.
 
        3 atoms
        2 bonds
@@ -25,11 +27,11 @@ Pair Coeffs #lj/cut/coul/long 10.0
 
 Bond Coeffs #harmonic
 
-      1    0.0 1.0  
+      1    1000 1.0  
 
 Angle Coeffs #harmonic
 
-      1    0.0 109.47
+      1    1000 109.47
 
 Atoms
 
