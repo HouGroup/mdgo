@@ -967,7 +967,7 @@ def sdf_to_pdb(
                 line_dict["name"] = " " + line_dict["name"]
             # format pdb
             formatted_line = (
-                "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "
+                "{:<6s}{:>5d} {:^4s}{:1s}{:>3s} {:1s}{:>4.4}{:1s}   "  # pylint: disable=consider-using-f-string
                 "{:>8.3f}{:>8.3f}{:>8.3f}{:>6.2f}{:>6.2f}      "
                 "{:<4s}{:>2s}{:<2s}"
             ).format(
