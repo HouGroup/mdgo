@@ -234,7 +234,7 @@ class MdRun:
             if ave_dx[-1] >= ave_dx[-2]:
                 convergence = i
                 break
-        d = list()
+        d = []
         for j in range(convergence, npt_range):
             d.append(self.wrapped_run.trajectory[j].dimensions)
         return np.mean(np.array(d), axis=0)
@@ -359,9 +359,9 @@ class MdRun:
             time_units = "ps"
         elif self.units == "lj":
             time_units = "tau"
-        print("Start of linear fitting regime: {} ({} {})".format(start, self.time_array[start], time_units))
-        print("End of linear fitting regime: {} ({} {})".format(end, self.time_array[end], time_units))
-        print("Beta value (fit to MSD = t^\u03B2): {} (\u03B2 = 1 in the diffusive regime)".format(beta))
+        print(f"Start of linear fitting regime: {start} ({self.time_array[start]} {time_units})")
+        print(f"End of linear fitting regime: {end} ({self.time_array[end]} {time_units})")
+        print(f"Beta value (fit to MSD = t^\u03B2): {beta} (\u03B2 = 1 in the diffusive regime)")
         cond = conductivity_calculator(
             self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp, self.units
         )
@@ -614,7 +614,7 @@ class MdRun:
         percent_list = []
         for i in range(len(combined)):
             item_list.append(str(int(combined[i, 0])))
-            percent_list.append(str("%.4f" % (combined[i, 1] / combined[:, 1].sum() * 100)) + "%")
+            percent_list.append(f"{(combined[i, 1] / combined[:, 1].sum() * 100):.4f}%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
         df = pd.DataFrame(df_dict)
         return df
@@ -641,9 +641,9 @@ class MdRun:
         item_name = "Species in first solvation shell"
         item_list = []
         cn_list = []
-        for kw in cn_values:
+        for kw, val in cn_values.items():
             if kw != "total":
-                shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
+                shell_component, shell_count = np.unique(val.flatten(), return_counts=True)
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
                 item_list.append(kw)
                 cn_list.append(cn)
@@ -685,7 +685,7 @@ class MdRun:
         for i in range(len(combined)):
             item = str(int(combined[i, 0]))
             item_list.append(item_dict.get(item))
-            percent_list.append(str("%.4f" % (combined[i, 1] / combined[:, 1].sum() * 100)) + "%")
+            percent_list.append(f"{(combined[i, 1] / combined[:, 1].sum() * 100):.4f}%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
         df = pd.DataFrame(df_dict)
         return df
@@ -719,9 +719,9 @@ class MdRun:
         ssip_list = []
         cip_list = []
         agg_list = []
-        for kw in cn_values:
+        for kw, val in cn_values.items():
             if kw != "total":
-                shell_component, shell_count = np.unique(cn_values[kw].flatten(), return_counts=True)
+                shell_component, shell_count = np.unique(val.flatten(), return_counts=True)
                 cn = (shell_component * shell_count / shell_count.sum()).sum()
                 if kw.startswith("ssip_"):
                     item_list.append(kw[5:])
@@ -812,19 +812,9 @@ class MdRun:
         if percentage != 1:
             d = (msd_array[start] - msd_array[stop]) / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
-            print(
-                "Diffusivity of",
-                "%.2f" % (percentage * 100) + "% " + species + ": ",
-                d,
-                "m^2/s",
-            )
+            print(f"Diffusivity of {(percentage * 100):.2f}% {species}: {d} m^2/s")
             if species.lower() == "cation" or species.lower() == "li":
-                print(
-                    "NE Conductivity of",
-                    "%.2f" % (percentage * 100) + "% " + species + ": ",
-                    sigma,
-                    "mS/cm",
-                )
+                print(f"NE Conductivity of {(percentage * 100):.2f}% {species}: {sigma}mS/cm")
         else:
             d = (msd_array[start] - msd_array[stop]) / (start - stop) / self.time_step / 6 * a2 / ps
             sigma = d * self.d_to_sigma * s_m_to_ms_cm
@@ -1003,8 +993,8 @@ class MdRun:
             A dictionary containing the number of trj logged, the averaged coordination number and standard deviation
             for each species, and the corresponding time sequence.
         """
-        in_list: Dict[str, List[np.ndarray]] = dict()
-        out_list: Dict[str, List[np.ndarray]] = dict()
+        in_list: Dict[str, List[np.ndarray]] = {}
+        out_list: Dict[str, List[np.ndarray]] = {}
         for k in list(distance_dict):
             in_list[k] = []
             out_list[k] = []
@@ -1042,13 +1032,13 @@ class MdRun:
                     binding_site,
                     center_atom,
                 )
-        cn_dict = dict()
+        cn_dict = {}
         cn_dict["time"] = np.array([i * self.time_step - lag_step * self.time_step for i in range(lag_step * 2 + 1)])
         for k in list(distance_dict):
             if "in_count" not in cn_dict:
                 cn_dict["in_count"] = np.array(in_list[k]).shape[0]
                 cn_dict["out_count"] = np.array(out_list[k]).shape[0]
-            k_dict = dict()
+            k_dict = {}
             k_dict["in_ave"] = np.nanmean(np.array(in_list[k]), axis=0)
             k_dict["in_err"] = np.nanstd(np.array(in_list[k]), axis=0)
             k_dict["out_ave"] = np.nanmean(np.array(out_list[k]), axis=0)
@@ -1098,12 +1088,12 @@ class MdRun:
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         if isinstance(cluster_terminal, str):
             terminal_atom_type: Union[str, List[str]] = self.select_dict.get(cluster_terminal, "Not defined")
-            assert terminal_atom_type != "Not defined", "{} not defined in select_dict".format(cluster_terminal)
+            assert terminal_atom_type != "Not defined", f"{cluster_terminal} not defined in select_dict"
         else:
-            terminal_atom_type = list()
+            terminal_atom_type = []
             for species in cluster_terminal:
                 atom_type = self.select_dict.get(species, "Not defined")
-                assert atom_type != "Not defined", "{} not defined in select_dict".format(species)
+                assert atom_type != "Not defined", f"{species} not defined in select_dict"
                 terminal_atom_type.append(atom_type)
         coord_list = np.array([[0, 0, 0]])
         for atom in tqdm(floating_atoms[:]):

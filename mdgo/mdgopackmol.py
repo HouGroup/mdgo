@@ -114,7 +114,7 @@ class PackmolWrapper:
             )
         try:
             p = subprocess.run(
-                f'packmol < "{self.input}"',
+                f"packmol < '{self.input}'",
                 check=True,
                 shell=True,
                 timeout=timeout,
