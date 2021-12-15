@@ -81,61 +81,6 @@ def make_doc(ctx):
 
 
 @task
-def make_dash(ctx):
-    """
-    Make customized doc version for Dash
-    :param ctx:
-    """
-    ctx.run("cp docs_rst/conf-docset.py docs_rst/conf.py")
-    make_doc(ctx)
-    ctx.run("rm docs/_static/mdgo.docset.tgz", warn=True)
-    ctx.run("doc2dash docs -n mdgo -i docs/_images/mdgo.png -u https://mdgo.readthedocs.io/")
-    plist = "mdgo.docset/Contents/Info.plist"
-    xml = []
-    with open(plist) as f:
-        for l in f:
-            xml.append(l.strip())
-            if l.strip() == "<dict>":
-                xml.append("<key>dashIndexFilePath</key>")
-                xml.append("<string>index.html</string>")
-    with open(plist, "wt") as f:
-        f.write("\n".join(xml))
-    ctx.run('tar --exclude=".DS_Store" -cvzf mdgo.tgz mdgo.docset')
-    ctx.run("rm -r mdgo.docset")
-    ctx.run("cp docs_rst/conf-normal.py docs_rst/conf.py")
-
-
-@task
-def contribute_dash(ctx, version):
-    make_dash(ctx)
-    ctx.run("cp mdgo.tgz ../Dash-User-Contributions/docsets/mdgo/mdgo.tgz")
-    with cd("../Dash-User-Contributions/docsets/mdgo"):
-        with open("docset.json") as f:
-            data = json.load(f)
-            data["version"] = version
-        with open("docset.json", "wt") as f:
-            json.dump(data, f, indent=4)
-        ctx.run('git commit --no-verify -a -m "Update to v%s"' % version)
-        ctx.run("git push")
-    ctx.run("rm mdgo.tgz")
-
-
-@task
-def submit_dash_pr(ctx, version):
-    with cd("../Dash-User-Contributions/docsets/mdgo"):
-        payload = {
-            "title": "Update mdgo docset to v%s" % version,
-            "body": "Update mdgo docset to v%s" % version,
-            "head": "Dash-User-Contributions:master",
-            "base": "master",
-        }
-        response = requests.post(
-            "https://api.github.com/repos/materialsvirtuallab/Dash-User-Contributions/pulls", data=json.dumps(payload)
-        )
-        print(response.text)
-
-
-@task
 def update_doc(ctx):
     """
     Update the web documentation.
@@ -190,7 +135,7 @@ def release_github(ctx, version):
     desc = "\n".join(toks[:-1]).strip()
     payload = {
         "tag_name": "v" + version,
-        "target_commitish": "master",
+        "target_commitish": "main",
         "name": "v" + version,
         "body": desc,
         "draft": False,
