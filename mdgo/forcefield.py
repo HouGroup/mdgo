@@ -215,13 +215,30 @@ class FFcrawler:
         print("Structure info uploaded. Rendering force field...")
         self.wait.until(EC.presence_of_element_located((By.NAME, "go")))
         data_lmp = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]")
+        num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
         data_lmp.click()
+        while True:
+            files = sorted(
+                [
+                    os.path.join(self.write_dir, f)
+                    for f in os.listdir(self.write_dir)
+                    if os.path.splitext(f)[1] == ".lmp"
+                ],
+                key=os.path.getmtime,
+            )
+            # wait for file to finish download
+            if len(files) < num_file:
+                time.sleep(1)
+                print("waiting for download to be initiated")
+            else:
+                newest = files[-1]
+                if ".crdownload" in newest:
+                    time.sleep(1)
+                    print("waiting for download to complete")
+                else:
+                    break
         print("Force field file downloaded.")
-        time.sleep(1)
-        lmp_file = max(
-            [self.write_dir + "/" + f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"],
-            key=os.path.getctime,
-        )
+        lmp_file = newest
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)

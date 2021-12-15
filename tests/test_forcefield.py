@@ -33,13 +33,16 @@ class FFcrawlerTest(unittest.TestCase):
 
             lpg = FFcrawler(download_dir, xyz=True, gromacs=True)
             lpg.data_from_pdb(os.path.join(test_dir, "EMC.pdb"))
-            self.assertEqual(
-                out.getvalue(),
+            self.assertIn(
                 "LigParGen server connected.\n"
-                "Structure info uploaded. Rendering force field...\n"
+                "Structure info uploaded. Rendering force field...\n",
+                out.getvalue(),
+            )
+            self.assertIn(
                 "Force field file downloaded.\n"
                 ".xyz file saved.\n"
                 "Force field file saved.\n",
+                out.getvalue(),
             )
             self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.lmp")))
             self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.lmp.xyz")))
