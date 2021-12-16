@@ -207,8 +207,8 @@ def release(ctx, version, nodoc=False):
     release_github(ctx, version)
 
 @task
-def commit(ctx, message):
-    ctx.run(f'git commit -a -m {message}', warn=True)
+def commit(ctx, m):
+    ctx.run(f'git commit -a -m {m}', warn=True)
     ctx.run(f'git push https://{os.environ["GITHUB_RELEASES_TOKEN"]}@github.com/HT-MD/mdgo.git', warn=True)
 
 
