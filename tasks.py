@@ -89,8 +89,7 @@ def update_doc(ctx):
     ctx.run("cp docs_rst/conf-normal.py docs_rst/conf.py")
     make_doc(ctx)
     ctx.run("git add .")
-    ctx.run('git commit -a -m "Update docs"')
-    ctx.run("git push")
+    commit(ctx, "Update docs")
 
 
 @task
@@ -202,9 +201,9 @@ def release(ctx, version, nodoc=False):
     if not nodoc:
         make_doc(ctx)
         ctx.run("git add .")
-        ctx.run('git commit -a -m "Update docs"')
-        ctx.run("git push")
+        commit(ctx, "Update docs")
     release_github(ctx, version)
+
 
 @task
 def commit(ctx, message):
