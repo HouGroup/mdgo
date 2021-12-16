@@ -32,10 +32,10 @@ def make_doc(ctx):
     changes.append("\n" + "\n".join(toks[1].strip().split("\n")[0:-1]))
     changes = ("-" * n).join(changes)
 
-    with open("docs_rst/latest_changes.rst", "w") as f:
+    with open("docs/source/latest_changes.rst", "w") as f:
         f.write(changes)
 
-    with cd("docs_rst"):
+    with cd("docs/source"):
         ctx.run("cp ../CHANGES.rst change_log.rst")
         ctx.run("rm mdgo.*.rst", warn=True)
         ctx.run("sphinx-apidoc --implicit-namespaces --separate -d 7 -o . -f ../mdgo")
