@@ -17,7 +17,7 @@ For using the MaestroRunner class:
   * Download a free Maestro via https://www.schrodinger.com/freemaestro
 
   * Install the package and set the environment variable $SCHRODINGER
-    (e.g. 'export SCHRODINGER=/opt/schrodinger/suites2020-4', please
+    (e.g. 'export SCHRODINGER=/opt/schrodinger/suites2021-4', please
     check https://www.schrodinger.com/kb/446296 or
     https://www.schrodinger.com/kb/1842 for details.
 
