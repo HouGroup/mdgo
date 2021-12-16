@@ -2,6 +2,7 @@ matplotlib
 MDAnalysis
 numpy>=1.16.0
 pandas
+monty
 pubchempy
 pymatgen>=2022.0.17
 scipy
