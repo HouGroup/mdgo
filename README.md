@@ -8,8 +8,11 @@
 
 An all-in-one code base for the classical molecualr dynamics (MD) simulation setup and results analysis. 
 
-Citing MDGO
-Hou, T.; Fong, K. D.; Wang, J.; Persson, K. A. The solvation structure, transport properties and reduction behavior of carbonate-based electrolytes of lithium-ion batteries. *Chem. Sci.* **2021**, *12*, 14740-14751. ![doi](https://doi.org/10.1039/D1SC04265C)
+# 0. Citation
+
+When using MDAnalysis in published work, please cite the following paper:
+
+  * Hou, T.; Fong, K. D.; Wang, J.; Persson, K. A. The solvation structure, transport properties and reduction behavior of carbonate-based electrolytes of lithium-ion batteries. *Chem. Sci.* **2021**, *12*, 14740-14751. [[doi](https://doi.org/10.1039/D1SC04265C)]
 
 # 1. Installation
 
