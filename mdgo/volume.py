@@ -462,12 +462,12 @@ def fill_volume_matrix(
                             if matrix[i][j][k] != 1:
                                 if abs(a.z - (z0 + 0.5 * res + k * res)) < radius:
                                     if dsq(
-                                            a.x,
-                                            a.y,
-                                            a.z,
-                                            x0 + 0.5 * res + i * res,
-                                            y0 + 0.5 * res + j * res,
-                                            z0 + 0.5 * res + k * res,
+                                        a.x,
+                                        a.y,
+                                        a.z,
+                                        x0 + 0.5 * res + i * res,
+                                        y0 + 0.5 * res + j * res,
+                                        z0 + 0.5 * res + k * res,
                                     ) < (radius * radius):
                                         matrix[i][j][k] = 1
                                     else:
