@@ -17,10 +17,10 @@ INSTALL_REQUIRES = [
     "matplotlib",
     "scipy",
     "tqdm",
-    "pymatgen>=2022.0.17",
+    "pymatgen>=2022.7.8",
     "statsmodels",
     "pubchempy",
-    "MDAnalysis",
+    "MDAnalysis>=2.2.0",
     "selenium",
     "typing-extensions",
 ]
