@@ -147,7 +147,7 @@ class FFcrawler:
             self.web = webdriver.Chrome(options=self.options)
         else:
             self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
-        self.wait = WebDriverWait(self.web, 10)
+        self.wait = WebDriverWait(self.web, 20)
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
         print("LigParGen server connected.")
@@ -213,7 +213,7 @@ class FFcrawler:
         """
         print("Structure info uploaded. Rendering force field...")
         lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
-        self.wait.until(EC.element_to_be_clickable((By.NAME, lmp_xpath)))
+        self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
         data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
         num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
         time.sleep(1)
@@ -440,7 +440,6 @@ class PubChemRunner:
                 "download.default_directory": write_dir,
                 "safebrowsing.enabled": "false",
                 "profile.managed_default_content_settings.images": 2,
-                "javascript.enabled": False,
             }
             self.options = webdriver.ChromeOptions()
             self.options.add_argument(
