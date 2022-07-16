@@ -212,9 +212,11 @@ class FFcrawler:
             lmp_name: Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
-        self.wait.until(EC.element_to_be_clickable((By.NAME, "go")))
-        data_lmp = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]")
+        lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
+        self.wait.until(EC.element_to_be_clickable((By.NAME, lmp_xpath)))
+        data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
         num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
+        time.sleep(1)
         data_lmp.click()
         while True:
             files = sorted(
