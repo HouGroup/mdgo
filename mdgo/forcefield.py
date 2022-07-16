@@ -216,7 +216,7 @@ class FFcrawler:
         self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
         data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
         num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
-        time.sleep(1)
+        time.sleep(5)
         data_lmp.click()
         while True:
             files = sorted(
