@@ -439,7 +439,8 @@ class PubChemRunner:
             self.preferences = {
                 "download.default_directory": write_dir,
                 "safebrowsing.enabled": "false",
-                "profile.managed_default_content_settings": {"images": 2, "javascript": 2},
+                "profile.managed_default_content_settings.images": 2,
+                "javascript.enabled": False,
             }
             self.options = webdriver.ChromeOptions()
             self.options.add_argument(
