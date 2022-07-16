@@ -30,7 +30,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from string import Template
-from typing import Optional, Union
+from typing import Optional, Union, Final, Literal
 from urllib.parse import quote
 
 import numpy as np
@@ -49,7 +49,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from typing_extensions import Final, Literal
 
 from mdgo.util import ff_parser, lmp_mass_to_name, sdf_to_pdb
 
