@@ -22,7 +22,6 @@ INSTALL_REQUIRES = [
     "pubchempy",
     "MDAnalysis>=2.2.0",
     "selenium",
-    "typing-extensions",
 ]
 
 on_rtd = os.environ.get("READTHEDOCS") == "True"
