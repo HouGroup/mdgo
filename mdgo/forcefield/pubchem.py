@@ -22,7 +22,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from mdgo.util import sdf_to_pdb
+from mdgo.util.reformat import sdf_to_pdb
 
 
 MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"

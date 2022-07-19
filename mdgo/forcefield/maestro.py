@@ -24,7 +24,7 @@ import time
 from string import Template
 from typing import Optional, Final
 
-from mdgo.util import ff_parser
+from mdgo.util.reformat import ff_parser
 
 MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
 FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"

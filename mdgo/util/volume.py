@@ -17,12 +17,89 @@ the cube is defined by the -xsize, -ysize and -zsize options.
 import sys
 import os
 import argparse
-from typing import Union, Optional, Tuple, Dict
-from pymatgen.core import Molecule, Element
+from typing import Optional, List, Dict, Union, Tuple, Final
+
 import numpy as np
+from pymatgen.core import Molecule, Element
 
 
 DEFAULT_VDW = 1.5  # See Ev:130902
+
+MOLAR_VOLUME: Final[Dict[str, float]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+
+ALIAS: Final[Dict[str, str]] = {
+    "ethylene carbonate": "ec",
+    "ec": "ec",
+    "propylene carbonate": "pc",
+    "pc": "pc",
+    "dimethyl carbonate": "dmc",
+    "dmc": "dmc",
+    "diethyl carbonate": "dec",
+    "dec": "dec",
+    "ethyl methyl carbonate": "emc",
+    "emc": "emc",
+    "fluoroethylene carbonate": "fec",
+    "fec": "fec",
+    "vinyl carbonate": "vc",
+    "vinylene carbonate": "vc",
+    "vc": "vc",
+    "1,3-dioxolane": "dol",
+    "dioxolane": "dol",
+    "dol": "dol",
+    "ethylene glycol monomethyl ether": "egme",
+    "2-methoxyethanol": "egme",
+    "egme": "egme",
+    "dme": "dme",
+    "1,2-dimethoxyethane": "dme",
+    "glyme": "dme",
+    "monoglyme": "dme",
+    "2-methoxyethyl ether": "diglyme",
+    "diglyme": "diglyme",
+    "triglyme": "triglyme",
+    "tetraglyme": "tetraglyme",
+    "acetonitrile": "acn",
+    "acn": "acn",
+    "water": "water",
+    "h2o": "water",
+}
+
+# From PubChem
+MOLAR_MASS: Final[Dict[str, float]] = {
+    "ec": 88.06,
+    "pc": 102.09,
+    "dec": 118.13,
+    "dmc": 90.08,
+    "emc": 104.05,
+    "fec": 106.05,
+    "vc": 86.05,
+    "dol": 74.08,
+    "egme": 76.09,
+    "dme": 90.12,
+    "diglyme": 134.17,
+    "triglyme": 178.23,
+    "tetraglyme": 222.28,
+    "acn": 41.05,
+    "water": 18.01528,
+}
+
+# from Sigma-Aldrich
+DENSITY: Final[Dict[str, float]] = {
+    "ec": 1.321,
+    "pc": 1.204,
+    "dec": 0.975,
+    "dmc": 1.069,
+    "emc": 1.006,
+    "fec": 1.454,  # from qm-ht.com
+    "vc": 1.355,
+    "dol": 1.06,
+    "dme": 0.867,
+    "egme": 0.965,
+    "diglyme": 0.939,
+    "triglyme": 0.986,
+    "tetraglyme": 1.009,
+    "acn": 0.786,
+    "water": 0.99707,
+}
 
 
 def parse_command_line():
@@ -624,3 +701,114 @@ if __name__ == "__main__":
         ),
         "cm^3/mol",
     )
+
+
+def concentration_matcher(
+    concentration: float,
+    salt: Union[float, int, str, Molecule],
+    solvents: List[Union[str, Dict[str, float]]],
+    solv_ratio: List[float],
+    num_salt: int = 100,
+    mode: str = "v",
+    radii_type: str = "Bondi",
+) -> Tuple[List, float]:
+    """
+    Estimate the number of molecules of each species in a box,
+    given the salt concentration, salt type, solvent molecular weight,
+    solvent density, solvent ratio and total number of salt.
+    TODO: Auto box size according to Debye screening length
+
+    Args:
+        concentration: Salt concentration in mol/L.
+        salt: Four types of input are accepted:
+              1. The salt name in string ('lipf6' or 'litfsi')
+              2. Salt molar volume in as a float/int (cm^3/mol)
+              3. A pymatgen Molecule object of the salt structure
+              4. The path to the salt structure xyz file
+
+            Valid names are listed in the MOLAR_VOLUME dictionary at the beginning
+            of this file and currently include only 'lipf6' or 'litfsi'
+
+            If a Molecule or structure file is provided, mdgo will estimate
+            the molar volume according to the VdW radii of the atoms. The
+            specific radii used depend on the value of the 'radii_type' kwarg
+            (see below).
+        solvents: A list of solvent molecules. A molecule could either be
+            a name (e.g. "water" or "ethylene carbonate") or a dict containing
+            two keys "mass" and "density" in g/mol and g/mL, respectively.
+
+            Valid names are listed in the ALIAS dictionary at the beginning
+            of this file.
+        solv_ratio: A list of relative weights or volumes of solvents. Must be the
+            same length as solvents. For example, for a 30% / 70% (w/w) mix of
+            two solvent, pass [0.3, 0.7] or [30, 70]. The sum of weights / volumes
+            does not need to be normalized.
+        num_salt: The number of salt in the box.
+        mode: Weight mode (Weight/weight/W/w/W./w.) or volume mode
+            (Volume/volume/V/v/V./v.) for interpreting the ratio of solvents.
+        radii_type: "Bondi", "Lange", or "pymatgen". Bondi and Lange vdW radii
+            are compiled in this package for H, B, C, N, O, F, Si, P, S, Cl, Br,
+            and I. Choose 'pymatgen' to use the vdW radii from pymatgen.Element,
+            which are available for most elements and reflect the latest values in
+            the CRC handbook.
+
+    Returns:
+        A list of number of molecules in the simulation box, starting with
+        the salt and followed by each solvent in 'solvents'.
+        The list is followed by a float of the approximate length of one side of the box in Å.
+
+    """
+    n_solvent = []
+    n = len(solv_ratio)
+    if n != len(solvents):
+        raise ValueError("solvents and solv_ratio must be the same length!")
+
+    if isinstance(salt, (float, int)):
+        salt_molar_volume = salt
+    elif isinstance(salt, Molecule):
+        salt_molar_volume = molecular_volume(salt, salt.composition.reduced_formula, radii_type=radii_type)
+    elif isinstance(salt, str):
+        if MOLAR_VOLUME.get(salt.lower()):
+            salt_molar_volume = MOLAR_VOLUME.get(salt.lower(), 0)
+        else:
+            if not os.path.exists(salt):
+                print(f"\nError: Input file '{salt}' not found.\n")
+                sys.exit(1)
+            name = os.path.splitext(os.path.split(salt)[-1])[0]
+            ext = os.path.splitext(os.path.split(salt)[-1])[1]
+            if not ext == ".xyz":
+                print("Error: Wrong file format, please use a .xyz file.\n")
+                sys.exit(1)
+            salt_molar_volume = molecular_volume(salt, name, radii_type=radii_type)
+    else:
+        raise ValueError("Invalid salt type! Salt must be a number, string, or Molecule.")
+
+    solv_mass = []
+    solv_density = []
+    for solv in solvents:
+        if isinstance(solv, dict):
+            solv_mass.append(solv.get("mass"))
+            solv_density.append(solv.get("density"))
+        else:
+            solv_mass.append(MOLAR_MASS[ALIAS[solv.lower()]])
+            solv_density.append(DENSITY[ALIAS[solv.lower()]])
+    if mode.lower().startswith("v"):
+        for i in range(n):
+            n_solvent.append(solv_ratio[i] * solv_density[i] / solv_mass[i])  # type: ignore
+        v_solv = sum(solv_ratio)
+        n_salt = v_solv / (1000 / concentration - salt_molar_volume)
+        n_all = [int(m / n_salt * num_salt) for m in n_solvent]
+        n_all.insert(0, num_salt)
+        volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        return n_all, volume ** (1 / 3) * 1e8
+    if mode.lower().startswith("w"):
+        for i in range(n):
+            n_solvent.append(solv_ratio[i] / solv_mass[i])  # type: ignore
+        v_solv = np.divide(solv_ratio, solv_density).sum()
+        n_salt = v_solv / (1000 / concentration - salt_molar_volume)
+        n_all = [int(m / n_salt * num_salt) for m in n_solvent]
+        n_all.insert(0, num_salt)
+        volume = ((v_solv + salt_molar_volume * n_salt) / n_salt * num_salt) / 6.022e23
+        return n_all, volume ** (1 / 3) * 1e8
+    mode = input("Volume or weight ratio? (w or v): ")
+    return concentration_matcher(concentration, salt_molar_volume, solvents, solv_ratio, num_salt=num_salt, mode=mode)
