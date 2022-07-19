@@ -37,7 +37,7 @@ class ChargeWriter:
         Returns:
             A recreated LammpsData obj
         """
-        items = dict()
+        items = {}
         items["box"] = self.data.box
         items["masses"] = self.data.masses
         atoms = self.data.atoms.copy(deep=True)
