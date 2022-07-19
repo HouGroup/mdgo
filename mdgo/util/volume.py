@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 """
-Computes the volume for each ligand or active site in a file.
+Utilities for computing molecular volume and matching concentration.
 
 In ligand mode, the volume of the entire structure is calculated. The -x, -y,
 -z, -xsize, -ysize and -zsize options are ignored.
@@ -666,43 +666,6 @@ def molecular_volume(
     return molar_vol
 
 
-if __name__ == "__main__":
-    """
-    ec = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/EC.xyz"
-    )
-    emc = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/EMC.xyz"
-    )
-    dec = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/DEC.xyz"
-    )
-    pf6 = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/PF6.xyz"
-    )
-    tfsi = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/TFSI.xyz"
-    )
-    lipf6 = Molecule.from_file(
-        "/Users/th/Downloads/package/packmol-17.163/LiPF6.xyz"
-    )
-    """
-    options = parse_command_line()
-
-    print(
-        molecular_volume(
-            options.ixyz,
-            name=options.name if options.name != "" else None,
-            res=options.res,
-            radii_type=options.radii_type,
-            molar_volume=options.molar_volume in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
-            exclude_h=options.exclude_h in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
-            mode=options.mode,
-        ),
-        "cm^3/mol",
-    )
-
-
 def concentration_matcher(
     concentration: float,
     salt: Union[float, int, str, Molecule],
@@ -812,3 +775,40 @@ def concentration_matcher(
         return n_all, volume ** (1 / 3) * 1e8
     mode = input("Volume or weight ratio? (w or v): ")
     return concentration_matcher(concentration, salt_molar_volume, solvents, solv_ratio, num_salt=num_salt, mode=mode)
+
+
+if __name__ == "__main__":
+    """
+    ec = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/EC.xyz"
+    )
+    emc = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/EMC.xyz"
+    )
+    dec = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/DEC.xyz"
+    )
+    pf6 = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/PF6.xyz"
+    )
+    tfsi = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/TFSI.xyz"
+    )
+    lipf6 = Molecule.from_file(
+        "/Users/th/Downloads/package/packmol-17.163/LiPF6.xyz"
+    )
+    """
+    options = parse_command_line()
+
+    print(
+        molecular_volume(
+            options.ixyz,
+            name=options.name if options.name != "" else None,
+            res=options.res,
+            radii_type=options.radii_type,
+            molar_volume=options.molar_volume in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
+            exclude_h=options.exclude_h in ["yes", "y", "Y", "Yes", "1", "t", "T", "true", "True"],
+            mode=options.mode,
+        ),
+        "cm^3/mol",
+    )

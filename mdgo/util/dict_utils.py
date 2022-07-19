@@ -3,9 +3,8 @@
 # Distributed under the terms of the MIT License.
 
 """
-This module implements utility functions for other modules in the package.
+Utilities for manipulating dictionaries.
 """
-
 
 import string
 import re
@@ -186,6 +185,7 @@ def res_dict_from_lammpsdata(lammps_data: CombinedData) -> Dict[str, str]:
             res_dict[name] = "resid " + str(start) + "-" + str(end - 1)
     return res_dict
 
+
 def select_dict_from_resname(u: Universe) -> Dict[str, str]:
     """
     Infer select_dict (possibly interested atom species selection) from resnames in a MDAnalysis.universe object.
@@ -235,6 +235,7 @@ def select_dict_from_resname(u: Universe) -> Dict[str, str]:
         else:
             extract_atom_from_ion(False, residue, select_dict)
     return select_dict
+
 
 def extract_atom_from_ion(positive: bool, ion: Union[Residue, AtomGroup], select_dict: Dict[str, str], number: int = 0):
     """

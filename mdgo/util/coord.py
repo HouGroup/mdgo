@@ -3,7 +3,8 @@
 # Distributed under the terms of the MIT License.
 
 """
-This module implements utility functions for other modules in the package.
+Utilities for manipulating coordinates or list of coordinates, under periodic
+boundary conditions or otherwise.
 """
 
 from typing import List, Union

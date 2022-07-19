@@ -3,7 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 """
-This module implements utility functions for other modules in the package.
+Utilities for converting data file formats.
 """
 
 from io import StringIO

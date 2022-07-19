@@ -2,6 +2,9 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""
+Utilities for manipulating numbers in data structures.
+"""
 
 from typing import List, Union, Optional
 

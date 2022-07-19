@@ -20,7 +20,7 @@ jobs:
         python-version: [ 3.8, 3.9 ]
         # This distribution of tests is designed to ensure an approximately even time to finish for parallel jobs.
         pkg:
-          - tests
+          - tests --ignore=tests/test_conductivity.py
 
     runs-on: ${{ matrix.os }}
 
