@@ -18,10 +18,10 @@ from mdgo.util.coord import atom_vec, angle
 
 
 __author__ = "Tingzheng Hou"
-__version__ = "1.0"
+__version__ = "0.3.0"
 __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
-__date__ = "Feb 9, 2021"
+__date__ = "Jul 19, 2021"
 
 
 def neighbor_distance(
