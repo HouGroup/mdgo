@@ -17,7 +17,7 @@ For using the MaestroRunner class:
   * Download a free Maestro via https://www.schrodinger.com/freemaestro
 
   * Install the package and set the environment variable $SCHRODINGER
-    (e.g. 'export SCHRODINGER=/opt/schrodinger/suites2020-4', please
+    (e.g. 'export SCHRODINGER=/opt/schrodinger/suites2021-4', please
     check https://www.schrodinger.com/kb/446296 or
     https://www.schrodinger.com/kb/1842 for details.
 
@@ -30,7 +30,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from string import Template
-from typing import Optional, Union
+from typing import Optional, Union, Final, Literal
 from urllib.parse import quote
 
 import numpy as np
@@ -49,7 +49,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from typing_extensions import Final, Literal
 
 from mdgo.util import ff_parser, lmp_mass_to_name, sdf_to_pdb
 
@@ -170,10 +169,10 @@ class FFcrawler:
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
-        upload = self.web.find_element_by_xpath('//*[@id="exampleMOLFile"]')
+        upload = self.web.find_element(By.XPATH, '//*[@id="exampleMOLFile"]')
         try:
             upload.send_keys(pdb_dir)
-            submit = self.web.find_element_by_xpath("/html/body/div[2]/div/div[2]/form/button[1]")
+            submit = self.web.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/form/button[1]")
             submit.click()
             pdb_filename = os.path.basename(pdb_dir)
             self.download_data(os.path.splitext(pdb_filename)[0] + ".lmp")
@@ -194,9 +193,9 @@ class FFcrawler:
         """
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
-        smile = self.web.find_element_by_xpath('//*[@id="smiles"]')
+        smile = self.web.find_element(By.XPATH, '//*[@id="smiles"]')
         smile.send_keys(smiles_code)
-        submit = self.web.find_element_by_xpath("/html/body/div[2]/div/div[2]/form/button[1]")
+        submit = self.web.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/form/button[1]")
         submit.click()
         try:
             self.download_data(smiles_code + ".lmp")
@@ -213,15 +212,36 @@ class FFcrawler:
             lmp_name: Name of the LAMMPS data file.
         """
         print("Structure info uploaded. Rendering force field...")
-        self.wait.until(EC.presence_of_element_located((By.NAME, "go")))
-        data_lmp = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]")
+        lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
+        jmol_xpath = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[2]")
+        self.wait.until(EC.presence_of_element_located((By.XPATH, lmp_xpath)))
+        self.web.execute_script("arguments[0].remove();", jmol_xpath)
+        self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
+        data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
+        num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
         data_lmp.click()
+        while True:
+            files = sorted(
+                [
+                    os.path.join(self.write_dir, f)
+                    for f in os.listdir(self.write_dir)
+                    if os.path.splitext(f)[1] == ".lmp"
+                ],
+                key=os.path.getmtime,
+            )
+            # wait for file to finish download
+            if len(files) < num_file:
+                time.sleep(1)
+                print("waiting for download to be initiated")
+            else:
+                newest = files[-1]
+                if ".crdownload" in newest:
+                    time.sleep(1)
+                    print("waiting for download to complete")
+                else:
+                    break
         print("Force field file downloaded.")
-        time.sleep(1)
-        lmp_file = max(
-            [self.write_dir + "/" + f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"],
-            key=os.path.getctime,
-        )
+        lmp_file = newest
         if self.xyz:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
@@ -239,8 +259,8 @@ class FFcrawler:
                 xyz_file.write("\n".join(lines))
             print(".xyz file saved.")
         if self.gromacs:
-            data_gro = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[8]/form/input[1]")
-            data_itp = self.web.find_element_by_xpath("/html/body/div[2]/div[2]/div[1]/div/div[9]/form/input[1]")
+            data_gro = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[1]/div/div[8]/form/input[1]")
+            data_itp = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[1]/div/div[9]/form/input[1]")
             data_gro.click()
             data_itp.click()
             time.sleep(1)
@@ -480,12 +500,12 @@ class PubChemRunner:
         translate_xpath = "/html/body/div/div[2]/div[1]/form/table[2]/tbody/tr/td/input[2]"
         download_xpath = "/html/body/center/b/a"
         self.web.get(convertor_url)
-        self.web.find_element_by_xpath(input_xpath).clear()
-        self.web.find_element_by_xpath(input_xpath).send_keys(smiles)
-        self.web.find_element_by_xpath(pdb_xpath).click()
-        self.web.find_element_by_xpath(translate_xpath).click()
+        self.web.find_element(By.XPATH, input_xpath).clear()
+        self.web.find_element(By.XPATH, input_xpath).send_keys(smiles)
+        self.web.find_element(By.XPATH, pdb_xpath).click()
+        self.web.find_element(By.XPATH, translate_xpath).click()
         time.sleep(1)
-        self.web.find_element_by_xpath(download_xpath).click()
+        self.web.find_element(By.XPATH, download_xpath).click()
         print("Waiting for downloads.", end="")
         time.sleep(1)
         while any(filename.endswith(".crdownload") for filename in os.listdir(self.write_dir)):
@@ -508,16 +528,16 @@ class PubChemRunner:
                 "/div[2]/div[1]/a/span/span"
             )
             if EC.presence_of_element_located((By.XPATH, best_xpath)):
-                match = self.web.find_element_by_xpath(best_xpath)
+                match = self.web.find_element(By.XPATH, best_xpath)
             else:
-                match = self.web.find_element_by_xpath(relevant_xpath)
+                match = self.web.find_element(By.XPATH, relevant_xpath)
             match.click()
             # density_locator = '//*[@id="Density"]/div[2]/div[1]/p'
             cid_locator = '//*[@id="main-content"]/div/div/div[1]/' "div[3]/div/table/tbody/tr[1]/td"
             smiles_locator = '//*[@id="Canonical-SMILES"]/div[2]/div[1]/p'
             self.wait.until(EC.presence_of_element_located((By.XPATH, cid_locator)))
-            cid = self.web.find_element_by_xpath(cid_locator).text
-            smiles = self.web.find_element_by_xpath(smiles_locator).text
+            cid = self.web.find_element(By.XPATH, cid_locator).text
+            smiles = self.web.find_element(By.XPATH, smiles_locator).text
             print("Best match found, PubChem ID:", cid)
             if output_format.lower() == "smiles":
                 print("SMILES code:", smiles)

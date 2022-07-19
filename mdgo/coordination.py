@@ -754,7 +754,7 @@ def num_of_neighbor(
             # (key = atom id, value = list of values for step function)
             for _ in shell.atoms:
                 cn_values[kw][time_count] += 1
-                cn_values["total"][time_count] += 10 ** digit_of_species
+                cn_values["total"][time_count] += 10**digit_of_species
             digit_of_species = digit_of_species - 1
         if write and cn_values["total"][time_count] == structure_code:
             a = np.random.random()

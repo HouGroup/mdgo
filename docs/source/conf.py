@@ -85,6 +85,7 @@ autodoc_mock_imports = [
     "matplotlib",
     "scipy",
     "tqdm",
+    "monty",
     "pymatgen",
     "statsmodels",
     "pubchempy",

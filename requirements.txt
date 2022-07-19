@@ -1,9 +1,10 @@
 matplotlib
-MDAnalysis
+MDAnalysis>=2.2.0
 numpy>=1.16.0
 pandas
+monty
 pubchempy
-pymatgen>=2022.0.17
+pymatgen>=2022.7.8
 scipy
 selenium
 setuptools
@@ -12,4 +13,3 @@ sphinx_rtd_theme
 sphinx-autodoc-typehints
 statsmodels
 tqdm
-typing-extensions
