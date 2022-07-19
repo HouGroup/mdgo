@@ -28,7 +28,7 @@ def autocorr_fft(x: np.ndarray) -> np.ndarray:
     """Calculates the autocorrelation function using the fast Fourier transform.
 
     Args:
-        x (numpy.array): function on which to compute autocorrelation function
+        x: function on which to compute autocorrelation function
 
     Returns a numpy.array of the autocorrelation function
     """
@@ -45,7 +45,7 @@ def msd_fft(r: np.ndarray) -> np.ndarray:
     """Calculates mean square displacement of the array r using the fast Fourier transform.
 
     Args:
-        r (numpy.array): atom positions over time
+        r: atom positions over time
 
     Returns a numpy.array containing the mean-squared displacement over time
     """
@@ -80,9 +80,9 @@ def calc_cond_msd(
         u: MDAnalysis universe
         anions: MDAnalysis AtomGroup containing all anions
         cations: MDAnalysis AtomGroup containing all cations
-        run_start (int): index of trajectory from which to start analysis
-        cation_charge (int): net charge of cation
-        anion_charge (int): net charge of anion
+        run_start: index of trajectory from which to start analysis
+        cation_charge: net charge of cation
+        anion_charge: net charge of anion
 
     Returns a numpy.array containing conductivity "MSD" over time
     """
@@ -112,10 +112,10 @@ def get_beta(
     to the diffusive regime.
 
     Args:
-        msd (numpy.array): mean squared displacement
-        time_array (numpy.array): times at which position data was collected in the simulation
-        start (int): index at which to start fitting linear regime of the MSD
-        end (int): index at which to end fitting linear regime of the MSD
+        msd: mean squared displacement
+        time_array: times at which position data was collected in the simulation
+        start: index at which to start fitting linear regime of the MSD
+        end: index at which to end fitting linear regime of the MSD
 
     Returns beta (int) and the range of beta values within the region
     """
@@ -141,8 +141,8 @@ def choose_msd_fitting_region(
        simulations or more replicates are necessary.
 
     Args:
-        msd (numpy.array): mean squared displacement
-        time_array (numpy.array): times at which position data was collected in the simulation
+        msd: mean squared displacement
+        time_array: times at which position data was collected in the simulation
 
     Returns at tuple with the start of the fitting regime (int), end of the
     fitting regime (int), and the beta value of the fitting regime (float).
@@ -177,13 +177,14 @@ def conductivity_calculator(
     """Calculates the overall conductivity of the system
 
     Args:
-        time_array (numpy.array): times at which position data was collected in the simulation
-        cond_array (numpy.array): conductivity "mean squared displacement"
-        v (float): simulation volume (Angstroms^3)
-        name (str): system name
-        start (int): index at which to start fitting linear regime of the MSD
-        end (int): index at which to end fitting linear regime of the MSD
-        units (str): unit system (currently 'real' and 'lj' are supported)
+        time_array: times at which position data was collected in the simulation
+        cond_array: conductivity "mean squared displacement"
+        v: simulation volume (Angstroms^3)
+        name: system name
+        start: index at which to start fitting linear regime of the MSD
+        end: index at which to end fitting linear regime of the MSD
+        T: temperature
+        units: unit system (currently 'real' and 'lj' are supported)
 
     Returns the overall ionic conductivity (float)
     """
