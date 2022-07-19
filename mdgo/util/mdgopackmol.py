@@ -23,7 +23,7 @@ from monty.os.path import which
 
 # from pymatgen.io.core import InputFile, InputSet, InputGenerator
 
-from mdgo.volume import molecular_volume
+from mdgo.util.volume import molecular_volume
 
 __author__ = "Tingzheng Hou, Ryan Kingsbury"
 __version__ = "1.0"

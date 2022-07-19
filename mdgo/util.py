@@ -23,7 +23,7 @@ from pymatgen.io.lammps.data import CombinedData
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom, Residue, AtomGroup
 
-from mdgo.volume import molecular_volume
+from mdgo.util.volume import molecular_volume
 
 __author__ = "Tingzheng Hou"
 __version__ = "1.0"

@@ -1,7 +1,7 @@
 import os
 import unittest
 from pymatgen.core import Molecule
-from mdgo.volume import molecular_volume
+from mdgo.util.volume import molecular_volume
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 

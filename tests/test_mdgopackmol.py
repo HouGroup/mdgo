@@ -7,7 +7,7 @@ import pytest
 import numpy as np
 from pymatgen.core import Molecule
 
-from mdgo.mdgopackmol import PackmolWrapper
+from mdgo.util.mdgopackmol import PackmolWrapper
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
