@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom

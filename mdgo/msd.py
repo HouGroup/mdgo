@@ -13,7 +13,7 @@ except ImportError:
     mda_msd = None
 
 import numpy as np
-from tqdm.notebook import trange
+from tqdm.auto import trange
 
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom

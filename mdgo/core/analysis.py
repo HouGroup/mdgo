@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from mdgo.util.dict_utils import (
     mass_to_name,
     assign_name,

@@ -9,7 +9,7 @@ This module implements functions for coordination analysis.
 from typing import Dict, List, Tuple, Union, Callable, Optional
 
 import numpy as np
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom
 from MDAnalysis.analysis.distances import distance_array
