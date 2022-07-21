@@ -16,6 +16,10 @@ try:
     import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
     mda_msd = None
+try:
+    import tidynamics as td
+except ImportError:
+    td = None
 
 import numpy as np
 from tqdm.auto import trange
@@ -72,10 +76,21 @@ def total_msd(
         if not mda_msd:
             raise ValueError("MDAnalysis version too low, please update MDAnalysis.")
         if center_of_mass:
-            print(
+            raise ValueError(
                 "Warning! MDAnalysis does not support subtracting center of mass. Calculating without subtracting..."
             )
-        return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
+        if fft and td is None:
+            raise ImportError("""tidynamics was not found!
+
+                            tidynamics is required to compute an FFT based MSD (default)
+
+                            try installing it using pip eg:
+
+                                pip install tidynamics
+
+                            or set fft=False""")
+        else:
+            return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
 
 
 def autocorr_fft(x: np.ndarray) -> np.ndarray:

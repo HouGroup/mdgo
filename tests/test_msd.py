@@ -4,6 +4,11 @@ import unittest
 import numpy as np
 import MDAnalysis
 
+try:
+    import tidynamics as td
+except ImportError:
+    td = None
+
 from mdgo.msd import *
 
 
@@ -22,8 +27,8 @@ class MyTestCase(unittest.TestCase):
             os.path.join(test_dir, "gen2_light", "gen2_mdgo_unwrapped_nvt_main.dcd"),
             format="LAMMPS",
         )
-        cls.mda_msd_cation = mda_msd_wrapper(cls.gen2, 0, 100, select="type 3")
-        cls.mda_msd_anion = mda_msd_wrapper(cls.gen2, 0, 100, select="type 1")
+        cls.mda_msd_cation = mda_msd_wrapper(cls.gen2, 0, 100, select="type 3", fft=False)
+        cls.mda_msd_anion = mda_msd_wrapper(cls.gen2, 0, 100, select="type 1", fft=False)
         cls.onsager_ii_self = onsager_ii_self(cls.gen2, 0, 100, select="type 3")
         cls.onsager_ii_self_nocom = onsager_ii_self(cls.gen2, 0, 100, select="type 3", center_of_mass=False)
         cls.onsager_ii_self_nofft = onsager_ii_self(cls.gen2, 0, 100, select="type 3", fft=False)
@@ -55,28 +60,30 @@ class MyTestCase(unittest.TestCase):
         self.assertAlmostEqual(89.84668178, self.mda_msd_anion[99])
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="x", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x"),
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x", fft=False),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="y", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="y"),
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="y", fft=False),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="z", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="z"),
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="z", fft=False),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xy", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xy"),
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xy", fft=False),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="yz", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="yz"),
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="yz", fft=False),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xz", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz"),
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz", fft=False),
         )
+        if td is not None:
+            assert np.allclose(self.mda_msd_cation, mda_msd_wrapper(self.gen2, 0, 100, select="type 3"))
 
 
 if __name__ == "__main__":
