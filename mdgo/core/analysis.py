@@ -39,7 +39,7 @@ from mdgo.coordination import (
     heat_map,
     get_full_coords,
 )
-from mdgo.msd import total_msd, partial_msd
+from mdgo.msd import total_msd, partial_msd, DIM
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
 
 
@@ -733,7 +733,10 @@ class MdRun:
         self,
         start: int = 0,
         end: int = -1,
+        msd_type: DIM = "xyz",
         fft: bool = True,
+        built_in: bool = True,
+        center_of_mass: bool = True,
         species: str = "cation",
     ) -> np.ndarray:
         """Calculates the mean square displacement (MSD) of the interested atom species.
@@ -741,7 +744,12 @@ class MdRun:
         Args:
             start: Start time step.
             end: End time step.
-            fft: Whether to use fft to calculate msd. Default to True.
+            msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+            fft: Whether to use FFT to accelerate the calculation. Default to True.
+            built_in: Whether to use built in method to calculate msd or use function from mds.
+                Default to True.
+            center_of_mass: Whether to subtract center of mass at each step for atom coordinates.
+                Default to True.
             species: The species for analysis. Default to "cation".
 
         Return:
@@ -754,7 +762,10 @@ class MdRun:
             start=start,
             end=end,
             select=selection,
+            msd_type=msd_type,
             fft=fft,
+            built_in=built_in,
+            center_of_mass=center_of_mass,
         )
         return msd_array
 

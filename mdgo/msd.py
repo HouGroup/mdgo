@@ -95,7 +95,8 @@ def total_msd(
 
 
 def autocorr_fft(x: np.ndarray) -> np.ndarray:
-    """Calculates the autocorrelation function using the fast Fourier transform.
+    """
+    Calculates the autocorrelation function using the fast Fourier transform.
 
     Args:
         x: function on which to compute autocorrelation function
@@ -112,7 +113,8 @@ def autocorr_fft(x: np.ndarray) -> np.ndarray:
 
 
 def msd_fft(r: np.ndarray) -> np.ndarray:
-    """Calculates mean square displacement of the array r using the fast Fourier transform.
+    """
+    Calculates mean square displacement of the array r using the fast Fourier transform.
 
     Args:
         r: atom positions over time
@@ -132,7 +134,8 @@ def msd_fft(r: np.ndarray) -> np.ndarray:
 
 
 def msd_straight_forward(r: np.ndarray) -> np.ndarray:
-    """Calculates mean square displacement of the array r using straight forward method.
+    """
+    Calculates mean square displacement of the array r using straight forward method.
 
     Args:
         r: atom positions over time
