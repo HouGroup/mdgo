@@ -72,27 +72,26 @@ def total_msd(
         return onsager_ii_self(
             nvt_run, start, end, select=select, msd_type=msd_type, center_of_mass=center_of_mass, fft=fft
         )
-    else:
-        if not mda_msd:
-            raise ValueError("MDAnalysis version too low, please update MDAnalysis.")
-        if center_of_mass:
-            raise ValueError(
-                "Warning! MDAnalysis does not support subtracting center of mass. Calculating without subtracting..."
-            )
-        if fft and td is None:
-            raise ImportError(
-                """tidynamics was not found!
 
-                            tidynamics is required to compute an FFT based MSD (default)
+    if not mda_msd:
+        raise ValueError("MDAnalysis version too low, please update MDAnalysis.")
+    if center_of_mass:
+        raise ValueError(
+            "Warning! MDAnalysis does not support subtracting center of mass. Calculating without subtracting..."
+        )
+    if fft and td is None:
+        raise ImportError(
+            """tidynamics was not found!
 
-                            try installing it using pip eg:
+                        tidynamics is required to compute an FFT based MSD (default)
 
-                                pip install tidynamics
+                        try installing it using pip eg:
 
-                            or set fft=False"""
-            )
-        else:
-            return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
+                            pip install tidynamics
+
+                        or set fft=False"""
+        )
+    return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
 
 
 def autocorr_fft(x: np.ndarray) -> np.ndarray:
@@ -280,7 +279,7 @@ def parse_msd_type(msd_type: DIM) -> List[int]:
         dim = keys[msd_type_str]
     except KeyError:
         raise ValueError(
-            "invalid msd_type: {} specified, please specify one of xyz, " "xy, xz, yz, x, y, z".format(msd_type)
+            f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, " "xy, xz, yz, x, y, z"
         )
     return dim
 
