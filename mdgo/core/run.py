@@ -3,8 +3,7 @@
 # Distributed under the terms of the MIT License.
 
 """
-This module implements a core class MdRun for molecular dynamics
-job setup.
+This module implements a core class MdRun for molecular dynamics job setup.
 """
 
 
