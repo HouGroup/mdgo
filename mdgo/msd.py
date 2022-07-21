@@ -118,7 +118,7 @@ def msd_straight_forward(r: np.ndarray) -> np.ndarray:
     msds = np.zeros(shifts.size)
 
     for i, shift in enumerate(shifts):
-        diffs = r[:-shift if shift else None] - r[shift:]
+        diffs = r[: -shift if shift else None] - r[shift:]
         sqdist = np.square(diffs).sum(axis=1)
         msds[i] = sqdist.mean()
 
@@ -162,11 +162,11 @@ def calc_Lii_self(u, start, end, select="all", center_of_mass=True):
     atom_positions = create_position_arrays(u, start, end, select=select, center_of_mass=center_of_mass)
     Lii_self = np.zeros(end - start)
     n_atoms = np.shape(atom_positions)[1]
-    for atom_num in (range(n_atoms)):
+    for atom_num in range(n_atoms):
         r = atom_positions[:, atom_num, :]
         msd_temp = msd_fft(np.array(r))[start:end]
         Lii_self += msd_temp
-    msd = np.array(Lii_self)/n_atoms
+    msd = np.array(Lii_self) / n_atoms
     return msd
 
 
