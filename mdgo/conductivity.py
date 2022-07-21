@@ -12,53 +12,13 @@ from tqdm.auto import tqdm
 from scipy import stats
 from MDAnalysis import Universe, AtomGroup
 
+from mdgo.msd import msd_fft
+
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
 __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Jul 19, 2021"
-
-"""
-Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 and
-http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
-"""
-
-
-def autocorr_fft(x: np.ndarray) -> np.ndarray:
-    """Calculates the autocorrelation function using the fast Fourier transform.
-
-    Args:
-        x: function on which to compute autocorrelation function
-
-    Returns a numpy.array of the autocorrelation function
-    """
-    N = len(x)
-    F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
-    PSD = F * F.conjugate()
-    res = np.fft.ifft(PSD)
-    res = (res[:N]).real
-    n = N * np.ones(N) - np.arange(0, N)
-    return res / n
-
-
-def msd_fft(r: np.ndarray) -> np.ndarray:
-    """Calculates mean square displacement of the array r using the fast Fourier transform.
-
-    Args:
-        r: atom positions over time
-
-    Returns a numpy.array containing the mean-squared displacement over time
-    """
-    N = len(r)
-    D = np.square(r).sum(axis=1)
-    D = np.append(D, 0)
-    S2 = sum([autocorr_fft(r[:, i]) for i in range(r.shape[1])])
-    Q = 2 * D.sum()
-    S1 = np.zeros(N)
-    for m in range(N):
-        Q = Q - D[m - 1] - D[N - m]
-        S1[m] = Q / (N - m)
-    return S1 - 2 * S2
 
 
 def calc_cond_msd(

@@ -4,7 +4,12 @@
 
 """
 This module implements functions for calculating meen square displacement (MSD).
+
+
+MSD FFT Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 and
+http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
 """
+
 from typing import List, Dict, Tuple, Union, Optional
 
 try:
@@ -13,7 +18,7 @@ except ImportError:
     mda_msd = None
 
 import numpy as np
-from tqdm.auto import trange
+from tqdm.auto import tqdm, trange
 
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom
@@ -62,6 +67,107 @@ def total_msd(
     if fft:
         raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
     return _total_msd(nvt_run, start, stop, select=select)
+
+
+def autocorr_fft(x: np.ndarray) -> np.ndarray:
+    """Calculates the autocorrelation function using the fast Fourier transform.
+
+    Args:
+        x: function on which to compute autocorrelation function
+
+    Returns a numpy.array of the autocorrelation function
+    """
+    N = len(x)
+    F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
+    PSD = F * F.conjugate()
+    res = np.fft.ifft(PSD)
+    res = (res[:N]).real
+    n = N * np.ones(N) - np.arange(0, N)
+    return res / n
+
+
+def msd_fft(r: np.ndarray) -> np.ndarray:
+    """Calculates mean square displacement of the array r using the fast Fourier transform.
+
+    Args:
+        r: atom positions over time
+
+    Returns a numpy.array containing the mean-squared displacement over time
+    """
+    N = len(r)
+    D = np.square(r).sum(axis=1)
+    D = np.append(D, 0)
+    S2 = sum([autocorr_fft(r[:, i]) for i in range(r.shape[1])])
+    Q = 2 * D.sum()
+    S1 = np.zeros(N)
+    for m in range(N):
+        Q = Q - D[m - 1] - D[N - m]
+        S1[m] = Q / (N - m)
+    return S1 - 2 * S2
+
+
+def msd_straight_forward(r: np.ndarray) -> np.ndarray:
+    """Calculates mean square displacement of the array r using straight forward method.
+
+    Args:
+        r: atom positions over time
+
+    Returns a numpy.array containing the mean-squared displacement over time
+    """
+    shifts = np.arange(len(r))
+    msds = np.zeros(shifts.size)
+
+    for i, shift in enumerate(shifts):
+        diffs = r[:-shift if shift else None] - r[shift:]
+        sqdist = np.square(diffs).sum(axis=1)
+        msds[i] = sqdist.mean()
+
+    return msds
+
+
+def create_position_arrays(u, start, end, select="all", center_of_mass=True):
+    """
+    Creates an array containing the positions of all cations and anions over time.
+    :param u: MDAnalysis universe
+    :param anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
+    :param cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
+    :param times: array[float], times at which position data was collected in the simulation
+    :return anion_positions, cation_positions: array[float,float,float], array with all
+    cation/anion positions. Indices correspond to time, ion index, and spatial dimension
+    (x,y,z), respectively
+    """
+    time = 0
+    atom_group = u.select_atoms(select)
+    atom_positions = np.zeros((end - start, len(atom_group), 3))
+    if center_of_mass:
+        for ts in u.trajectory[start:end]:
+            atom_positions[time, :, :] = atom_group.positions - u.atoms.center_of_mass()
+            time += 1
+    else:
+        for ts in u.trajectory[start:end]:
+            atom_positions[time, :, :] = atom_group.positions
+            time += 1
+    return atom_positions
+
+
+def calc_Lii_self(u, start, end, select="all", center_of_mass=True):
+    """
+    Calculates the "MSD" for the self component for a diagonal transport coefficient (L^{ii}).
+    :param atom_positions: array[float,float,float], position of each atom over time.
+    Indices correspond to time, ion index, and spatial dimension (x,y,z), respectively.
+    :param times: array[float], times at which position data was collected in the simulation
+    :return msd: array[float], "MSD" corresponding to the L^{ii}_{self} transport
+    coefficient at each time
+    """
+    atom_positions = create_position_arrays(u, start, end, select=select, center_of_mass=center_of_mass)
+    Lii_self = np.zeros(end - start)
+    n_atoms = np.shape(atom_positions)[1]
+    for atom_num in (range(n_atoms)):
+        r = atom_positions[:, atom_num, :]
+        msd_temp = msd_fft(np.array(r))[start:end]
+        Lii_self += msd_temp
+    msd = np.array(Lii_self)/n_atoms
+    return msd
 
 
 def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "all") -> np.ndarray:
