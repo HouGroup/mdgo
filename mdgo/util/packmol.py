@@ -15,7 +15,6 @@ set the folder of the packmol executable to the PATH environment variable.
 
 import os
 import subprocess
-import shlex
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
@@ -114,10 +113,10 @@ class PackmolWrapper:
                 "Don't forget to add the packmol binary to your path"
             )
         try:
-            args = shlex.split(f"packmol < '{self.input}'")
             p = subprocess.run(
-                args,
+                f"packmol < '{self.input}'",
                 check=True,
+                shell=True,
                 timeout=timeout,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
