@@ -15,8 +15,8 @@ class MyTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.arr1 = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2], [1, 1, 0], [4, 4, 2]])
         n = 100
-        cls.arr2 = np.cumsum(np.random.choice([-1., 0., 1.], size=(n, 3)), axis=0)
-        cls.fft = np.array([0.,  8.5,  7., 10.5, 36.])
+        cls.arr2 = np.cumsum(np.random.choice([-1.0, 0.0, 1.0], size=(n, 3)), axis=0)
+        cls.fft = np.array([0.0, 8.5, 7.0, 10.5, 36.0])
         cls.gen2 = MDAnalysis.Universe(
             os.path.join(test_dir, "gen2_light", "gen2_mdgo.data"),
             os.path.join(test_dir, "gen2_light", "gen2_mdgo_unwrapped_nvt_main.dcd"),
@@ -55,27 +55,27 @@ class MyTestCase(unittest.TestCase):
         self.assertAlmostEqual(89.84668178, self.mda_msd_anion[99])
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="x", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x")
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x"),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="y", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="y")
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="y"),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="z", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="z")
+            mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="z"),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xy", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xy")
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xy"),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="yz", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="yz")
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="yz"),
         )
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xz", center_of_mass=False),
-            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz")
+            mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz"),
         )
 
 
