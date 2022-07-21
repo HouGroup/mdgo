@@ -2,10 +2,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-Utilities for manipulating coordinates or list of coordinates, under periodic
-boundary conditions or otherwise.
-"""
+"""Utilities for manipulating coordinates under periodic boundary conditions."""
 
 from typing import List, Union
 import numpy as np

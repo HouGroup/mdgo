@@ -2,10 +2,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-The util package implements various utilities that are commonly used by various
-packages.
-"""
+"""The util package implements various utilities that are commonly used by various packages."""
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"

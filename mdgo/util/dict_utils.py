@@ -2,9 +2,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-Utilities for manipulating dictionaries.
-"""
+"""Utilities for manipulating dictionaries."""
 
 import string
 import re

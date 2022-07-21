@@ -2,9 +2,9 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module implements a core class MdRun for molecular dynamics
-simulation analysis.
+"""This module implements a core class MdRun for molecular dynamics simulation analysis.
+
+The MdRun class currently only supports LAMMPS simulations.
 """
 
 from __future__ import annotations
@@ -241,7 +241,8 @@ class MdRun:
         return self.wrapped_run.trajectory[-1].dimensions
 
     def get_cond_array(self) -> np.ndarray:
-        """Calculates the conductivity "mean square displacement".
+        """
+        Calculates the conductivity 'mean square displacement'.
 
         Return:
              An array of MSD values for each time in the trajectory.
@@ -260,10 +261,8 @@ class MdRun:
         return cond_array
 
     def choose_cond_fit_region(self) -> tuple:
-        """Computes the optimal fitting region (linear regime) of conductivity MSD.
-
-        Args:
-            msd (numpy.array): mean squared displacement
+        """
+        Computes the optimal fitting region (linear regime) of conductivity MSD.
 
         Returns at tuple with the start of the fitting regime (int), end of the
         fitting regime (int), and the beta value of the fitting regime (float).
@@ -280,7 +279,8 @@ class MdRun:
         *runs: MdRun,
         reference: bool = True,
     ):
-        """Plots the conductivity MSD as a function of time.
+        """
+        Plots the conductivity MSD as a function of time.
         If no fitting region (start, end) is provided, computes the optimal
         fitting region based on the portion of the MSD with greatest
         linearity.
