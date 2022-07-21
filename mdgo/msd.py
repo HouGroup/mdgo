@@ -274,10 +274,10 @@ def parse_msd_type(msd_type: DIM) -> List[int]:
         "xyz": [0, 3, 1],
     }
 
-    msd_type = str(msd_type).lower()
+    msd_type_str = str(msd_type).lower()
 
     try:
-        dim = keys[msd_type]
+        dim = keys[msd_type_str]
     except KeyError:
         raise ValueError(
             "invalid msd_type: {} specified, please specify one of xyz, " "xy, xz, yz, x, y, z".format(msd_type)
