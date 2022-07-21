@@ -732,7 +732,7 @@ class MdRun:
     def get_msd_all(
         self,
         start: int = 0,
-        stop: int = -1,
+        end: int = -1,
         fft: bool = True,
         species: str = "cation",
     ) -> np.ndarray:
@@ -740,7 +740,7 @@ class MdRun:
 
         Args:
             start: Start time step.
-            stop: End time step.
+            end: End time step.
             fft: Whether to use fft to calculate msd. Default to True.
             species: The species for analysis. Default to "cation".
 
@@ -752,7 +752,7 @@ class MdRun:
         msd_array = total_msd(
             self.unwrapped_run,
             start=start,
-            stop=stop,
+            end=end,
             select=selection,
             fft=fft,
         )
@@ -790,14 +790,14 @@ class MdRun:
         )
         return free_array, attach_array
 
-    def get_d(self, msd_array: np.ndarray, start: int, stop: int, percentage: float = 1, species: str = "cation"):
+    def get_d(self, msd_array: np.ndarray, start: int, end: int, percentage: float = 1, species: str = "cation"):
         """Prints the self-diffusion coefficient (in m^2/s) of the species.
         Prints the Nernst-Einstein conductivity (in mS/cm) if it's the cation.
 
         Args:
             msd_array: msd array.
             start: Start time step.
-            stop: End time step.
+            end: End time step.
             percentage: The percentage of the cation. Default to 1.
             species: The species for analysis. Default to "cation".
         """
@@ -805,13 +805,13 @@ class MdRun:
         ps = 1e-12
         s_m_to_ms_cm = 10
         if percentage != 1:
-            d = (msd_array[start] - msd_array[stop]) / (start - stop) / self.time_step / 6 * a2 / ps
+            d = (msd_array[start] - msd_array[end]) / (start - end) / self.time_step / 6 * a2 / ps
             sigma = percentage * d * self.d_to_sigma * s_m_to_ms_cm
             print(f"Diffusivity of {(percentage * 100):.2f}% {species}: {d} m^2/s")
             if species.lower() == "cation" or species.lower() == "li":
                 print(f"NE Conductivity of {(percentage * 100):.2f}% {species}: {sigma}mS/cm")
         else:
-            d = (msd_array[start] - msd_array[stop]) / (start - stop) / self.time_step / 6 * a2 / ps
+            d = (msd_array[start] - msd_array[end]) / (start - end) / self.time_step / 6 * a2 / ps
             sigma = d * self.d_to_sigma * s_m_to_ms_cm
             print("Diffusivity of all " + species + ":", d, "m^2/s")
             if species.lower() == "cation" or species.lower() == "li":

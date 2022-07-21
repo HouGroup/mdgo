@@ -134,26 +134,25 @@ def msd_straight_forward(r: np.ndarray) -> np.ndarray:
     return msds
 
 
-def create_position_arrays(u, start, end, select="all", center_of_mass=True):
+def create_position_arrays(nvt_run, start, end, select="all", center_of_mass=True):
     """
     Creates an array containing the positions of all cations and anions over time.
-    :param u: MDAnalysis universe
-    :param anions: MDAnalysis AtomGroup containing all anions (assumes anions are single atoms)
-    :param cations: MDAnalysis AtomGroup containing all cations (assumes cations are single atoms)
-    :param times: array[float], times at which position data was collected in the simulation
-    :return anion_positions, cation_positions: array[float,float,float], array with all
-    cation/anion positions. Indices correspond to time, ion index, and spatial dimension
-    (x,y,z), respectively
+
+    nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
+    start: Start frame of analysis.
+    end: End frame of analysis.
+    select: A selection string. Defaults to “all” in which case all atoms are selected.
+    center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
     """
     time = 0
-    atom_group = u.select_atoms(select)
+    atom_group = nvt_run.select_atoms(select)
     atom_positions = np.zeros((end - start, len(atom_group), 3))
     if center_of_mass:
-        for ts in u.trajectory[start:end]:
-            atom_positions[time, :, :] = atom_group.positions - u.atoms.center_of_mass()
+        for ts in nvt_run.trajectory[start:end]:
+            atom_positions[time, :, :] = atom_group.positions - nvt_run.atoms.center_of_mass()
             time += 1
     else:
-        for ts in u.trajectory[start:end]:
+        for ts in nvt_run.trajectory[start:end]:
             atom_positions[time, :, :] = atom_group.positions
             time += 1
     return atom_positions
@@ -208,7 +207,7 @@ def onsager_ii_self(
 
 
 def mda_msd_wrapper(
-    nvt_run: Universe, start: int, stop: int, select: str = "all", msd_type: DIM = "xyz", fft: bool = True
+    nvt_run: Universe, start: int, end: int, select: str = "all", msd_type: DIM = "xyz", fft: bool = True
 ) -> np.ndarray:
     """
     From a MD Universe, calculates the MSD array of a group of atoms using MDAnalysis's msd module..
@@ -216,7 +215,7 @@ def mda_msd_wrapper(
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         start: Start frame of analysis.
-        stop: End frame of analysis.
+        end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
         msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
         fft: Whether to use FFT to accelerate the calculation. Default to True.
@@ -230,11 +229,12 @@ def mda_msd_wrapper(
         An array of calculated MSD.
     """
     msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
-    msd_calculator.run(start=start, stop=stop)
+    msd_calculator.run(start=start, stop=end)
     try:
-        total_array = msd_calculator.timeseries
-    except AttributeError:
         total_array = msd_calculator.results.timeseries
+    except AttributeError:
+        total_array = msd_calculator.timeseries
+
     return total_array
 
 
@@ -257,7 +257,7 @@ def parse_msd_type(msd_type: DIM) -> List[int]:
         "xyz": [0, 3, 1],
     }
 
-    msd_type = msd_type.lower()
+    msd_type = str(msd_type).lower()
 
     try:
         dim = keys[msd_type]
