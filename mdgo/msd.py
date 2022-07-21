@@ -80,7 +80,8 @@ def total_msd(
                 "Warning! MDAnalysis does not support subtracting center of mass. Calculating without subtracting..."
             )
         if fft and td is None:
-            raise ImportError("""tidynamics was not found!
+            raise ImportError(
+                """tidynamics was not found!
 
                             tidynamics is required to compute an FFT based MSD (default)
 
@@ -88,7 +89,8 @@ def total_msd(
 
                                 pip install tidynamics
 
-                            or set fft=False""")
+                            or set fft=False"""
+            )
         else:
             return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
 
