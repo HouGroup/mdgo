@@ -289,7 +289,7 @@ def parse_msd_type(msd_type: DIM) -> List[int]:
 
 def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "all") -> np.ndarray:
     """
-    A native MSD calculator. Uses the conventional algorithm. TODO: add xyz dimension selection; use fft method
+    A native MSD calculator. Uses the conventional algorithm.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
