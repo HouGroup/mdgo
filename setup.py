@@ -2,6 +2,8 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
+"""Setup.py for MDGO."""
+
 import os
 
 from setuptools import setup, find_packages
