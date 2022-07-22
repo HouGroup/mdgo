@@ -48,7 +48,7 @@ def total_msd(
     center_of_mass: bool = True,
 ) -> np.ndarray:
     """
-    From a MD Universe, calculates the MSD array of a group of atoms defined by select.
+    From an MD Universe, calculates the MSD array of a group of atoms defined by select.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
