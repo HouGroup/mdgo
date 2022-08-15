@@ -153,7 +153,9 @@ def msd_straight_forward(r: np.ndarray) -> np.ndarray:
     return msds
 
 
-def create_position_arrays(nvt_run, start, end, select="all", center_of_mass=True):
+def create_position_arrays(
+    nvt_run: Universe, start: int, end: int, select: str = "all", center_of_mass: bool = True
+) -> np.ndarray:
     """
     Creates an array containing the positions of all cations and anions over time.
 

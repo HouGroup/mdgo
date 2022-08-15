@@ -1,7 +1,6 @@
 import os
 import unittest
 
-import numpy as np
 import MDAnalysis
 
 try:
@@ -27,11 +26,7 @@ class MyTestCase(unittest.TestCase):
             os.path.join(test_dir, "gen2_light", "gen2_mdgo_unwrapped_nvt_main.dcd"),
             format="LAMMPS",
         )
-        cls.mda_msd_cation = mda_msd_wrapper(cls.gen2, 0, 100, select="type 3", fft=False)
-        cls.mda_msd_anion = mda_msd_wrapper(cls.gen2, 0, 100, select="type 1", fft=False)
-        cls.onsager_ii_self = onsager_ii_self(cls.gen2, 0, 100, select="type 3")
-        cls.onsager_ii_self_nocom = onsager_ii_self(cls.gen2, 0, 100, select="type 3", center_of_mass=False)
-        cls.onsager_ii_self_nofft = onsager_ii_self(cls.gen2, 0, 100, select="type 3", fft=False)
+        cls.dims = ["x", "y", "z"]
 
     def test_msd_straight_forward(self):
         assert np.allclose(self.fft, msd_straight_forward(self.arr1))
@@ -40,24 +35,64 @@ class MyTestCase(unittest.TestCase):
         assert np.allclose(self.fft, msd_fft(self.arr1))
         assert np.allclose(msd_straight_forward(self.arr2), msd_fft(self.arr2))
 
+    def test_create_position_arrays(self):
+        assert np.allclose(
+            np.array([21.53381769, 14.97501839, -3.87998785]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3")[50][2]
+        )
+        assert np.allclose(
+            np.array([-2.78550047, -11.85487624, -17.1221954]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3")[99][10]
+        )
+        assert np.allclose(
+            np.array([41.1079216 , 34.95127106, 18.00482368]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[50][2]
+        )
+        assert np.allclose(
+            np.array([16.98478317,  8.27190208,  5.07116079]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[99][10]
+        )
+
+    def test_parse_msd_type(self):
+        xyz = parse_msd_type("xyz")
+        self.assertEqual(["x", "y", "z"], self.dims[xyz[0]:xyz[1]:xyz[2]])
+        xy = parse_msd_type("xy")
+        self.assertEqual(["x", "y"], self.dims[xy[0]:xy[1]:xy[2]])
+        yz = parse_msd_type("yz")
+        self.assertEqual(["y", "z"], self.dims[yz[0]:yz[1]:yz[2]])
+        xz = parse_msd_type("xz")
+        self.assertEqual(["x", "z"], self.dims[xz[0]:xz[1]:xz[2]])
+        x = parse_msd_type("x")
+        self.assertEqual(["x"], self.dims[x[0]:x[1]:x[2]])
+        y = parse_msd_type("y")
+        self.assertEqual(["y"], self.dims[y[0]:y[1]:y[2]])
+        z = parse_msd_type("z")
+        self.assertEqual(["z"], self.dims[z[0]:z[1]:z[2]])
+
     def test_onsager_ii_self(self):
-        self.assertAlmostEqual(32.14254152556588, self.onsager_ii_self[50])
-        self.assertAlmostEqual(63.62190983, self.onsager_ii_self[98])
-        self.assertAlmostEqual(67.29990019, self.onsager_ii_self[99])
-        self.assertAlmostEqual(32.14254152556588, self.onsager_ii_self_nofft[50])
-        self.assertAlmostEqual(63.62190983, self.onsager_ii_self_nofft[98])
-        self.assertAlmostEqual(67.29990019, self.onsager_ii_self_nofft[99])
-        self.assertAlmostEqual(32.338364098424634, self.onsager_ii_self_nocom[50])
-        self.assertAlmostEqual(63.52915984813752, self.onsager_ii_self_nocom[98])
-        self.assertAlmostEqual(67.29599346166411, self.onsager_ii_self_nocom[99])
+        onsager_ii_self_fft = onsager_ii_self(self.gen2, 0, 100, select="type 3")
+        onsager_ii_self_nocom = onsager_ii_self(self.gen2, 0, 100, select="type 3", center_of_mass=False)
+        onsager_ii_self_nofft = onsager_ii_self(self.gen2, 0, 100, select="type 3", fft=False)
+
+        self.assertAlmostEqual(32.14254152556588, onsager_ii_self_fft[50])
+        self.assertAlmostEqual(63.62190983, onsager_ii_self_fft[98])
+        self.assertAlmostEqual(67.29990019, onsager_ii_self_fft[99])
+        self.assertAlmostEqual(32.14254152556588, onsager_ii_self_nofft[50])
+        self.assertAlmostEqual(63.62190983, onsager_ii_self_nofft[98])
+        self.assertAlmostEqual(67.29990019, onsager_ii_self_nofft[99])
+        self.assertAlmostEqual(32.338364098424634, onsager_ii_self_nocom[50])
+        self.assertAlmostEqual(63.52915984813752, onsager_ii_self_nocom[98])
+        self.assertAlmostEqual(67.29599346166411, onsager_ii_self_nocom[99])
 
     def test_mda_msd_wrapper(self):
-        self.assertAlmostEqual(32.338364098424634, self.mda_msd_cation[50])
-        self.assertAlmostEqual(63.52915984813752, self.mda_msd_cation[98])
-        self.assertAlmostEqual(67.29599346166411, self.mda_msd_cation[99])
-        self.assertAlmostEqual(42.69200176568008, self.mda_msd_anion[50])
-        self.assertAlmostEqual(86.9209518, self.mda_msd_anion[98])
-        self.assertAlmostEqual(89.84668178, self.mda_msd_anion[99])
+        mda_msd_cation = mda_msd_wrapper(self.gen2, 0, 100, select="type 3", fft=False)
+        mda_msd_anion = mda_msd_wrapper(self.gen2, 0, 100, select="type 1", fft=False)
+        self.assertAlmostEqual(32.338364098424634, mda_msd_cation[50])
+        self.assertAlmostEqual(63.52915984813752, mda_msd_cation[98])
+        self.assertAlmostEqual(67.29599346166411, mda_msd_cation[99])
+        self.assertAlmostEqual(42.69200176568008, mda_msd_anion[50])
+        self.assertAlmostEqual(86.9209518, mda_msd_anion[98])
+        self.assertAlmostEqual(89.84668178, mda_msd_anion[99])
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="x", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x", fft=False),
@@ -83,7 +118,7 @@ class MyTestCase(unittest.TestCase):
             mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz", fft=False),
         )
         if td is not None:
-            assert np.allclose(self.mda_msd_cation, mda_msd_wrapper(self.gen2, 0, 100, select="type 3"))
+            assert np.allclose(mda_msd_cation, mda_msd_wrapper(self.gen2, 0, 100, select="type 3"))
 
 
 if __name__ == "__main__":
