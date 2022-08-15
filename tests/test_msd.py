@@ -120,6 +120,16 @@ class MyTestCase(unittest.TestCase):
         if td is not None:
             assert np.allclose(mda_msd_cation, mda_msd_wrapper(self.gen2, 0, 100, select="type 3"))
 
+    def test_total_msd(self):
+        total_builtin_cation = total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=True)
+        total_mda_cation = total_msd(
+            self.gen2, 0, 100, select="type 3", fft=False, built_in=False, center_of_mass=False
+        )
+        self.assertAlmostEqual(32.14254152556588, total_builtin_cation[50])
+        self.assertAlmostEqual(32.338364098424634, total_mda_cation[50])
+        with self.assertRaises(ValueError):
+            total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=False, center_of_mass=True)
+
 
 if __name__ == "__main__":
     unittest.main()
