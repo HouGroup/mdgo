@@ -107,7 +107,7 @@ class PackmolWrapper:
         if not which("packmol"):
             raise RuntimeError(
                 "PackmolWrapper requires the executable 'packmol' to be in "
-                "the path. Please download packmol from  "
+                "the path. Please download packmol from "
                 "https://github.com/leandromartinez98/packmol "
                 "and follow the instructions in the README to compile. "
                 "Don't forget to add the packmol binary to your path"
