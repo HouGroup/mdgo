@@ -114,7 +114,7 @@ If not available already, use the following steps.
 
 # 3. Citation
 
-When using MDAnalysis in published work, please cite the following paper:
+When using mdgo in published work, please cite the following paper:
 
   * Hou, T.; Fong, K. D.; Wang, J.; Persson, K. A. The solvation structure, transport properties and reduction behavior of carbonate-based electrolytes of lithium-ion batteries. *Chem. Sci.* **2021**, *12*, 14740-14751. [[doi](https://doi.org/10.1039/D1SC04265C)]
 
