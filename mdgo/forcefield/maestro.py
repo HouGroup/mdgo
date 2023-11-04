@@ -72,9 +72,9 @@ class MaestroRunner:
         >>> mr.get_ff()
     """
 
-    template_assignbond = os.path.join(MODULE_DIR, "templates", "mae_cmd_assignbond.txt")
+    template_assignbond = os.path.join(MODULE_DIR, '..', "templates", "mae_cmd_assignbond.txt")
 
-    template_noassignbond = os.path.join(MODULE_DIR, "templates", "mae_cmd_noassignbond.txt")
+    template_noassignbond = os.path.join(MODULE_DIR, '..', "templates", "mae_cmd_noassignbond.txt")
 
     def __init__(
         self,
