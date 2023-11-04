@@ -215,7 +215,7 @@ def onsager_ii_self(
     dim = parse_msd_type(msd_type)
     if fft:
         for atom_num in range(n_atoms):
-            r = atom_positions[:, atom_num, dim[0]: dim[1] : dim[2]]
+            r = atom_positions[:, atom_num, dim[0] : dim[1] : dim[2]]
             msd_temp = msd_fft(np.array(r))  # [start:end] bug fix, please confirm
             ii_self += msd_temp
     else:

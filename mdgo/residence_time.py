@@ -209,12 +209,14 @@ def fit_residence_time(
         plt.plot(times, acf_avg_norm[kw], label=kw, color=colors[i])
         fitted_x = np.linspace(0, cutoff_time * time_step, cutoff_time)
         fitted_y = exponential_func(np.linspace(0, cutoff_time * time_step, cutoff_time), *popt[kw])
-        save_decay = np.vstack((
-            times[:cutoff_time],
-            acf_avg_norm[kw][:cutoff_time],
-            fitted_x,
-            fitted_y,
-        ))
+        save_decay = np.vstack(
+            (
+                times[:cutoff_time],
+                acf_avg_norm[kw][:cutoff_time],
+                fitted_x,
+                fitted_y,
+            )
+        )
         np.savetxt(f"/Users/th/Downloads/decay{i}.csv", save_decay.T, delimiter=",")
         plt.plot(
             fitted_x,
