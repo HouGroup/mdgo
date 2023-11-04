@@ -278,6 +278,7 @@ class MdRun:
         end: int = -1,
         *runs: MdRun,
         reference: bool = True,
+        vert: float = 1,
     ):
         """
         Plots the conductivity MSD as a function of time.
@@ -291,7 +292,7 @@ class MdRun:
             runs (MdRun): Other runs to be compared in the same plot.
             reference (bool): Whether to plot reference line.
                 Default to True.
-            units (str): unit system (currently 'real' and 'lj' are supported)
+            vert (str): factor to modify the vertical position of the plot.
         """
         if self.cond_array is None:
             self.cond_array = self.get_cond_array()
@@ -319,7 +320,7 @@ class MdRun:
             slope_guess = (self.cond_array[int(np.log(len(self.time_array)) / 2)] - self.cond_array[5]) / (
                 self.time_array[int(np.log(len(self.time_array)) / 2)] - self.time_array[5]
             )
-            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2, "k--")
+            ax.loglog(self.time_array[start:end], np.array(self.time_array[start:end]) * slope_guess * 2 / vert, "k--")
         if self.units == "real":
             ax.set_ylabel("MSD (A$^2$)")
             ax.set_xlabel("Time (ps)")
@@ -328,7 +329,8 @@ class MdRun:
             ax.set_xlabel("Time ($\\tau$)")
         else:
             raise ValueError("units selection not supported")
-        ax.set_ylim(min(np.abs(self.cond_array[1:])) * 0.9, max(np.abs(self.cond_array)) * 1.2)
+        ax.set_ylim(min(np.abs(self.cond_array[1:])) * 0.9, max(np.abs(self.cond_array)) * 12)
+        ax.set_xlim(1000, 1000000)
         ax.legend()
         fig.show()
 
