@@ -11,16 +11,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import acovf
 from scipy.optimize import curve_fit
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom
 
 __author__ = "Kara Fong, Tingzheng Hou"
-__version__ = "1.0"
+__version__ = "0.3.0"
 __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
-__date__ = "Feb 9, 2021"
+__date__ = "Jul 19, 2021"
 
 
 def neighbors_one_atom(
@@ -207,9 +207,20 @@ def fit_residence_time(
     line_styles = ["-", "--", "-.", ":"]
     for i, kw in enumerate(species_list):
         plt.plot(times, acf_avg_norm[kw], label=kw, color=colors[i])
+        fitted_x = np.linspace(0, cutoff_time * time_step, cutoff_time)
+        fitted_y = exponential_func(np.linspace(0, cutoff_time * time_step, cutoff_time), *popt[kw])
+        save_decay = np.vstack(
+            (
+                times[:cutoff_time],
+                acf_avg_norm[kw][:cutoff_time],
+                fitted_x,
+                fitted_y,
+            )
+        )
+        np.savetxt(f"/Users/th/Downloads/decay{i}.csv", save_decay.T, delimiter=",")
         plt.plot(
-            np.linspace(0, cutoff_time * time_step, cutoff_time),
-            exponential_func(np.linspace(0, cutoff_time * time_step, cutoff_time), *popt[kw]),
+            fitted_x,
+            fitted_y,
             line_styles[i],
             color="k",
             label=kw + " Fit",

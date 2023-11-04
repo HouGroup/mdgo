@@ -1,4 +1,4 @@
-import os
+import io
 import sys
 import tempfile
 import unittest
@@ -7,7 +7,8 @@ from io import StringIO
 import numpy as np
 import pytest
 
-from mdgo.forcefield import *
+from mdgo.forcefield.crawler import *
+from mdgo.forcefield.aqueous import *
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
@@ -76,7 +77,7 @@ class FFcrawlerTest(unittest.TestCase):
 
 
 class AqueousTest(unittest.TestCase):
-    def test_get_ion(self):
+    def test_get_ion(self) -> None:
         """
         Some unit tests for get_ion
         """

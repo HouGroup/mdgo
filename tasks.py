@@ -112,6 +112,27 @@ def set_ver(ctx, version):
     with open("mdgo/__init__.py", "wt") as f:
         f.write(contents)
 
+    with open("mdgo/core/__init__.py") as f:
+        contents = f.read()
+        contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
+
+    with open("mdgo/core/__init__.py", "wt") as f:
+        f.write(contents)
+
+    with open("mdgo/forcefield/__init__.py") as f:
+        contents = f.read()
+        contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
+
+    with open("mdgo/forcefield/__init__.py", "wt") as f:
+        f.write(contents)
+
+    with open("mdgo/util/__init__.py") as f:
+        contents = f.read()
+        contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
+
+    with open("mdgo/util/__init__.py", "wt") as f:
+        f.write(contents)
+
     with open("setup.py") as f:
         contents = f.read()
         contents = re.sub(r"version=([^,]+),", 'version="%s",' % version, contents)

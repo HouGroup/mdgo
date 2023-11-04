@@ -4,37 +4,239 @@
 
 """
 This module implements functions for calculating meen square displacement (MSD).
+
+
+MSD FFT Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 and
+http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
 """
-from typing import List, Dict, Tuple, Union, Optional
+
+from typing import List, Dict, Tuple, Union, Optional, Literal
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
 except ImportError:
     mda_msd = None
+try:
+    import tidynamics as td
+except ImportError:
+    td = None
 
 import numpy as np
-from tqdm.notebook import trange
+from tqdm.auto import trange
 
 from MDAnalysis import Universe, AtomGroup
 from MDAnalysis.core.groups import Atom
 
 __author__ = "Tingzheng Hou"
-__version__ = "1.0"
+__version__ = "0.3.0"
 __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
-__date__ = "Feb 9, 2021"
+__date__ = "Jul 19, 2021"
+
+
+DIM = Literal["xyz", "xy", "yz", "xz", "x", "y", "z"]
 
 
 def total_msd(
-    nvt_run: Universe, start: int, stop: int, select: str = "all", msd_type: str = "xyz", fft: bool = True
+    nvt_run: Universe,
+    start: int,
+    end: int,
+    select: str = "all",
+    msd_type: DIM = "xyz",
+    fft: bool = True,
+    built_in: bool = True,
+    center_of_mass: bool = True,
 ) -> np.ndarray:
     """
-    From a MD Universe, calculates the MSD array of a group of atoms defined by select.
+    From an MD Universe, calculates the MSD array of a group of atoms defined by select.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
         start: Start frame of analysis.
-        stop: End frame of analysis.
+        end: End frame of analysis.
+        select: A selection string. Defaults to “all” in which case all atoms are selected.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        fft: Whether to use FFT to accelerate the calculation. Default to True.
+        built_in: Whether to use built in method to calculate msd or use function from mds. Default to True.
+        center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
+
+    Warning:
+        To correctly compute the MSD using this analysis module, you must supply coordinates in the
+        unwrapped convention. That is, when atoms pass the periodic boundary, they must not be
+        wrapped back into the primary simulation cell.
+
+    Returns:
+        An array of calculated MSD.
+    """
+    if built_in:
+        return onsager_ii_self(
+            nvt_run, start, end, select=select, msd_type=msd_type, center_of_mass=center_of_mass, fft=fft
+        )
+
+    if not mda_msd:
+        raise ValueError("MDAnalysis version too low, please update MDAnalysis.")
+    if center_of_mass:
+        raise ValueError(
+            "Warning! MDAnalysis does not support subtracting center of mass. Calculating without subtracting..."
+        )
+    if fft and td is None:
+        raise ImportError(
+            """tidynamics was not found!
+
+                        tidynamics is required to compute an FFT based MSD (default)
+
+                        try installing it using pip eg:
+
+                            pip install tidynamics
+
+                        or set fft=False"""
+        )
+    return mda_msd_wrapper(nvt_run, start, end, select=select, msd_type=msd_type, fft=fft)
+
+
+def autocorr_fft(x: np.ndarray) -> np.ndarray:
+    """
+    Calculates the autocorrelation function using the fast Fourier transform.
+
+    Args:
+        x: function on which to compute autocorrelation function
+
+    Returns a numpy.array of the autocorrelation function
+    """
+    N = len(x)
+    F = np.fft.fft(x, n=2 * N)  # 2*N because of zero-padding
+    PSD = F * F.conjugate()
+    res = np.fft.ifft(PSD)
+    res = (res[:N]).real
+    n = N * np.ones(N) - np.arange(0, N)
+    return res / n
+
+
+def msd_fft(r: np.ndarray) -> np.ndarray:
+    """
+    Calculates mean square displacement of the array r using the fast Fourier transform.
+
+    Args:
+        r: atom positions over time
+
+    Returns a numpy.array containing the mean-squared displacement over time
+    """
+    N = len(r)
+    D = np.square(r).sum(axis=1)
+    D = np.append(D, 0)
+    S2 = sum([autocorr_fft(r[:, i]) for i in range(r.shape[1])])
+    Q = 2 * D.sum()
+    S1 = np.zeros(N)
+    for m in range(N):
+        Q = Q - D[m - 1] - D[N - m]
+        S1[m] = Q / (N - m)
+    return S1 - 2 * S2
+
+
+def msd_straight_forward(r: np.ndarray) -> np.ndarray:
+    """
+    Calculates mean square displacement of the array r using straight forward method.
+
+    Args:
+        r: atom positions over time
+
+    Returns a numpy.array containing the mean-squared displacement over time
+    """
+    shifts = np.arange(len(r))
+    msds = np.zeros(shifts.size)
+
+    for i, shift in enumerate(shifts):
+        diffs = r[: -shift if shift else None] - r[shift:]
+        sqdist = np.square(diffs).sum(axis=1)
+        msds[i] = sqdist.mean()
+
+    return msds
+
+
+def create_position_arrays(
+    nvt_run: Universe, start: int, end: int, select: str = "all", center_of_mass: bool = True
+) -> np.ndarray:
+    """
+    Creates an array containing the positions of all cations and anions over time.
+
+    nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
+    start: Start frame of analysis.
+    end: End frame of analysis.
+    select: A selection string. Defaults to “all” in which case all atoms are selected.
+    center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
+    """
+    time = 0
+    atom_group = nvt_run.select_atoms(select)
+    atom_positions = np.zeros((end - start, len(atom_group), 3))
+    if center_of_mass:
+        for ts in nvt_run.trajectory[start:end]:
+            atom_positions[time, :, :] = atom_group.positions - nvt_run.atoms.center_of_mass()
+            time += 1
+    else:
+        for ts in nvt_run.trajectory[start:end]:
+            atom_positions[time, :, :] = atom_group.positions
+            time += 1
+    return atom_positions
+
+
+def onsager_ii_self(
+    nvt_run: Universe,
+    start: int,
+    end: int,
+    select: str = "all",
+    msd_type: DIM = "xyz",
+    center_of_mass: bool = True,
+    fft: bool = True,
+) -> np.ndarray:
+    """
+    From a MD Universe, calculates the MSD array for the self component for
+    a diagonal transport coefficient (L^{ii}).
+
+    Args:
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
+        start: Start frame of analysis.
+        end: End frame of analysis.
+        select: A selection string. Defaults to “all” in which case all atoms are selected.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
+        fft: Whether to use FFT to accelerate the calculation. Default to True.
+
+    Warning:
+        To correctly compute the MSD using this analysis module, you must supply coordinates in the
+        unwrapped convention. That is, when atoms pass the periodic boundary, they must not be
+        wrapped back into the primary simulation cell.
+
+    Returns:
+        An array of "MSD" corresponding to the L^{ii}_{self} transport coefficient at each time
+    """
+    atom_positions = create_position_arrays(nvt_run, start, end, select=select, center_of_mass=center_of_mass)
+    ii_self = np.zeros(end - start)
+    n_atoms = np.shape(atom_positions)[1]
+    dim = parse_msd_type(msd_type)
+    if fft:
+        for atom_num in range(n_atoms):
+            r = atom_positions[:, atom_num, dim[0] : dim[1] : dim[2]]
+            msd_temp = msd_fft(np.array(r))  # [start:end] bug fix, please confirm
+            ii_self += msd_temp
+    else:
+        for atom_num in range(n_atoms):
+            r = atom_positions[:, atom_num, dim[0] : dim[1] : dim[2]]
+            msd_temp = msd_straight_forward(np.array(r))  # [start:end]
+            ii_self += msd_temp
+    msd = np.array(ii_self) / n_atoms
+    return msd
+
+
+def mda_msd_wrapper(
+    nvt_run: Universe, start: int, end: int, select: str = "all", msd_type: DIM = "xyz", fft: bool = True
+) -> np.ndarray:
+    """
+    From a MD Universe, calculates the MSD array of a group of atoms using MDAnalysis's msd module..
+
+    Args:
+        nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
+        start: Start frame of analysis.
+        end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
         msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
         fft: Whether to use FFT to accelerate the calculation. Default to True.
@@ -44,29 +246,52 @@ def total_msd(
         unwrapped convention. That is, when atoms pass the periodic boundary, they must not be
         wrapped back into the primary simulation cell.
 
-    Note:
-         The built in FFT method is under construction.
-
     Returns:
         An array of calculated MSD.
     """
-    if mda_msd is not None:
-        msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
-        msd_calculator.run(start=start, stop=stop)
-        try:
-            total_array = msd_calculator.timeseries
-        except AttributeError:
-            total_array = msd_calculator.results.timeseries
-        return total_array
+    msd_calculator = mda_msd.EinsteinMSD(nvt_run, select=select, msd_type=msd_type, fft=fft)
+    msd_calculator.run(start=start, stop=end)
+    try:
+        total_array = msd_calculator.results.timeseries
+    except AttributeError:
+        total_array = msd_calculator.timeseries
 
-    if fft:
-        raise ValueError("Warning! MDAnalysis version too low, fft not supported. PleaseUse fft=False instead")
-    return _total_msd(nvt_run, start, stop, select=select)
+    return total_array
+
+
+def parse_msd_type(msd_type: DIM) -> List[int]:
+    """
+    Sets up the desired dimensionality of the MSD.
+
+    msd_type: Desired dimensions to be included in the MSD.
+
+    Returns:
+        A list of indexing number for slicing x, y, z coordinates.
+    """
+    keys = {
+        "x": [0, 1, 1],
+        "y": [1, 2, 1],
+        "z": [2, 3, 1],
+        "xy": [0, 2, 1],
+        "xz": [0, 3, 2],
+        "yz": [1, 3, 1],
+        "xyz": [0, 3, 1],
+    }
+
+    msd_type_str = str(msd_type).lower()
+
+    try:
+        dim = keys[msd_type_str]
+    except KeyError:
+        raise ValueError(
+            f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, " "xy, xz, yz, x, y, z"
+        )
+    return dim
 
 
 def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "all") -> np.ndarray:
     """
-    A native MSD calculator. Uses the conventional algorithm. TODO: add xyz dimension selection; use fft method
+    A native MSD calculator. Uses the conventional algorithm.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.

@@ -1,0 +1,54 @@
+Optimized TIP4P-FB parameters for water
+# Original model from Wang et al., Building Force Fields: An Automatic, 
+# Systematic, and Reproducible Approach, J. Phys. Chem. Letters 5(11), 2014.
+# https://pubs.acs.org/doi/10.1021/jz500737m
+# real units (kcal/mol, Angstrom) 
+# Command 'fix shake' is needed.
+# LJ and couloumb cutoffs of 9 and 7 angstroms were used in the original work
+# Bond and angle coefficients of 1000 are added to keep the water molecule together
+# during e.g. energy minimization in LAMMPS when `fix shake` is not active.
+
+       3 atoms
+       2 bonds
+       1 angles
+
+       2 atom types
+       1 bond types
+       1 angle types
+
+    0.0 3.1      xlo xhi
+    0.0 3.1      ylo yhi
+    0.0 3.1      zlo zhi
+
+Masses
+
+      1    1.00794
+      2    15.9994
+
+Pair Coeffs #lj/cut/tip4p/long 2 1 1 1 0.10527 9.0 7.0
+
+      1    0.000   0.000
+      2    0.17908 3.1655
+
+Bond Coeffs #harmonic
+
+      1    1000 0.9572
+
+Angle Coeffs #harmonic
+
+      1    1000 104.52 
+
+Atoms
+
+      1    1  2 -1.05174    1.55000    1.55000    1.50000
+      2    1  1  0.52587    1.55000    2.36649    2.07736
+      3    1  1  0.52587    1.55000    0.73351    2.07736
+
+Bonds
+
+      1   1      1      2
+      2   1      1      3
+
+Angles
+
+      1   1      2      1      3
