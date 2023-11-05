@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from pymatgen.core import Molecule
-from monty.os.path import which
+from shutil import which
 
 # from pymatgen.io.core import InputFile, InputSet, InputGenerator
 
