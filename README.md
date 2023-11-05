@@ -28,7 +28,7 @@ If not available already, use the following steps.
 
 2. Download the mdgo source code using the command:
 
-   `git clone https://github.com/htz1992213/mdgo.git`
+   `https://github.com/HouGroup/mdgo.git`
     
 ### Installation
 
