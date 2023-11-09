@@ -68,6 +68,7 @@ class PubChemRunner:
                 "profile.managed_default_content_settings.images": 2,
             }
             self.options = webdriver.ChromeOptions()
+            self.server = webdriver.ChromeService(chromedriver_dir)
             self.options.add_argument(
                 'user-agent="Mozilla/5.0 '
                 "(Macintosh; Intel Mac OS X 10_14_6) "
@@ -79,7 +80,7 @@ class PubChemRunner:
                 self.options.add_argument("--headless")
             self.options.add_experimental_option("prefs", self.preferences)
             self.options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
+            self.web = webdriver.Chrome(options=self.options, service=self.server)
             self.wait = WebDriverWait(self.web, 10)
             self.web.get("https://pubchem.ncbi.nlm.nih.gov/")
             time.sleep(1)
