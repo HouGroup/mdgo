@@ -146,6 +146,7 @@ class PubChemRunner:
             url = "https://pubchem.ncbi.nlm.nih.gov/#query=" + query
             self.web.get(url)
             time.sleep(1)
+            loaded_element_path = '//*[@id="main-results"]/div[1]/div/ul'
             best_xpath = '//*[@id="featured-results"]/div/div[2]' "/div/div[1]/div[2]/div[1]/a/span/span"
             relevant_xpath = (
                 '//*[@id="collection-results-container"]'
@@ -158,8 +159,8 @@ class PubChemRunner:
                 match = self.web.find_element(By.XPATH, relevant_xpath)
             match.click()
             # density_locator = '//*[@id="Density"]/div[2]/div[1]/p'
-            cid_locator = '//*[@id="main-content"]/div/div/div[1]/' "div[3]/div/table/tbody/tr[1]/td"
-            smiles_locator = '//*[@id="Canonical-SMILES"]/div[2]/div[1]/p'
+            cid_locator = '//*[@id="Title-and-Summary"]/div/div/div/div[1]/div[2]'
+            smiles_locator = '//*[@id="Canonical-SMILES"]/div[2]/div[1]'
             self.wait.until(EC.presence_of_element_located((By.XPATH, cid_locator)))
             cid = self.web.find_element(By.XPATH, cid_locator).text
             smiles = self.web.find_element(By.XPATH, smiles_locator).text
