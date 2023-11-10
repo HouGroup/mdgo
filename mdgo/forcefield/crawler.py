@@ -28,6 +28,7 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.service import Service
 
 from mdgo.util.dict_utils import lmp_mass_to_name
 
@@ -87,7 +88,7 @@ class FFcrawler:
         if chromedriver_dir is None:
             self.web = webdriver.Chrome(options=self.options)
         else:
-            self.web = webdriver.Chrome(chromedriver_dir, options=self.options)
+            self.web = webdriver.Chrome(service=Service(chromedriver_dir), options=self.options)
         self.wait = WebDriverWait(self.web, 10)
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
