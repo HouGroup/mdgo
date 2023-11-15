@@ -28,7 +28,6 @@ from selenium.common.exceptions import (
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.service import Service
 
 from mdgo.util.dict_utils import lmp_mass_to_name
 
@@ -74,6 +73,7 @@ class FFcrawler:
             "profile.managed_default_content_settings.images": 2,
         }
         self.options = webdriver.ChromeOptions()
+        self.server = webdriver.ChromeService(chromedriver_dir)
         self.options.add_argument(
             'user-agent="Mozilla/5.0 '
             "(Macintosh; Intel Mac OS X 10_14_6) "
@@ -88,7 +88,7 @@ class FFcrawler:
         if chromedriver_dir is None:
             self.web = webdriver.Chrome(options=self.options)
         else:
-            self.web = webdriver.Chrome(service=Service(chromedriver_dir), options=self.options)
+            self.web = webdriver.Chrome(service=self.server, options=self.options)
         self.wait = WebDriverWait(self.web, 10)
         self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
         time.sleep(1)
