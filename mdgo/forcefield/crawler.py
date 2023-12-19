@@ -110,7 +110,8 @@ class FFcrawler:
             pdb_dir: The path to the input pdb structure file.
         """
         self.web.get("http://traken.chem.yale.edu/ligpargen/")
-        upload_xpath = "/html/body/div[2]/div/div[2]/form/div/input[2]"
+        upload_xpath = '//*[@id="exampleMOLFile"]'
+        time.sleep(1)
         self.wait.until(EC.presence_of_element_located((By.XPATH, upload_xpath)))
         upload = self.web.find_element(By.XPATH, upload_xpath)
         try:
