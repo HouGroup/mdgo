@@ -111,7 +111,7 @@ class FFcrawler:
         """
         self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
-        upload = self.web.find_element(By.XPATH, '//*[@id="exampleMOLFile"]')
+        upload = self.web.find_element(By.XPATH, '//*[@id="samplebutton"]')
         try:
             upload.send_keys(pdb_dir)
             submit = self.web.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/form/button[1]")
