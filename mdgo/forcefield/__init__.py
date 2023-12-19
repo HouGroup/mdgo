@@ -8,10 +8,10 @@ modifying MD force filed data.
 """
 
 __author__ = "Tingzheng Hou, Ryan Kingsbury"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __maintainer__ = "Tingzheng Hou, Ryan Kingsbury"
 __email__ = "tingzheng_hou@berkeley.edu"
-__date__ = "Jul 19, 2022"
+__date__ = "Dec 19, 2023"
 
 
 from .aqueous import IonLJData, Aqueous

@@ -81,6 +81,7 @@ class FFcrawler:
             'Chrome/88.0.4324.146 Safari/537.36"'
         )
         self.options.add_argument("--window-size=1920,1080")
+        self.options.add_argument("ignore-certificate-errors")
         if headless:
             self.options.add_argument("--headless")
         self.options.add_experimental_option("prefs", self.preferences)
@@ -90,7 +91,7 @@ class FFcrawler:
         else:
             self.web = webdriver.Chrome(service=self.server, options=self.options)
         self.wait = WebDriverWait(self.web, 10)
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
         print("LigParGen server connected.")
 
@@ -109,9 +110,11 @@ class FFcrawler:
         Args:
             pdb_dir: The path to the input pdb structure file.
         """
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
+        upload_xpath = '//*[@id="exampleMOLFile"]'
         time.sleep(1)
-        upload = self.web.find_element(By.XPATH, '//*[@id="exampleMOLFile"]')
+        self.wait.until(EC.presence_of_element_located((By.XPATH, upload_xpath)))
+        upload = self.web.find_element(By.XPATH, upload_xpath)
         try:
             upload.send_keys(pdb_dir)
             submit = self.web.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/form/button[1]")
@@ -133,7 +136,7 @@ class FFcrawler:
         Args:
             smiles_code: The SMILES code for the LigParGen input.
         """
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
         smile = self.web.find_element(By.XPATH, '//*[@id="smiles"]')
         smile.send_keys(smiles_code)
@@ -155,9 +158,9 @@ class FFcrawler:
         """
         print("Structure info uploaded. Rendering force field...")
         lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
-        jmol_xpath = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[2]")
         self.wait.until(EC.presence_of_element_located((By.XPATH, lmp_xpath)))
-        self.web.execute_script("arguments[0].remove();", jmol_xpath)
+        jmol = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[2]")
+        self.web.execute_script("arguments[0].remove();", jmol)
         self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
         data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
         num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1

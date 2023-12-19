@@ -8,10 +8,10 @@ setup, run and analysis.
 """
 
 __author__ = "Tingzheng Hou"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
-__date__ = "Jul 19, 2021"
+__date__ = "Dec 19, 2023"
 
 
 from .analysis import MdRun
