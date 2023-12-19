@@ -224,8 +224,8 @@ def fit_residence_time(
         if save_curve:
             if save_curve is True:
                 np.savetxt(f"decay{i}.csv", save_decay.T, delimiter=",")
-            elif os.path.exists(save_curve):
-                np.savetxt(save_curve + f"decay{i}.csv", save_decay.T, delimiter=",")
+            elif os.path.exists(str(save_curve)):
+                np.savetxt(str(save_curve) + f"decay{i}.csv", save_decay.T, delimiter=",")
             else:
                 raise ValueError("Please specify a bool or a path in string.")
         plt.plot(
