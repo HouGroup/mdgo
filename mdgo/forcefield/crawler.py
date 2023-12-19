@@ -158,7 +158,8 @@ class FFcrawler:
         """
         print("Structure info uploaded. Rendering force field...")
         lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
-        jmol_xpath = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[2]")
+        jmol_xpath = "/html/body/div[2]/div[2]/div[2]"
+        self.wait.until(EC.presence_of_element_located((By.XPATH, jmol_xpath)))
         self.wait.until(EC.presence_of_element_located((By.XPATH, lmp_xpath)))
         self.web.execute_script("arguments[0].remove();", jmol_xpath)
         self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
