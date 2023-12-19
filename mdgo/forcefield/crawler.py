@@ -81,6 +81,7 @@ class FFcrawler:
             'Chrome/88.0.4324.146 Safari/537.36"'
         )
         self.options.add_argument("--window-size=1920,1080")
+        self.options.add_argument('ignore-certificate-errors')
         if headless:
             self.options.add_argument("--headless")
         self.options.add_experimental_option("prefs", self.preferences)
@@ -110,7 +111,6 @@ class FFcrawler:
             pdb_dir: The path to the input pdb structure file.
         """
         self.web.get("http://traken.chem.yale.edu/ligpargen/")
-        self.wait.until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/div[1]/ul/li[6]/h5")))
         upload_xpath = '//*[@id="exampleMOLFile"]'
         time.sleep(1)
         self.wait.until(EC.presence_of_element_located((By.XPATH, upload_xpath)))
