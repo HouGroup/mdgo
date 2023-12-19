@@ -90,7 +90,7 @@ class FFcrawler:
         else:
             self.web = webdriver.Chrome(service=self.server, options=self.options)
         self.wait = WebDriverWait(self.web, 10)
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
         print("LigParGen server connected.")
 
@@ -109,7 +109,7 @@ class FFcrawler:
         Args:
             pdb_dir: The path to the input pdb structure file.
         """
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
         upload = self.web.find_element(By.XPATH, '//*[@id="exampleMOLFile"]')
         try:
@@ -133,7 +133,7 @@ class FFcrawler:
         Args:
             smiles_code: The SMILES code for the LigParGen input.
         """
-        self.web.get("http://zarbi.chem.yale.edu/ligpargen/")
+        self.web.get("http://traken.chem.yale.edu/ligpargen/")
         time.sleep(1)
         smile = self.web.find_element(By.XPATH, '//*[@id="smiles"]')
         smile.send_keys(smiles_code)
