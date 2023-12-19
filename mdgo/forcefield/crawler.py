@@ -81,7 +81,7 @@ class FFcrawler:
             'Chrome/88.0.4324.146 Safari/537.36"'
         )
         self.options.add_argument("--window-size=1920,1080")
-        self.options.add_argument('ignore-certificate-errors')
+        self.options.add_argument("ignore-certificate-errors")
         if headless:
             self.options.add_argument("--headless")
         self.options.add_experimental_option("prefs", self.preferences)
@@ -158,10 +158,9 @@ class FFcrawler:
         """
         print("Structure info uploaded. Rendering force field...")
         lmp_xpath = "/html/body/div[2]/div[2]/div[1]/div/div[14]/form/input[1]"
-        jmol_xpath = "/html/body/div[2]/div[2]/div[2]"
-        self.wait.until(EC.presence_of_element_located((By.XPATH, jmol_xpath)))
         self.wait.until(EC.presence_of_element_located((By.XPATH, lmp_xpath)))
-        self.web.execute_script("arguments[0].remove();", jmol_xpath)
+        jmol = self.web.find_element(By.XPATH, "/html/body/div[2]/div[2]/div[2]")
+        self.web.execute_script("arguments[0].remove();", jmol)
         self.wait.until(EC.element_to_be_clickable((By.XPATH, lmp_xpath)))
         data_lmp = self.web.find_element(By.XPATH, lmp_xpath)
         num_file = len([f for f in os.listdir(self.write_dir) if os.path.splitext(f)[1] == ".lmp"]) + 1
