@@ -1,14 +1,38 @@
+# coding: utf-8
+# Copyright (c) Tingzheng Hou.
+# Distributed under the terms of the MIT License.
 
 """
-This module implements a core class LigpargenRunner for generating
-LAMMPS/GROMACS data files from molecule structure using LigParGen 2.1 
-and BOSS 5.0.
+This module implements two core class LigpargenRunner and FFcrawler for generating
+LAMMPS/GROMACS data files from molecule structure using LigParGen 2.1 + BOSS 5.0 or
+the LigParGen web server.
+
+For using the FFcrawler class:
+
+  * Download the ChromeDriver executable that
+    matches your Chrome version via https://chromedriver.chromium.org/downloads
 """
 
-import subprocess
 import os
+import subprocess
+import shutil
+import time
+from typing import Optional
+
+
 from pymatgen.io.lammps.data import LammpsData
+from selenium import webdriver
+from selenium.common.exceptions import (
+    TimeoutException,
+    WebDriverException,
+)
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 from mdgo.util.dict_utils import lmp_mass_to_name
+from ligpargen.ligpargen import LigParGen
+
 
 class LigpargenRunner:
 
@@ -23,9 +47,8 @@ class LigpargenRunner:
         xyz: bool = False,        
     ):
         """Base constructor."""
-        self.structure = structure_dir + "/" + structure_name
-        self.name = os.path.splitext(structure_name)[0]
-        self.structure_format = os.path.splitext(structure_name)[1][1:]
+        self.structure = os.path.join(structure_dir, structure_name)
+        self.name, self.structure_format = os.path.splitext(structure_name)
         print("Input format:", self.structure_format)
         self.structure_dir = structure_dir
         self.work = working_dir
@@ -54,7 +77,7 @@ class LigpargenRunner:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
-            lines = []
+            lines = list()
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
@@ -67,7 +90,7 @@ class LigpargenRunner:
                 xyz_file.write("\n".join(lines))
             print(".xyz file saved.")
         
-    def data_from_smiles(self, wait: float = 30):
+    def data_from_smiles(self):
         try:
             cmd = f"ligpargen -s {self.name} -n {self.name} -p {self.work} -c {self.charge} -o {self.opt}"
             subprocess.run(cmd, shell=True)
@@ -85,7 +108,7 @@ class LigpargenRunner:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
-            lines = []
+            lines = list()
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
