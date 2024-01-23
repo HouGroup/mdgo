@@ -57,7 +57,7 @@ class LigpargenRunner:
         self.opt = opt
         self.xyz = xyz
 
-    def data_from_structure(self, wait: float = 30):
+    def data_from_structure(self):
 
         try:
             cmd = f"ligpargen -i {self.structure} -n {self.name} -p {self.work} -c {self.charge} -o {self.opt}"
