@@ -7,7 +7,7 @@ from io import StringIO
 import numpy as np
 import pytest
 
-from mdgo.forcefield.crawler import *
+from mdgo.forcefield.ligpargen import *
 from mdgo.forcefield.aqueous import *
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
