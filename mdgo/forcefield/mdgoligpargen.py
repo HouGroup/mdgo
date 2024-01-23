@@ -14,7 +14,6 @@ For using the FFcrawler class:
 """
 
 import os
-import subprocess
 import shutil
 import time
 from typing import Optional

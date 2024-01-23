@@ -18,4 +18,4 @@ from .aqueous import IonLJData, Aqueous
 from .charge import ChargeWriter
 from .maestro import MaestroRunner
 from .pubchem import PubChemRunner
-from .ligpargen import LigpargenRunner, FFcrawler
+from .mdgoligpargen import LigpargenRunner, FFcrawler
