@@ -56,7 +56,6 @@ class LigpargenRunner:
         self.charge = charge
         self.opt = opt
         self.xyz = xyz
-    
 
     def data_from_structure(self, wait: float = 30):
 
