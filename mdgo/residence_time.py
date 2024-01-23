@@ -5,6 +5,7 @@
 """
 This module calculates species correlation lifetime (residence time).
 """
+import os
 from typing import List, Dict, Union, Tuple
 
 import numpy as np
@@ -171,6 +172,7 @@ def fit_residence_time(
     acf_avg_dict: Dict[str, np.ndarray],
     cutoff_time: int,
     time_step: float,
+    save_curve: Union[str, bool] = False,
 ) -> Dict[str, np.floating]:
     """
     Use the ACF to fit the residence time (Exponential decay constant).
@@ -181,6 +183,8 @@ def fit_residence_time(
         acf_avg_dict: A dict containing the ACFs of the species.
         cutoff_time: Fitting cutoff time.
         time_step: The time step between each frame, in ps.
+        save_curve: Whether to save the curve as a csv file for post-processing.
+                Default to False.
 
     Returns:
         A dict containing residence time of each species
@@ -217,7 +221,13 @@ def fit_residence_time(
                 fitted_y,
             )
         )
-        np.savetxt(f"/Users/th/Downloads/decay{i}.csv", save_decay.T, delimiter=",")
+        if save_curve:
+            if save_curve is True:
+                np.savetxt(f"decay{i}.csv", save_decay.T, delimiter=",")
+            elif os.path.exists(str(save_curve)):
+                np.savetxt(str(save_curve) + f"decay{i}.csv", save_decay.T, delimiter=",")
+            else:
+                raise ValueError("Please specify a bool or a path in string.")
         plt.plot(
             fitted_x,
             fitted_y,
