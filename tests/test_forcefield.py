@@ -8,7 +8,10 @@ import numpy as np
 import pytest
 
 from mdgo.forcefield.mdgoligpargen import *
-from mdgo.forcefield.aqueous import *
+try:
+    from mdgo.forcefield.aqueous import *
+except ModuleNotFoundError:
+    pass
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
