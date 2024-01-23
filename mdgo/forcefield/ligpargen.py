@@ -61,7 +61,7 @@ class LigpargenRunner:
     def run(self):
         if self.structure_format == "SMILES":
             molecule_a = LigParGen(
-                smile=self.structure,
+                smile=self.name,
                 charge=self.charge,
                 numberOfOptimizations=self.opt,
                 molname=self.name,
