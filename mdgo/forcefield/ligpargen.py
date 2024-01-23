@@ -40,7 +40,6 @@ class LigpargenRunner:
         structure_name: str,
         structure_dir: str,
         working_dir: str = "boss_files",
-        out: str = "lmp",
         charge: int = 0,
         opt: int = 0,
         xyz: bool = False,
@@ -53,7 +52,6 @@ class LigpargenRunner:
         print("Input format:", self.structure_format)
         self.structure_dir = structure_dir
         self.work = working_dir
-        self.out = out
         self.charge = charge
         self.opt = opt
         self.xyz = xyz
