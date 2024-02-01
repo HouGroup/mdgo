@@ -16,6 +16,7 @@ For using the FFcrawler class:
 import os
 import shutil
 import time
+import subprocess
 from typing import Optional
 
 
@@ -34,28 +35,50 @@ from ligpargen.ligpargen import LigParGen
 
 
 class LigpargenRunner:
+    """
+    LigpargenRunner make use of LigParGen2.1 and BOSS5.0 to generate LAMMPS
+    data file and xyz file from structure file.
+    
+    Args:
+        structure_name: Name of the input structure file including file format.
+        structure_dir: Directory of the structure file and output file.
+        working_dir: Files generated from BOSS software. Arguement of LigParGen. 
+            Default to "boss_files".
+        charge: Molecule net charge. Arguement of LigParGen. Default to 0.
+        opt: Number of optimizations. Arguement of LIgParGen. Default to 0.
+        xyz: Whether to write the structure in the LigParGen generated data file
+            as .xyz. Default to False. This is useful because the order and the 
+            name of the atoms could be different from the initial input.)
+    
+    Examples:
+
+        >>> lpg = LigpargenRunner('sturcture_name', 'path/to/structure/')
+        >>> lpg.run()
+    """
+    
     def __init__(
         self,
         structure_name: str,
-        structure_dir: str,
+        write_dir: str,
         working_dir: str = "boss_files",
         charge: int = 0,
         opt: int = 0,
         xyz: bool = False,
     ):
         """Base constructor."""
-        self.structure = os.path.join(structure_dir, structure_name)
+        
         self.name, self.structure_format = os.path.splitext(structure_name)
         if self.structure_format == "":
             self.structure_format = "SMILES"
         print("Input format:", self.structure_format)
-        self.structure_dir = structure_dir
+        self.structure_name = structure_name
+        self.write_dir = write_dir
         self.work = working_dir
         self.charge = charge
         self.opt = opt
         self.xyz = xyz
 
-    def run(self):
+    def run(self, structure_dir: str):
         if self.structure_format == "SMILES":
             molecule_a = LigParGen(
                 smile=self.name,
@@ -65,6 +88,7 @@ class LigpargenRunner:
                 workdir=self.work,
             )
         else:
+            self.structure = os.path.join(structure_dir, self.structure_name)
             molecule_a = LigParGen(
                 ifile=self.structure,
                 charge=self.charge,
@@ -73,10 +97,14 @@ class LigpargenRunner:
                 workdir=self.work,
             )
         molecule_a.writeAllOuputs()
+        lmp_name = f"{self.name}.lmp"
+        lmp_file = os.path.join(self.write_dir, lmp_name)
+        copy_file = os.path.join(self.work, f"{self.name}.lammps.lmp")
+        shutil.copyfile(copy_file, lmp_file)
         print("LigParGen finished succesfully!")
 
         if self.xyz:
-            lmp_file = os.path.join(self.structure_dir, self.name + ".lmp")
+            lmp_file = os.path.join(self.write_dir, self.name + ".lmp")
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
@@ -89,7 +117,7 @@ class LigpargenRunner:
                 line = element_name + " " + " ".join(str(r[loc]) for loc in ["x", "y", "z"])
                 lines.append(line)
 
-            with open(os.path.join(self.structure_dir, self.name + ".xyz"), "w") as xyz_file:
+            with open(os.path.join(self.write_dir, lmp_name + ".xyz"), "w") as xyz_file:
                 xyz_file.write("\n".join(lines))
             print(".xyz file saved.")
 
