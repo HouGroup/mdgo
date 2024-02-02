@@ -39,8 +39,8 @@ class LigpargenRunner:
     data file and xyz file from structure file.
     
     Args:
-        structure_name: Name of the input structure file including file format.
-        structure_dir: Directory of the structure file and output file.
+        structure_file: The input structure file including path to file.
+        write_dir: Directory to write the output file.
         working_dir: Files generated from BOSS software. Arguement of LigParGen. 
             Default to "boss_files".
         charge: Molecule net charge. Arguement of LigParGen. Default to 0.
@@ -51,13 +51,13 @@ class LigpargenRunner:
     
     Examples:
 
-        >>> lpg = LigpargenRunner('sturcture_name', 'path/to/structure/')
+        >>> lpg = LigpargenRunner('sturcture_file', 'path/to/write/output')
         >>> lpg.run()
     """
     
     def __init__(
         self,
-        structure_name: str,
+        structure_file: str,
         write_dir: str,
         working_dir: str = "boss_files",
         charge: int = 0,
@@ -65,19 +65,27 @@ class LigpargenRunner:
         xyz: bool = False,
     ):
         """Base constructor."""
-        
+        structure_dir, structure_name = os.path.split(structure_file)
         self.name, self.structure_format = os.path.splitext(structure_name)
         if self.structure_format == "":
             self.structure_format = "SMILES"
         print("Input format:", self.structure_format)
-        self.structure_name = structure_name
+        self.structure = structure_file
         self.write_dir = write_dir
         self.work = working_dir
         self.charge = charge
         self.opt = opt
         self.xyz = xyz
 
-    def run(self, structure_dir: str):
+    def run(self):
+        """
+        Run LigParGen2.1 to generate a LAMMPS data file from a structrure file
+        (pdb/mol/mol2...) supported by BOSS5.0.
+        Write out a LAMMPS data file.
+        
+        Args:
+            None
+        """
         if self.structure_format == "SMILES":
             molecule_a = LigParGen(
                 smile=self.name,
@@ -87,7 +95,6 @@ class LigpargenRunner:
                 workdir=self.work,
             )
         else:
-            self.structure = os.path.join(structure_dir, self.structure_name)
             molecule_a = LigParGen(
                 ifile=self.structure,
                 charge=self.charge,

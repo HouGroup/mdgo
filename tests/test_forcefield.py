@@ -33,8 +33,8 @@ class LigpargenRunnerTest(unittest.TestCase):
             out = StringIO()
             sys.stdout = out
             
-            lpg = LigpargenRunner("EC.pdb", download_dir, xyz=True)
-            lpg.run(test_dir)
+            lpg = LigpargenRunner(os.path.join(test_dir, "EC.pdb"), download_dir, xyz=True)
+            lpg.run()
             self.assertIn(
                 "Input format: .pdb\n"
                 "LigParGen finished succesfully!\n"
@@ -51,7 +51,7 @@ class LigpargenRunnerTest(unittest.TestCase):
                 self.assertListEqual(xyz, xyz_actual)
             
             lpg = LigpargenRunner("CCOC(=O)O", download_dir, xyz=True)
-            lpg.run(test_dir)
+            lpg.run()
             self.assertIn(
                 "Input format: SMILES\n"
                 "LigParGen finished succesfully!\n"
