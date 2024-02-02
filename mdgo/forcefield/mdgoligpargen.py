@@ -29,8 +29,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from mdgo.util.dict_utils import lmp_mass_to_name
 from ligpargen.ligpargen import LigParGen
+from mdgo.util.dict_utils import lmp_mass_to_name
+
 
 
 class LigpargenRunner:
@@ -47,7 +48,7 @@ class LigpargenRunner:
         opt: Number of optimizations. Arguement of LIgParGen. Default to 0.
         xyz: Whether to write the structure in the LigParGen generated data file
             as .xyz. Default to False. This is useful because the order and the 
-            name of the atoms could be different from the initial input.)
+            name of the atoms could be different from the initial input.
     
     Examples:
 
@@ -84,7 +85,7 @@ class LigpargenRunner:
         Write out a LAMMPS data file.
         
         Args:
-            None
+            None.
         """
         if self.structure_format == "SMILES":
             molecule_a = LigParGen(
@@ -141,7 +142,7 @@ class FFcrawler:
         xyz: Whether to write the structure in the LigParGen
             generated data file as .xyz. Default to False. This is useful
             because the order and the name of the atoms could be
-            different from the initial input.)
+            different from the initial input.
         gromacs: Whether to save GROMACS format data files.
             Default to False.
 
