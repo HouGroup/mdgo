@@ -23,23 +23,23 @@ class MyTestCase(unittest.TestCase):
         lipf6_volume_3 = molecular_volume(self.lipf6, radii_type="Lange")
         lipf6_volume_4 = molecular_volume(self.lipf6, radii_type="pymatgen")
         lipf6_volume_5 = molecular_volume(self.lipf6, molar_volume=False)
-        self.assertAlmostEqual(lipf6_volume_1, 47.62, places=2)
-        self.assertAlmostEqual(lipf6_volume_2, 43.36, places=2)
-        self.assertAlmostEqual(lipf6_volume_3, 41.49, places=2)
-        self.assertAlmostEqual(lipf6_volume_4, 51.94, places=2)
-        self.assertAlmostEqual(lipf6_volume_5, 79.08, places=2)
+        assert lipf6_volume_1 == 47.62
+        assert lipf6_volume_2 == 43.36
+        assert lipf6_volume_3 == 41.49
+        assert lipf6_volume_4 == 51.94
+        assert lipf6_volume_5 == 79.08
         ec_volume_1 = molecular_volume(self.ec)
         ec_volume_2 = molecular_volume(self.ec, exclude_h=False)
         ec_volume_3 = molecular_volume(self.ec, res=1.0)
         ec_volume_4 = molecular_volume(self.ec, radii_type="Lange")
         ec_volume_5 = molecular_volume(self.ec, radii_type="pymatgen")
         ec_volume_6 = molecular_volume(self.ec, molar_volume=False)
-        self.assertAlmostEqual(ec_volume_1, 38.44, places=2)
-        self.assertAlmostEqual(ec_volume_2, 43.17, places=2)
-        self.assertAlmostEqual(ec_volume_3, 40.95, places=2)
-        self.assertAlmostEqual(ec_volume_4, 41.07, places=2)
-        self.assertAlmostEqual(ec_volume_5, 38.44, places=2)
-        self.assertAlmostEqual(ec_volume_6, 63.83, places=2)
+        assert ec_volume_1 == 38.44
+        assert ec_volume_2 == 43.17
+        assert ec_volume_3 == 40.95
+        assert ec_volume_4 == 41.07
+        assert ec_volume_5 == 38.44
+        assert ec_volume_6 == 63.83
         litfsi_volume_1 = molecular_volume(self.litfsi)
         litfsi_volume_2 = molecular_volume(self.litfsi, exclude_h=False)
         litfsi_volume_3 = molecular_volume(self.litfsi, res=1.0)
@@ -47,13 +47,13 @@ class MyTestCase(unittest.TestCase):
         litfsi_volume_5 = molecular_volume(self.litfsi, radii_type="pymatgen")
         litfsi_volume_6 = molecular_volume(self.litfsi, molar_volume=False)
         litfsi_volume_7 = molecular_volume(self.litfsi, mode="act", x_size=8, y_size=8, z_size=8)
-        self.assertAlmostEqual(litfsi_volume_1, 100.16, places=2)
-        self.assertAlmostEqual(litfsi_volume_2, 100.16, places=2)
-        self.assertAlmostEqual(litfsi_volume_3, 99.37, places=2)
-        self.assertAlmostEqual(litfsi_volume_4, 90.78, places=2)
-        self.assertAlmostEqual(litfsi_volume_5, 105.31, places=2)
-        self.assertAlmostEqual(litfsi_volume_6, 166.32, places=2)
-        self.assertAlmostEqual(litfsi_volume_7, 124.66, places=2)
+        assert litfsi_volume_1 == 100.16
+        assert litfsi_volume_2 == 100.16
+        assert litfsi_volume_3 == 99.37
+        assert litfsi_volume_4 == 90.78
+        assert litfsi_volume_5 == 105.31
+        assert litfsi_volume_6 == 166.32
+        assert litfsi_volume_7 == 124.66
 
 
 if __name__ == "__main__":
