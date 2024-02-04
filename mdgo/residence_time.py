@@ -5,8 +5,10 @@
 """
 This module calculates species correlation lifetime (residence time).
 """
+
+from __future__ import annotations
+
 import os
-from typing import List, Dict, Union, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt

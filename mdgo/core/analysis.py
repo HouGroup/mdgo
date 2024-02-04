@@ -8,7 +8,7 @@ The MdRun class currently only supports LAMMPS simulations.
 """
 
 from __future__ import annotations
-from typing import Union, Dict, Tuple, List, Optional
+
 import MDAnalysis
 import numpy as np
 import pandas as pd

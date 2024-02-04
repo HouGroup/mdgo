@@ -6,7 +6,7 @@
 This module implements functions for coordination analysis.
 """
 
-from typing import Dict, List, Tuple, Union, Callable, Optional
+from __future__ import annotations
 
 import numpy as np
 from tqdm.auto import tqdm

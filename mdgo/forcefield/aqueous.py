@@ -6,10 +6,11 @@
 A class for retrieving water and ion force field parameters.
 """
 
+from __future__ import annotations
+
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional, Union, Final, Literal
 
 from monty.json import MSONable
 from monty.serialization import loadfn

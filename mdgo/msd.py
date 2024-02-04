@@ -10,7 +10,7 @@ MSD FFT Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 a
 http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
 """
 
-from typing import List, Dict, Tuple, Union, Optional, Literal
+from __future__ import annotations
 
 try:
     import MDAnalysis.analysis.msd as mda_msd

@@ -6,6 +6,8 @@
 A class for writing, overwriting, scaling charges of a LammpsData object.
 """
 
+from __future__ import annotations
+
 import numpy as np
 from pymatgen.io.lammps.data import LammpsData
 

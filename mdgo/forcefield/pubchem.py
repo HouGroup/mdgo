@@ -7,6 +7,8 @@ This module implements a core class PubChemRunner for accessing PubChem data tha
 can be used to retrieve compound structure and information.
 """
 
+from __future__ import annotations
+
 import os
 import time
 from typing import Optional, Final

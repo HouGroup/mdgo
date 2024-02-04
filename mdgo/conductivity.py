@@ -5,7 +5,8 @@
 """
 This module implements functions to calculate the ionic conductivity.
 """
-from typing import Union
+
+from __future__ import annotations
 
 import numpy as np
 from tqdm.auto import tqdm

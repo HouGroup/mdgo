@@ -17,12 +17,13 @@ For using the MaestroRunner class:
 
 """
 
+from __future__ import annotations
+
 import os
 import signal
 import subprocess
 import time
 from string import Template
-from typing import Optional, Final
 
 from mdgo.util.reformat import ff_parser
 

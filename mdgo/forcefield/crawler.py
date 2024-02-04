@@ -13,6 +13,8 @@ For using the FFcrawler class:
     matches your Chrome version via https://chromedriver.chromium.org/downloads
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 import time
