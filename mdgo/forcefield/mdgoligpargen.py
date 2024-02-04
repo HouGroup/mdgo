@@ -29,33 +29,35 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ligpargen.ligpargen import LigParGen
+try:
+    from ligpargen.ligpargen import LigParGen
+except ModuleNotFoundError:
+    pass
 from mdgo.util.dict_utils import lmp_mass_to_name
-
 
 
 class LigpargenRunner:
     """
     LigpargenRunner make use of LigParGen2.1 and BOSS5.0 to generate LAMMPS
     data file and xyz file from structure file.
-    
+
     Args:
         structure_file: The input structure file including path to file.
         write_dir: Directory to write the output file.
-        working_dir: Files generated from BOSS software. Arguement of LigParGen. 
+        working_dir: Files generated from BOSS software. Arguement of LigParGen.
             Default to "boss_files".
         charge: Molecule net charge. Arguement of LigParGen. Default to 0.
         opt: Number of optimizations. Arguement of LIgParGen. Default to 0.
         xyz: Whether to write the structure in the LigParGen generated data file
-            as .xyz. Default to False. This is useful because the order and the 
+            as .xyz. Default to False. This is useful because the order and the
             name of the atoms could be different from the initial input.
-    
+
     Examples:
 
         >>> lpg = LigpargenRunner('sturcture_file', 'path/to/write/output')
         >>> lpg.run()
     """
-    
+
     def __init__(
         self,
         structure_file: str,
@@ -83,7 +85,7 @@ class LigpargenRunner:
         Run LigParGen2.1 to generate a LAMMPS data file from a structrure file
         (pdb/mol/mol2...) supported by BOSS5.0.
         Write out a LAMMPS data file.
-        
+
         Args:
             None.
         """

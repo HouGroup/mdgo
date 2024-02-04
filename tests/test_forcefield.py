@@ -8,10 +8,7 @@ import numpy as np
 import pytest
 
 from mdgo.forcefield.mdgoligpargen import *
-try:
-    from mdgo.forcefield.aqueous import *
-except ModuleNotFoundError:
-    pass
+from mdgo.forcefield.aqueous import *
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
@@ -32,15 +29,13 @@ class LigpargenRunnerTest(unittest.TestCase):
         try:
             out = StringIO()
             sys.stdout = out
-            
+
             lpg = LigpargenRunner(os.path.join(test_dir, "EC.pdb"), download_dir, xyz=True)
             lpg.run()
             self.assertIn(
-                "Input format: .pdb\n"
-                "LigParGen finished succesfully!\n"
-                ".xyz file saved.",
+                "Input format: .pdb\n" "LigParGen finished succesfully!\n" ".xyz file saved.",
                 out.getvalue(),
-                )
+            )
             self.assertTrue(os.path.exists(os.path.join(download_dir, "EC.lmp")))
             self.assertTrue(os.path.exists(os.path.join(download_dir, "EC.lmp.xyz")))
             with open(os.path.join(download_dir, "EC.lmp")) as f:
@@ -49,15 +44,13 @@ class LigpargenRunnerTest(unittest.TestCase):
             with open(os.path.join(download_dir, "EC.lmp.xyz")) as f:
                 xyz_actual = f.readlines()
                 self.assertListEqual(xyz, xyz_actual)
-            
+
             lpg = LigpargenRunner("CCOC(=O)O", download_dir, xyz=True)
             lpg.run()
             self.assertIn(
-                "Input format: SMILES\n"
-                "LigParGen finished succesfully!\n"
-                ".xyz file saved.",
+                "Input format: SMILES\n" "LigParGen finished succesfully!\n" ".xyz file saved.",
                 out.getvalue(),
-                )
+            )
             self.assertTrue(os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp")))
             self.assertTrue(os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp.xyz")))
             with open(os.path.join(download_dir, "CCOC(=O)O.lmp")) as f:
@@ -94,14 +87,11 @@ class FFcrawlerTest(unittest.TestCase):
             lpg = FFcrawler(download_dir, xyz=True, gromacs=True)
             lpg.data_from_pdb(os.path.join(test_dir, "EMC.pdb"))
             self.assertIn(
-                "LigParGen server connected.\n"
-                "Structure info uploaded. Rendering force field...\n",
+                "LigParGen server connected.\n" "Structure info uploaded. Rendering force field...\n",
                 out.getvalue(),
             )
             self.assertIn(
-                "Force field file downloaded.\n"
-                ".xyz file saved.\n"
-                "Force field file saved.\n",
+                "Force field file downloaded.\n" ".xyz file saved.\n" "Force field file saved.\n",
                 out.getvalue(),
             )
             self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.lmp")))
