@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -27,8 +26,8 @@ def calc_cond_msd(
     anions: AtomGroup,
     cations: AtomGroup,
     run_start: int,
-    cation_charge: int | float = 1,
-    anion_charge: int | float = -1,
+    cation_charge: float = 1,
+    anion_charge: float = -1,
 ) -> np.ndarray:
     """Calculates the conductivity "mean square displacement" over time
 
@@ -128,11 +127,11 @@ def choose_msd_fitting_region(
 def conductivity_calculator(
     time_array: np.ndarray,
     cond_array: np.ndarray,
-    v: int | float,
+    v: float,
     name: str,
     start: int,
     end: int,
-    T: int | float,
+    T: float,
     units: str = "real",
 ) -> float:
     """Calculates the overall conductivity of the system
