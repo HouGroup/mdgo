@@ -17,13 +17,13 @@ For using the MaestroRunner class:
 """
 
 from __future__ import annotations
-from typing import Final
 
 import os
 import signal
 import subprocess
 import time
 from string import Template
+from typing import Final
 
 from mdgo.util.reformat import ff_parser
 
@@ -67,7 +67,6 @@ class MaestroRunner:
     $SCHRODINGER/mmshare-vversion/data/f14/
 
     Examples:
-
         >>> mr = MaestroRunner('/path/to/structure', '/path/to/working/dir')
         >>> mr.get_mae()
         >>> mr.get_ff()
@@ -100,11 +99,11 @@ class MaestroRunner:
             self.cmd_template = cmd_template
         else:
             if assign_bond:
-                with open(self.template_assignbond, "r") as f:
+                with open(self.template_assignbond) as f:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
             else:
-                with open(self.template_noassignbond, "r") as f:
+                with open(self.template_noassignbond) as f:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
 

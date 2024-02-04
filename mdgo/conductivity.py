@@ -8,9 +8,9 @@ This module implements functions to calculate the ionic conductivity.
 from __future__ import annotations
 
 import numpy as np
-from tqdm.auto import tqdm
+from MDAnalysis import AtomGroup, Universe
 from scipy import stats
-from MDAnalysis import Universe, AtomGroup
+from tqdm.auto import tqdm
 
 from mdgo.msd import msd_fft
 

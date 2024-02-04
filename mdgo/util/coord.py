@@ -4,8 +4,8 @@
 """Utilities for manipulating coordinates under periodic boundary conditions."""
 
 from __future__ import annotations
-import numpy as np
 
+import numpy as np
 from MDAnalysis.core.groups import Atom
 
 

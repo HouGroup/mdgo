@@ -10,6 +10,7 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 """
 
 from __future__ import annotations
+
 from typing import Literal
 
 try:
@@ -22,10 +23,9 @@ except ImportError:
     td = None
 
 import numpy as np
-from tqdm.auto import trange
-
-from MDAnalysis import Universe, AtomGroup
+from MDAnalysis import AtomGroup, Universe
 from MDAnalysis.core.groups import Atom
+from tqdm.auto import trange
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -333,7 +333,7 @@ def msd_from_frags(coord_list: list[np.ndarray], largest: int) -> np.ndarray:
         for lag in lag_times:
             disp = state[:-lag, :] - state[lag:, :]
             sqdist = np.square(disp).sum(axis=-1)
-            if lag in msd_dict.keys():
+            if lag in msd_dict:
                 msd_dict[lag] = np.concatenate((msd_dict[lag], sqdist), axis=0)
             else:
                 msd_dict[lag] = sqdist

@@ -56,7 +56,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_parse_msd_type(self):
         xyz = parse_msd_type("xyz")
-        self.assertEqual(["x", "y", "z"], self.dims[xyz[0]:xyz[1]:xyz[2]])
+        assert ["x", "y", "z"] == self.dims[xyz[0]:xyz[1]:xyz[2]]
         xy = parse_msd_type("xy")
         self.assertEqual(["x", "y"], self.dims[xy[0]:xy[1]:xy[2]])
         yz = parse_msd_type("yz")

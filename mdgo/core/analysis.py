@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -9,38 +8,39 @@ The MdRun class currently only supports LAMMPS simulations.
 
 from __future__ import annotations
 
+import matplotlib.pyplot as plt
 import MDAnalysis
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.auto import tqdm
-from mdgo.util.dict_utils import (
-    mass_to_name,
-    assign_name,
-    assign_resname,
-    res_dict_from_select_dict,
-    res_dict_from_datafile,
-    select_dict_from_resname,
-)
-from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region, get_beta
+
+from mdgo.conductivity import calc_cond_msd, choose_msd_fitting_region, conductivity_calculator, get_beta
 from mdgo.coordination import (
+    angular_dist_of_neighbor,
     concat_coord_array,
+    find_nearest,
+    find_nearest_free_only,
+    get_full_coords,
+    heat_map,
+    neighbor_distance,
     num_of_neighbor,
     num_of_neighbor_simple,
     num_of_neighbor_specific,
-    angular_dist_of_neighbor,
-    neighbor_distance,
-    find_nearest,
-    find_nearest_free_only,
     process_evol,
-    heat_map,
-    get_full_coords,
 )
-from mdgo.msd import total_msd, partial_msd, DIM
+from mdgo.msd import DIM, partial_msd, total_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.util.dict_utils import (
+    assign_name,
+    assign_resname,
+    mass_to_name,
+    res_dict_from_datafile,
+    res_dict_from_select_dict,
+    select_dict_from_resname,
+)
 
 
 class MdRun:
@@ -90,7 +90,6 @@ class MdRun:
          parsed data (``Universe``) or other bridging objects (``CombinedData``). Not
         recommended to use directly.
         """
-
         self.wrapped_run = wrapped_run
         self.unwrapped_run = unwrapped_run
         self.nvt_start = nvt_start
@@ -1124,7 +1123,7 @@ class MdRun:
                 run_start,
                 run_end,
             )
-            if not coords.size == 0:
+            if coords.size != 0:
                 coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:

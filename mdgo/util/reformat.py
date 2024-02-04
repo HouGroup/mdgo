@@ -5,15 +5,17 @@
 Utilities for converting data file formats.
 """
 
-from io import StringIO
-import re
 from __future__ import annotations
+
+import re
+from io import StringIO
 from typing import Any, Final
+
 import pandas as pd
 
 from mdgo.util.dict_utils import MM_of_Elements
-from . import __author__
 
+from . import __author__
 
 SECTION_SORTER: Final[dict[str, dict[str, Any]]] = {
     "atoms": {
@@ -87,12 +89,12 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
     Return:
         The output LAMMPS data string.
     """
-    with open(xyz_dir, "r") as f_xyz:
+    with open(xyz_dir) as f_xyz:
         molecule = pd.read_table(f_xyz, skiprows=2, delim_whitespace=True, names=["atom", "x", "y", "z"])
         coordinates = molecule[["x", "y", "z"]]
         lo = coordinates.min().min() - 0.5
         hi = coordinates.max().max() + 0.5
-    with open(ff_dir, "r") as f:
+    with open(ff_dir) as f:
         lines_org = f.read()
         lines = lines_org.split("\n\n")
         atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
@@ -203,9 +205,8 @@ def sdf_to_pdb(
         credit: Whether to credit line (remark 888) in the pdb file. Default to True.
         pubchem: Whether the sdf is downloaded from PubChem. Default to True.
     """
-
     # parse sdf file file
-    with open(sdf_file, "r") as inp:
+    with open(sdf_file) as inp:
         sdf_lines = inp.readlines()
         sdf = list(map(str.strip, sdf_lines))
     if pubchem:
@@ -243,12 +244,12 @@ def sdf_to_pdb(
                 "z": float(line_split[2]),
                 "occupancy": 1.00,
                 "tempFactor": 0.00,
-                "altLoc": str(""),
-                "chainID": str(""),
-                "iCode": str(""),
+                "altLoc": "",
+                "chainID": "",
+                "iCode": "",
                 "element": str(line_split[3]),
-                "charge": str(""),
-                "segment": str(""),
+                "charge": "",
+                "segment": "",
             }
             pdb_atoms.append(newline)
         elif i in list(range(4 + atoms, 4 + atoms + bonds)):
@@ -266,13 +267,13 @@ def sdf_to_pdb(
             pass
 
     # write pdb file
-    with open(pdb_file, "wt") as outp:
+    with open(pdb_file, "w") as outp:
         if write_title:
             outp.write(f"TITLE     {title:70s}\n")
         if version:
             outp.write("REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n")
         if credit:
-            outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
+            outp.write("REMARK 888\nREMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
         for n in range(atoms):
             line_dict = pdb_atoms[n].copy()
             if len(line_dict["name"]) == 3:

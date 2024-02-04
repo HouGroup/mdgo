@@ -6,18 +6,17 @@ A class for retrieving water and ion force field parameters.
 """
 
 from __future__ import annotations
-from typing import Literal, Final
 
 import os
 import re
 from dataclasses import dataclass
+from typing import Final, Literal
 
 from monty.json import MSONable
 from monty.serialization import loadfn
 from pymatgen.core import Lattice, Structure
 from pymatgen.core.ion import Ion
 from pymatgen.io.lammps.data import ForceField, LammpsData, Topology, lattice_2_lmpbox
-
 
 MODULE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR: Final[str] = os.path.join(MODULE_DIR, "data")
@@ -126,6 +125,7 @@ class Aqueous:
             model: Water model to use. Valid choices are "spc", "spce", "opc3",
                 "tip3pew", "tip3pfb", "tip4p2005", "tip4pew", "tip4pfb", and "opc".
                 (Default: "spce")
+
         Returns:
             LammpsData: Force field parameters for the chosen water model.
                 If you specify an invalid water model, None is returned.

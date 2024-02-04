@@ -14,14 +14,13 @@ the cube is defined by the -xsize, -ysize and -zsize options.
 """
 from __future__ import annotations
 
-import sys
-import os
 import argparse
+import os
+import sys
 from typing import Final
 
 import numpy as np
-from pymatgen.core import Molecule, Element
-
+from pymatgen.core import Element, Molecule
 
 DEFAULT_VDW = 1.5  # See Ev:130902
 
@@ -294,7 +293,6 @@ def get_max_dimensions(mol: Molecule) -> tuple[float, float, float, float, float
     Returns:
         xmin, xmax, ymin, ymax, zmin, zmax
     """
-
     xmin = 9999
     ymin = 9999
     zmin = 9999
@@ -433,7 +431,6 @@ def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
     Returns:
         matrix
     """
-
     matrix = np.array([[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)])
     return matrix
 
@@ -537,11 +534,11 @@ def fill_volume_matrix(
             if element == "H":
                 continue
         radius = radii.get(element, DEFAULT_VDW)
-        for i in range(0, xsteps):
+        for i in range(xsteps):
             if abs(a.x - (x0 + 0.5 * res + i * res)) < radius:
-                for j in range(0, ysteps):
+                for j in range(ysteps):
                     if abs(a.y - (y0 + 0.5 * res + j * res)) < radius:
-                        for k in range(0, zsteps):
+                        for k in range(zsteps):
                             if matrix[i][j][k] != 1:
                                 if abs(a.z - (z0 + 0.5 * res + k * res)) < radius:
                                     if dsq(
@@ -745,7 +742,7 @@ def concentration_matcher(
                 sys.exit(1)
             name = os.path.splitext(os.path.split(salt)[-1])[0]
             ext = os.path.splitext(os.path.split(salt)[-1])[1]
-            if not ext == ".xyz":
+            if ext != ".xyz":
                 print("Error: Wrong file format, please use a .xyz file.\n")
                 sys.exit(1)
             salt_molar_volume = molecular_volume(salt, name, radii_type=radii_type)

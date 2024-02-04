@@ -6,16 +6,17 @@ This module implements functions for coordination analysis.
 """
 
 from __future__ import annotations
+
 from collections.abc import Callable
 
 import numpy as np
-from tqdm.auto import tqdm
-from MDAnalysis import Universe, AtomGroup
-from MDAnalysis.core.groups import Atom
+from MDAnalysis import AtomGroup, Universe
 from MDAnalysis.analysis.distances import distance_array
+from MDAnalysis.core.groups import Atom
 from scipy.signal import savgol_filter
-from mdgo.util.coord import atom_vec, angle
+from tqdm.auto import tqdm
 
+from mdgo.util.coord import angle, atom_vec
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -451,8 +452,8 @@ def heat_map(
                         vertex_atoms.append(atoms[idx[0]])
                     else:
                         raise ValueError(
-                            f"There should be at least 1 cluster_terminal atom in the {str(dim[i])} dimension."
-                            f"Try broadening the selection at index {str(i + 1)} of the cluster_terminal "
+                            f"There should be at least 1 cluster_terminal atom in the {dim[i]!s} dimension."
+                            f"Try broadening the selection at index {i + 1!s} of the cluster_terminal "
                         )
             else:
                 assert isinstance(cluster_terminal, str)
@@ -799,7 +800,6 @@ def num_of_neighbor_simple(
         A dict with "total" as the key and an array of the solvation structure type in the specified frame range
         as the value.
     """
-
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     center_selection = "same type as index " + str(center_atom.index)

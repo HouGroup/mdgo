@@ -9,14 +9,13 @@ from __future__ import annotations
 
 import os
 
-import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.tsa.stattools import acovf
-from scipy.optimize import curve_fit
-from tqdm.auto import tqdm
-
+import numpy as np
 from MDAnalysis import Universe
 from MDAnalysis.core.groups import Atom
+from scipy.optimize import curve_fit
+from statsmodels.tsa.stattools import acovf
+from tqdm.auto import tqdm
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
@@ -53,7 +52,7 @@ def neighbors_one_atom(
     bool_values = {}
     time_count = 0
     for ts in nvt_run.trajectory[run_start:run_end:]:
-        if species in select_dict.keys():
+        if species in select_dict:
             selection = (
                 "("
                 + select_dict[species]
@@ -147,7 +146,7 @@ def calc_neigh_corr(
     times = np.array(times)
 
     acf_avg = {}
-    for kw in distance_dict.keys():
+    for kw in distance_dict:
         acf_all = []
         for atom in tqdm(center_atoms[::]):
             distance = distance_dict.get(kw)

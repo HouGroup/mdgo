@@ -15,16 +15,12 @@ from urllib.parse import quote
 
 import pubchempy as pcp
 from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    TimeoutException,
-)
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from mdgo.util.reformat import sdf_to_pdb
-
 
 MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
 FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
