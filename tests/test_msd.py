@@ -4,6 +4,7 @@ import os
 import unittest
 
 import MDAnalysis
+from numpy.testing import assert_allclose
 
 try:
     import tidynamics as td
@@ -75,25 +76,25 @@ class MyTestCase(unittest.TestCase):
         onsager_ii_self_nocom = onsager_ii_self(self.gen2, 0, 100, select="type 3", center_of_mass=False)
         onsager_ii_self_nofft = onsager_ii_self(self.gen2, 0, 100, select="type 3", fft=False)
 
-        self.assertAlmostEqual(32.14254152556588, onsager_ii_self_fft[50])
-        self.assertAlmostEqual(63.62190983, onsager_ii_self_fft[98])
-        self.assertAlmostEqual(67.29990019, onsager_ii_self_fft[99])
-        self.assertAlmostEqual(32.14254152556588, onsager_ii_self_nofft[50])
-        self.assertAlmostEqual(63.62190983, onsager_ii_self_nofft[98])
-        self.assertAlmostEqual(67.29990019, onsager_ii_self_nofft[99])
-        self.assertAlmostEqual(32.338364098424634, onsager_ii_self_nocom[50])
-        self.assertAlmostEqual(63.52915984813752, onsager_ii_self_nocom[98])
-        self.assertAlmostEqual(67.29599346166411, onsager_ii_self_nocom[99])
+        assert_allclose(32.14254152556588, onsager_ii_self_fft[50])
+        assert_allclose(63.62190983, onsager_ii_self_fft[98])
+        assert_allclose(67.29990019, onsager_ii_self_fft[99])
+        assert_allclose(32.14254152556588, onsager_ii_self_nofft[50])
+        assert_allclose(63.62190983, onsager_ii_self_nofft[98])
+        assert_allclose(67.29990019, onsager_ii_self_nofft[99])
+        assert_allclose(32.338364098424634, onsager_ii_self_nocom[50])
+        assert_allclose(63.52915984813752, onsager_ii_self_nocom[98])
+        assert_allclose(67.29599346166411, onsager_ii_self_nocom[99])
 
     def test_mda_msd_wrapper(self):
         mda_msd_cation = mda_msd_wrapper(self.gen2, 0, 100, select="type 3", fft=False)
         mda_msd_anion = mda_msd_wrapper(self.gen2, 0, 100, select="type 1", fft=False)
-        self.assertAlmostEqual(32.338364098424634, mda_msd_cation[50])
-        self.assertAlmostEqual(63.52915984813752, mda_msd_cation[98])
-        self.assertAlmostEqual(67.29599346166411, mda_msd_cation[99])
-        self.assertAlmostEqual(42.69200176568008, mda_msd_anion[50])
-        self.assertAlmostEqual(86.9209518, mda_msd_anion[98])
-        self.assertAlmostEqual(89.84668178, mda_msd_anion[99])
+        assert_allclose(32.338364098424634, mda_msd_cation[50])
+        assert_allclose(63.52915984813752, mda_msd_cation[98])
+        assert_allclose(67.29599346166411, mda_msd_cation[99])
+        assert_allclose(42.69200176568008, mda_msd_anion[50])
+        assert_allclose(86.9209518, mda_msd_anion[98])
+        assert_allclose(89.84668178, mda_msd_anion[99])
         assert np.allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="x", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x", fft=False),
@@ -126,8 +127,8 @@ class MyTestCase(unittest.TestCase):
         total_mda_cation = total_msd(
             self.gen2, 0, 100, select="type 3", fft=False, built_in=False, center_of_mass=False
         )
-        self.assertAlmostEqual(32.14254152556588, total_builtin_cation[50])
-        self.assertAlmostEqual(32.338364098424634, total_mda_cation[50])
+        assert_allclose(32.14254152556588, total_builtin_cation[50])
+        assert_allclose(32.338364098424634, total_mda_cation[50])
         with self.assertRaises(ValueError):
             total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=False, center_of_mass=True)
 
