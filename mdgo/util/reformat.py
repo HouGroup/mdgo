@@ -8,14 +8,15 @@ Utilities for converting data file formats.
 
 from io import StringIO
 import re
-from typing import List, Dict, Any, Final
+from __future__ import annotations
+from typing import Any, Final
 import pandas as pd
 
 from mdgo.util.dict_utils import MM_of_Elements
 from . import __author__
 
 
-SECTION_SORTER: Final[Dict[str, Dict[str, Any]]] = {
+SECTION_SORTER: Final[dict[str, dict[str, Any]]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -212,7 +213,7 @@ def sdf_to_pdb(
         title = "cid_"
     else:
         title = ""
-    pdb_atoms: List[Dict[str, Any]] = []
+    pdb_atoms: list[dict[str, Any]] = []
     # create pdb list of dictionaries
     atoms = 0
     bonds = 0

@@ -13,11 +13,12 @@ center of the cube is defined by the -x, -y and -z options, and the size of
 the cube is defined by the -xsize, -ysize and -zsize options.
 
 """
+from __future__ import annotations
 
 import sys
 import os
 import argparse
-from typing import Optional, List, Dict, Union, Tuple, Final
+from typing import Final
 
 import numpy as np
 from pymatgen.core import Molecule, Element
@@ -25,9 +26,9 @@ from pymatgen.core import Molecule, Element
 
 DEFAULT_VDW = 1.5  # See Ev:130902
 
-MOLAR_VOLUME: Final[Dict[str, float]] = {"lipf6": 18, "litfsi": 100}  # empirical value
+MOLAR_VOLUME: Final[dict[str, float]] = {"lipf6": 18, "litfsi": 100}  # empirical value
 
-ALIAS: Final[Dict[str, str]] = {
+ALIAS: Final[dict[str, str]] = {
     "ethylene carbonate": "ec",
     "ec": "ec",
     "propylene carbonate": "pc",
@@ -68,7 +69,7 @@ ALIAS: Final[Dict[str, str]] = {
 }
 
 # From PubChem
-MOLAR_MASS: Final[Dict[str, float]] = {
+MOLAR_MASS: Final[dict[str, float]] = {
     "ec": 88.06,
     "pc": 102.09,
     "dec": 118.13,
@@ -88,7 +89,7 @@ MOLAR_MASS: Final[Dict[str, float]] = {
 }
 
 # from Sigma-Aldrich
-DENSITY: Final[Dict[str, float]] = {
+DENSITY: Final[dict[str, float]] = {
     "ec": 1.321,
     "pc": 1.204,
     "dec": 0.975,
@@ -284,7 +285,7 @@ def parse_command_line():
     return args
 
 
-def get_max_dimensions(mol: Molecule) -> Tuple[float, float, float, float, float, float]:
+def get_max_dimensions(mol: Molecule) -> tuple[float, float, float, float, float, float]:
     """
     Calculates the dimension of a Molecule
 
@@ -319,7 +320,7 @@ def get_max_dimensions(mol: Molecule) -> Tuple[float, float, float, float, float
 
 def set_max_dimensions(
     x: float = 0.0, y: float = 0.0, z: float = 0.0, x_size: float = 10.0, y_size: float = 10.0, z_size: float = 10.0
-) -> Tuple[float, float, float, float, float, float]:
+) -> tuple[float, float, float, float, float, float]:
     """
     Set the max dimensions for calculating active site volume.
 
@@ -345,7 +346,7 @@ def set_max_dimensions(
 
 def round_dimensions(
     x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float, mode: str = "lig"
-) -> Tuple[float, float, float, float, float, float]:
+) -> tuple[float, float, float, float, float, float]:
     """
     Round dimensions to a larger box size (+ buffer).
 
@@ -394,7 +395,7 @@ def dsq(a1: float, a2: float, a3: float, b1: float, b2: float, b3: float) -> flo
 
 def get_dimensions(
     x0: float, x1: float, y0: float, y1: float, z0: float, z1: float, res: float = 0.1
-) -> Tuple[int, int, int]:
+) -> tuple[int, int, int]:
     """
     Mesh dimensions in unit of res.
 
@@ -438,7 +439,7 @@ def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
     return matrix
 
 
-def get_radii(radii_type: str = "Bondi") -> Dict[str, float]:
+def get_radii(radii_type: str = "Bondi") -> dict[str, float]:
     """
     Get a radii dict by type.
 
@@ -560,7 +561,7 @@ def fill_volume_matrix(
     return matrix
 
 
-def get_occupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = None, molar_volume=True) -> float:
+def get_occupied_volume(matrix: np.ndarray, res: float, name: str | None = None, molar_volume=True) -> float:
     """
     Get the occupied volume of the molecule in the box.
 
@@ -581,7 +582,7 @@ def get_occupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = No
     return v  # Å^3
 
 
-def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = None, molar_volume=True) -> float:
+def get_unoccupied_volume(matrix: np.ndarray, res: float, name: str | None = None, molar_volume=True) -> float:
     """
     Get the unoccupied volume of the molecule in the box.
 
@@ -603,8 +604,8 @@ def get_unoccupied_volume(matrix: np.ndarray, res: float, name: Optional[str] = 
 
 
 def molecular_volume(
-    mol: Union[str, Molecule],
-    name: Optional[str] = None,
+    mol: str | Molecule,
+    name: str | None = None,
     res: float = 0.1,
     radii_type: str = "Bondi",
     molar_volume: bool = True,
@@ -674,13 +675,13 @@ def molecular_volume(
 
 def concentration_matcher(
     concentration: float,
-    salt: Union[float, int, str, Molecule],
-    solvents: List[Union[str, Dict[str, float]]],
-    solv_ratio: List[float],
+    salt: float | int | str | Molecule,
+    solvents: list[str | dict[str, float]],
+    solv_ratio: list[float],
     num_salt: int = 100,
     mode: str = "v",
     radii_type: str = "Bondi",
-) -> Tuple[List, float]:
+) -> tuple[list, float]:
     """
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,

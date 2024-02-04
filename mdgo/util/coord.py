@@ -4,7 +4,7 @@
 
 """Utilities for manipulating coordinates under periodic boundary conditions."""
 
-from typing import List, Union
+from __future__ import annotations
 import numpy as np
 
 from MDAnalysis.core.groups import Atom
@@ -35,9 +35,9 @@ def atom_vec(atom1: Atom, atom2: Atom, dimension: np.ndarray) -> np.ndarray:
 
 
 def position_vec(
-    pos1: Union[List[float], np.ndarray],
-    pos2: Union[List[float], np.ndarray],
-    dimension: Union[List[float], np.ndarray],
+    pos1: list[float] | np.ndarray,
+    pos2: list[float] | np.ndarray,
+    dimension: list[float] | np.ndarray,
 ) -> np.ndarray:
     """
     Calculate the vector from pos2 to pos2.
@@ -50,7 +50,7 @@ def position_vec(
     Return:
         The obtained vector.
     """
-    vec: List[Union[int, float, np.floating]] = [0, 0, 0]
+    vec: list[int | float | np.floating] = [0, 0, 0]
     for i in range(3):
         diff = pos1[i] - pos2[i]
         if diff > dimension[i] / 2:

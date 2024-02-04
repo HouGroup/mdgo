@@ -16,7 +16,7 @@ set the folder of the packmol executable to the PATH environment variable.
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
 from shutil import which
 from pymatgen.core import Molecule
 
@@ -54,13 +54,13 @@ class PackmolWrapper:
     def __init__(
         self,
         path: str,
-        molecules: List[Dict],
-        box: Optional[List[float]] = None,
+        molecules: list[dict],
+        box: list[float] | None = None,
         tolerance: float = 2.0,
         seed: int = 1,
-        control_params: Optional[Dict] = None,
-        inputfile: Union[str, Path] = "packmol.inp",
-        outputfile: Union[str, Path] = "packmol_out.xyz",
+        control_params: dict | None = None,
+        inputfile: str | Path = "packmol.inp",
+        outputfile: str | Path = "packmol_out.xyz",
     ):
         """
         Args:

@@ -4,10 +4,10 @@
 
 """Utilities for manipulating numbers in data structures."""
 
-from typing import List, Union, Optional
+from __future__ import annotations
 
 
-def strip_zeros(items: Union[List[Union[str, float, int]], str]) -> Optional[List[int]]:
+def strip_zeros(items: list[str | float | int] | str) -> list[int] | None:
     """
     Strip the trailing zeros of a sequence.
 
