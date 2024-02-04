@@ -4,6 +4,9 @@
 """
 This package contains core modules and classes molecular dynamics simulation setup and analysis.
 """
+
+from __future__ import annotations
+
 __author__ = "Mdgo Development Team"
 __email__ = "tingzheng_hou@berkeley.edu"
 __maintainer__ = "Tingzheng Hou"

@@ -6,6 +6,8 @@ This package contains modules and classes for retrieving, generating and
 modifying MD force filed data.
 """
 
+from __future__ import annotations
+
 __author__ = "Tingzheng Hou, Ryan Kingsbury"
 __version__ = "0.3.1"
 __maintainer__ = "Tingzheng Hou, Ryan Kingsbury"

@@ -3,6 +3,8 @@
 
 """The util package implements various utilities that are commonly used by various packages."""
 
+from __future__ import annotations
+
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
 __maintainer__ = "Tingzheng Hou"

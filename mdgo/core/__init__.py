@@ -7,6 +7,8 @@ This package contains core modules and classes for molecular dynamics
 setup, run and analysis.
 """
 
+from __future__ import annotations
+
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.1"
 __maintainer__ = "Tingzheng Hou"
