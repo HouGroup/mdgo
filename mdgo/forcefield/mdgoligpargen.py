@@ -109,7 +109,7 @@ class LigpargenRunner:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
-            lines = list()
+            lines = []
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
@@ -282,7 +282,7 @@ class FFcrawler:
             data_obj = LammpsData.from_file(lmp_file)
             element_id_dict = lmp_mass_to_name(data_obj.masses)
             coords = data_obj.atoms[["type", "x", "y", "z"]]
-            lines = list()
+            lines = []
             lines.append(str(len(coords.index)))
             lines.append("")
             for _, r in coords.iterrows():
