@@ -1,8 +1,10 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
 """Setup.py for MDGO."""
+
+from __future__ import annotations
+
 
 import os
 

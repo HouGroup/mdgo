@@ -96,7 +96,7 @@ def find_nearest(
         the ``frequency`` of hopping between sites, and ``steps`` when each binding site
         exhibits the closest distance to the center atom.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
@@ -185,7 +185,7 @@ def find_nearest_free_only(
         the ``frequency`` of hopping between sites, and ``steps`` when each binding site
         exhibits the closest distance to the center atom.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
@@ -272,7 +272,7 @@ def find_in_n_out(
     Returns:
         Two arrays of numberings of frames with hopping in and hopping out event, respectively.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)

@@ -29,7 +29,7 @@ def calc_cond_msd(
     cation_charge: float = 1,
     anion_charge: float = -1,
 ) -> np.ndarray:
-    """Calculates the conductivity "mean square displacement" over time
+    """Calculates the conductivity "mean square displacement" over time.
 
     Note:
        Coordinates must be unwrapped (in dcd file when creating MDAnalysis Universe)
@@ -58,8 +58,7 @@ def calc_cond_msd(
         for cation in cation_list:
             qr_temp += cation.center_of_mass() * cation_charge
         qr.append(qr_temp)
-    msd = msd_fft(np.array(qr))
-    return msd
+    return msd_fft(np.array(qr))
 
 
 def get_beta(
@@ -134,7 +133,7 @@ def conductivity_calculator(
     T: float,
     units: str = "real",
 ) -> float:
-    """Calculates the overall conductivity of the system
+    """Calculates the overall conductivity of the system.
 
     Args:
         time_array: times at which position data was collected in the simulation
