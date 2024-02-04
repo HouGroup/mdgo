@@ -1,10 +1,10 @@
 from __future__ import annotations
+
 import os
-import sys
-import tempfile
-from io import StringIO
 import unittest
+
 import MDAnalysis
+
 from mdgo.conductivity import *
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")

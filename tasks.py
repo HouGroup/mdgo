@@ -2,6 +2,7 @@
 Pyinvoke tasks.py file for automating releases and admin stuff.
 Author: Tingzheng Hou
 """
+from __future__ import annotations
 
 import glob
 import json
@@ -109,35 +110,35 @@ def set_ver(ctx, version):
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/__init__.py", "wt") as f:
+    with open("mdgo/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/core/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/core/__init__.py", "wt") as f:
+    with open("mdgo/core/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/forcefield/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/forcefield/__init__.py", "wt") as f:
+    with open("mdgo/forcefield/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/util/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/util/__init__.py", "wt") as f:
+    with open("mdgo/util/__init__.py", "w") as f:
         f.write(contents)
 
     with open("setup.py") as f:
         contents = f.read()
         contents = re.sub(r"version=([^,]+),", 'version="%s",' % version, contents)
 
-    with open("setup.py", "wt") as f:
+    with open("setup.py", "w") as f:
         f.write(contents)
 
 

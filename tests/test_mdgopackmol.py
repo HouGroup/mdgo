@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import os
 import tempfile
 from pathlib import Path
 from subprocess import TimeoutExpired
 
-import pytest
 import numpy as np
+import pytest
 from pymatgen.core import Molecule
 
 from mdgo.util.packmol import PackmolWrapper
@@ -13,7 +14,7 @@ from mdgo.util.packmol import PackmolWrapper
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
 
-@pytest.fixture
+@pytest.fixture()
 def ethanol():
     """
     Returns a Molecule of ethanol
@@ -34,7 +35,7 @@ def ethanol():
     return Molecule(ethanol_atoms, ethanol_coords)
 
 
-@pytest.fixture
+@pytest.fixture()
 def water():
     """
     Returns a Molecule of water
@@ -121,7 +122,7 @@ class TestPackmolWrapper:
                 control_params={"maxit": 0, "nloop": 0},
             )
             pw.make_packmol_input()
-            with open(os.path.join(scratch_dir, "packmol.inp"), "r") as f:
+            with open(os.path.join(scratch_dir, "packmol.inp")) as f:
                 input_string = f.read()
                 assert "maxit 0" in input_string
                 assert "nloop 0" in input_string
@@ -159,7 +160,7 @@ class TestPackmolWrapper:
                 box=[0, 0, 0, 2, 2, 2],
             )
             pw.make_packmol_input()
-            with open(os.path.join(scratch_dir, "packmol.inp"), "r") as f:
+            with open(os.path.join(scratch_dir, "packmol.inp")) as f:
                 input_string = f.read()
                 assert "inside box 0 0 0 2 2 2" in input_string
             with pytest.raises(ValueError):

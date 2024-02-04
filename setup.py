@@ -5,14 +5,13 @@
 
 from __future__ import annotations
 
-
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 module_dir = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(module_dir, "README.md"), "r") as f:
+with open(os.path.join(module_dir, "README.md")) as f:
     readme = f.read()
 
 INSTALL_REQUIRES = [

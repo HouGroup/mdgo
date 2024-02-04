@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import os
 import unittest
 
@@ -10,7 +11,6 @@ except ImportError:
     td = None
 
 from mdgo.msd import *
-
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-import io
+
 import sys
 import tempfile
 import unittest
@@ -8,8 +8,8 @@ from io import StringIO
 import numpy as np
 import pytest
 
-from mdgo.forcefield.crawler import *
 from mdgo.forcefield.aqueous import *
+from mdgo.forcefield.crawler import *
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
