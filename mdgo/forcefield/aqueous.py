@@ -7,6 +7,7 @@ A class for retrieving water and ion force field parameters.
 """
 
 from __future__ import annotations
+from typing import Literal, Final
 
 import os
 import re
@@ -137,10 +138,10 @@ class Aqueous:
 
     @staticmethod
     def get_ion(
-        ion: Union[Ion, str],
+        ion: Ion | str,
         parameter_set: str = "auto",
         water_model: str = "auto",
-        mixing_rule: Optional[str] = None,
+        mixing_rule: str | None = None,
     ) -> LammpsData:
         """
         Retrieve force field parameters for an ion in water.

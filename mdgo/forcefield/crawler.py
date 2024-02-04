@@ -18,7 +18,6 @@ from __future__ import annotations
 import os
 import shutil
 import time
-from typing import Optional
 
 
 from pymatgen.io.lammps.data import LammpsData
@@ -60,7 +59,7 @@ class FFcrawler:
     def __init__(
         self,
         write_dir: str,
-        chromedriver_dir: Optional[str] = None,
+        chromedriver_dir: str | None = None,
         headless: bool = True,
         xyz: bool = False,
         gromacs: bool = False,

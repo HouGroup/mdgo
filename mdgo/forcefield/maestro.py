@@ -18,6 +18,7 @@ For using the MaestroRunner class:
 """
 
 from __future__ import annotations
+from typing import Final
 
 import os
 import signal
@@ -82,7 +83,7 @@ class MaestroRunner:
         structure_dir: str,
         working_dir: str,
         out: str = "lmp",
-        cmd_template: Optional[str] = None,
+        cmd_template: str | None = None,
         assign_bond: bool = False,
     ):
         """Base constructor."""

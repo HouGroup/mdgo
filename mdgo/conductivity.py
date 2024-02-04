@@ -27,8 +27,8 @@ def calc_cond_msd(
     anions: AtomGroup,
     cations: AtomGroup,
     run_start: int,
-    cation_charge: Union[int, float] = 1,
-    anion_charge: Union[int, float] = -1,
+    cation_charge: int | float = 1,
+    anion_charge: int | float = -1,
 ) -> np.ndarray:
     """Calculates the conductivity "mean square displacement" over time
 
@@ -128,11 +128,11 @@ def choose_msd_fitting_region(
 def conductivity_calculator(
     time_array: np.ndarray,
     cond_array: np.ndarray,
-    v: Union[int, float],
+    v: int | float,
     name: str,
     start: int,
     end: int,
-    T: Union[int, float],
+    T: int | float,
     units: str = "real",
 ) -> float:
     """Calculates the overall conductivity of the system

@@ -30,11 +30,11 @@ def neighbors_one_atom(
     nvt_run: Universe,
     center_atom: Atom,
     species: str,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Create adjacency matrix for one center atom.
 
@@ -75,7 +75,7 @@ def neighbors_one_atom(
     return bool_values
 
 
-def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
+def calc_acf(a_values: dict[str, np.ndarray]) -> list[np.ndarray]:
     """
     Calculate auto-correlation function (ACF)
 
@@ -94,11 +94,11 @@ def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
 
 
 def exponential_func(
-    x: Union[float, np.floating, np.ndarray],
-    a: Union[float, np.floating, np.ndarray],
-    b: Union[float, np.floating, np.ndarray],
-    c: Union[float, np.floating, np.ndarray],
-) -> Union[np.floating, np.ndarray]:
+    x: float | np.floating | np.ndarray,
+    a: float | np.floating | np.ndarray,
+    b: float | np.floating | np.ndarray,
+    c: float | np.floating | np.ndarray,
+) -> np.floating | np.ndarray:
     """
     An exponential decay function
 
@@ -116,13 +116,13 @@ def exponential_func(
 
 def calc_neigh_corr(
     nvt_run: Universe,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     time_step: float,
     run_start: int,
     run_end: int,
     center_atom: str = "cation",
-) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Calculates the neighbor auto-correlation function (ACF)
     of selected species around center atom.
 
@@ -171,11 +171,11 @@ def calc_neigh_corr(
 
 def fit_residence_time(
     times: np.ndarray,
-    acf_avg_dict: Dict[str, np.ndarray],
+    acf_avg_dict: dict[str, np.ndarray],
     cutoff_time: int,
     time_step: float,
-    save_curve: Union[str, bool] = False,
-) -> Dict[str, np.floating]:
+    save_curve: str | bool = False,
+) -> dict[str, np.floating]:
     """
     Use the ACF to fit the residence time (Exponential decay constant).
     TODO: allow defining the residence time according to a threshold value of the decay

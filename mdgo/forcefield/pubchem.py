@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Optional, Final
+from typing import Final
 from urllib.parse import quote
 
 import pubchempy as pcp
@@ -96,7 +96,7 @@ class PubChemRunner:
         if not self.api:
             self.web.quit()
 
-    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> Optional[str]:
+    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> str | None:
         """
         Search the PubChem database with a text entry and save the
         structure in desired format.
@@ -140,7 +140,7 @@ class PubChemRunner:
             print(".", end="")
         print("\nStructure file saved.")
 
-    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> Optional[str]:
+    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> str | None:
         cid = None
 
         try:
@@ -197,7 +197,7 @@ class PubChemRunner:
             self.quit()
         return cid
 
-    def _obtain_entry_api(self, search_text, name, output_format) -> Optional[str]:
+    def _obtain_entry_api(self, search_text, name, output_format) -> str | None:
         cid = None
         cids = pcp.get_cids(search_text, "name", record_type="3d")
         if len(cids) == 0:

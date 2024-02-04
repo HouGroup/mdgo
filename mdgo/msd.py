@@ -11,6 +11,7 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 """
 
 from __future__ import annotations
+from typing import Literal
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
@@ -259,7 +260,7 @@ def mda_msd_wrapper(
     return total_array
 
 
-def parse_msd_type(msd_type: DIM) -> List[int]:
+def parse_msd_type(msd_type: DIM) -> list[int]:
     """
     Sets up the desired dimensionality of the MSD.
 
@@ -315,7 +316,7 @@ def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "a
     return total_array
 
 
-def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
+def msd_from_frags(coord_list: list[np.ndarray], largest: int) -> np.ndarray:
     """
     Calculates the MSD using a list of fragments of trajectory with the conventional algorithm.
 
@@ -326,7 +327,7 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
     Returns:
         The MSD series.
     """
-    msd_dict: Dict[Union[int, np.integer], np.ndarray] = {}
+    msd_dict: dict[int | np.integer, np.ndarray] = {}
     for state in coord_list:
         n_frames = state.shape[0]
         lag_times = np.arange(1, min(n_frames, largest))
@@ -352,12 +353,12 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
 def states_coord_array(
     nvt_run: Universe,
     atom: Atom,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
     binding_site: str = "anion",
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Cuts the trajectory of an atom into fragments. Each fragment contains consecutive timesteps of coordinates
     of the atom in either attached or free state. The Attached state is when the atom coordinates with the
     ``binding_site`` species (distance < ``distance``), and vice versa for the free state.
@@ -426,12 +427,12 @@ def partial_msd(
     nvt_run: Universe,
     atoms: AtomGroup,
     largest: int,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
     binding_site: str = "anion",
-) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
+) -> tuple[list[np.ndarray] | None, list[np.ndarray] | None]:
     """Calculates the mean square displacement (MSD) of the ``atoms`` according to coordination states.
     The returned ``free_data`` include the MSD when ``atoms`` are not coordinated to ``binding_site``.
     The ``attach_data`` includes the MSD of ``atoms`` are not coordinated to ``binding_site``.
