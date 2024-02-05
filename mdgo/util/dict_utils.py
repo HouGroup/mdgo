@@ -274,7 +274,6 @@ def extract_atom_from_anion(ion: Residue | AtomGroup, select_dict: dict[str, str
             and the corresponding values are the selection language.
         number: The serial number of the anion.
     """
-
     anion_name = "anion" if number == 0 else "anion_" + str(number)
     if len(ion.atoms.types) == 1:
         select_dict[anion_name] = "type " + ion.atoms.types[0]

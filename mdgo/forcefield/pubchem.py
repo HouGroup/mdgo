@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Final
+from typing import Final, NoReturn
 from urllib.parse import quote
 
 import pubchempy as pcp
@@ -103,14 +103,12 @@ class PubChemRunner:
             return self._obtain_entry_api(search_text, name, output_format=output_format)
         return self._obtain_entry_web(search_text, name, output_format=output_format)
 
-    def smiles_to_pdb(self, smiles: str):
+    def smiles_to_pdb(self, smiles: str) -> NoReturn:
         """
         Obtain pdf file based on SMILES code.
 
         Args:
             smiles: SMILES code.
-
-        Returns:
 
         """
         convertor_url = "https://cactus.nci.nih.gov/translate/"
@@ -141,7 +139,7 @@ class PubChemRunner:
             self.web.get(url)
             loaded_element_path = '//*[@id="main-results"]/div[1]/div/ul'
             self.wait.until(EC.presence_of_element_located((By.XPATH, loaded_element_path)))
-            best_xpath = '//*[@id="featured-results"]/div/div[2]' "/div/div[1]/div[2]/div[1]/a/span/span"
+            best_xpath = '//*[@id="featured-results"]/div/div[2]/div/div[1]/div[2]/div[1]/a/span/span'
             relevant_xpath = (
                 '//*[@id="collection-results-container"]'
                 "/div/div/div[2]/ul/li[1]/div/div/div[1]"

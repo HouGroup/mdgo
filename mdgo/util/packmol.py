@@ -71,17 +71,17 @@ class PackmolWrapper:
                     2. "number" - the number of that molecule to pack into the box
                     3. "coords" - Coordinates in the form of either a Molecule object or
                         a path to a file.
-
-        Example:
-                    {"name": "water",
-                     "number": 500,
-                     "coords": "/path/to/input/file.xyz"}
+                For Example,
+                            {"name": "water",
+                             "number": 500,
+                             "coords": "/path/to/input/file.xyz"}
             box: A list of box dimensions xlo, ylo, zlo, xhi, yhi, zhi, in Å. If set to None
                 (default), mdgo will estimate the required box size based on the volumes of
                 the provided molecules using mdgo.volume.molecular_volume()
             tolerance: Tolerance for packmol, in Å.
             seed: Random seed for packmol. Use a value of 1 (default) for deterministic
                 output, or -1 to generate a new random seed from the current time.
+            control_params: Specify custom control parapeters, e,g, "maxit" and "nloop", in a dict
             inputfile: Path to the input file. Default to 'packmol.inp'.
             outputfile: Path to the output file. Default to 'output.xyz'.
         """

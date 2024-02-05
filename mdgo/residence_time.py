@@ -84,7 +84,7 @@ def calc_acf(a_values: dict[str, np.ndarray]) -> list[np.ndarray]:
         A list of auto-correlation functions for each neighbor species.
     """
     acfs = []
-    for _atom_id, neighbors in a_values.items():
+    for neighbors in a_values.values():  # for _atom_id, neighbors in a_values.items():
         #  atom_id_numeric = int(re.search(r"\d+", _atom_id).group())
         acfs.append(acovf(neighbors, demean=False, unbiased=True, fft=True))
     return acfs
