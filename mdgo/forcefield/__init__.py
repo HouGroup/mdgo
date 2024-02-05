@@ -17,6 +17,6 @@ __date__ = "Dec 19, 2023"
 
 from .aqueous import Aqueous, IonLJData
 from .charge import ChargeWriter
-from .crawler import FFcrawler
 from .maestro import MaestroRunner
+from .mdgoligpargen import FFcrawler, LigpargenRunner
 from .pubchem import PubChemRunner
