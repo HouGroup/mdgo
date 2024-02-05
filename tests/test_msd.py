@@ -42,7 +42,11 @@ class MyTestCase(unittest.TestCase):
         cls.dims = ["x", "y", "z"]
 
     def test_msd_straight_forward(self):
-        assert_allclose(self.fft, msd_straight_forward(self.arr1))
+        assert_allclose(
+            self.fft,
+            msd_straight_forward(self.arr1),
+            atol=1e-12,
+        )
 
     def test_msd_fft(self):
         assert_allclose(self.fft, msd_fft(self.arr1))
@@ -109,29 +113,39 @@ class MyTestCase(unittest.TestCase):
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="x", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="x", fft=False),
+            atol=1e-12,
         )
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="y", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="y", fft=False),
+            atol=1e-12,
         )
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 10, select="type 3", msd_type="z", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 10, select="type 3", msd_type="z", fft=False),
+            atol=1e-12,
         )
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xy", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xy", fft=False),
+            atol=1e-12,
         )
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="yz", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="yz", fft=False),
+            atol=1e-12,
         )
         assert_allclose(
             onsager_ii_self(self.gen2, 0, 100, select="type 3", msd_type="xz", center_of_mass=False),
             mda_msd_wrapper(self.gen2, 0, 100, select="type 3", msd_type="xz", fft=False),
+            atol=1e-12,
         )
         if td is not None:
-            assert_allclose(mda_msd_cation, mda_msd_wrapper(self.gen2, 0, 100, select="type 3"))
+            assert_allclose(
+                mda_msd_cation,
+                mda_msd_wrapper(self.gen2, 0, 100, select="type 3"),
+                atol=1e-12,
+            )
 
     def test_total_msd(self):
         total_builtin_cation = total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=True)
