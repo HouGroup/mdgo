@@ -124,7 +124,7 @@ class MaestroRunner:
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                preexec_fn=os.setsid,
+                start_new_session=True,
             )
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Maestro failed with errorcode {e.returncode}  and stderr: {e.stderr}") from e
