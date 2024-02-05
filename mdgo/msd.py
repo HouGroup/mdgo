@@ -284,9 +284,7 @@ def parse_msd_type(msd_type: DIM) -> list[int]:
     try:
         dim = keys[msd_type_str]
     except KeyError:
-        raise ValueError(
-            f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, xy, xz, yz, x, y, z"
-        )
+        raise ValueError(f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, xy, xz, yz, x, y, z")
     return dim
 
 

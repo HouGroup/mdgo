@@ -71,7 +71,7 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Physics",
             "Topic :: Scientific/Engineering :: Chemistry",
             "Topic :: Software Development :: Libraries :: Python Modules",
-            ],
+        ],
         packages=find_packages(),
         install_requires=INSTALL_REQUIRES,
         extras_require={

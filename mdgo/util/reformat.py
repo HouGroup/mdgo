@@ -68,9 +68,7 @@ SECTION_SORTER: Final[dict[str, dict[str, Any]]] = {
     },
 }
 
-BOX: Final[
-    str
-] = """{0:6f} {1:6f} xlo xhi
+BOX: Final[str] = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 

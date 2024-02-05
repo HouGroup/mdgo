@@ -363,9 +363,7 @@ def check_contiguous_steps(
         An array of distance between the center atom and the neighbor atoms
         in the checkpoint +/- lag time range.
     """
-    coord_num: dict[str, list[list[int]] | np.ndarray] = {
-        x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict
-    }
+    coord_num: dict[str, list[list[int]] | np.ndarray] = {x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict}
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     has = False
     for i, _ts in enumerate(trj_analysis):
@@ -1092,9 +1090,7 @@ def write_out(center_pos: np.ndarray, center_name: str, neighbors: AtomGroup, pa
         xyz_file.write("\n".join(lines))
 
 
-def select_shell(
-    select: dict[str, str] | str, distance: dict[str, float] | str, center_atom: Atom, kw: str
-) -> str:
+def select_shell(select: dict[str, str] | str, distance: dict[str, float] | str, center_atom: Atom, kw: str) -> str:
     """
     Select a group of atoms that is within a distance of an ``center_atom``.
 

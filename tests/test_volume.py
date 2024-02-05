@@ -50,9 +50,7 @@ class MyTestCase(unittest.TestCase):
         litfsi_volume_4 = molecular_volume(self.litfsi, radii_type="Lange")
         litfsi_volume_5 = molecular_volume(self.litfsi, radii_type="pymatgen")
         litfsi_volume_6 = molecular_volume(self.litfsi, molar_volume=False)
-        litfsi_volume_7 = molecular_volume(
-            self.litfsi, mode="act", x_size=8, y_size=8, z_size=8
-        )
+        litfsi_volume_7 = molecular_volume(self.litfsi, mode="act", x_size=8, y_size=8, z_size=8)
         assert litfsi_volume_1 == 100.16
         assert litfsi_volume_2 == 100.16
         assert litfsi_volume_3 == 99.37

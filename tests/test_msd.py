@@ -55,36 +55,36 @@ class MyTestCase(unittest.TestCase):
     def test_create_position_arrays(self):
         assert_allclose(
             np.array([21.53381769, 14.97501839, -3.87998785]),
-            create_position_arrays(self.gen2, 0, 100, select="type 3")[50][2]
+            create_position_arrays(self.gen2, 0, 100, select="type 3")[50][2],
         )
         assert_allclose(
             np.array([-2.78550047, -11.85487624, -17.1221954]),
-            create_position_arrays(self.gen2, 0, 100, select="type 3")[99][10]
+            create_position_arrays(self.gen2, 0, 100, select="type 3")[99][10],
         )
         assert_allclose(
-            np.array([41.1079216 , 34.95127106, 18.00482368]),
-            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[50][2]
+            np.array([41.1079216, 34.95127106, 18.00482368]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[50][2],
         )
         assert_allclose(
-            np.array([16.98478317,  8.27190208,  5.07116079]),
-            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[99][10]
+            np.array([16.98478317, 8.27190208, 5.07116079]),
+            create_position_arrays(self.gen2, 0, 100, select="type 3", center_of_mass=False)[99][10],
         )
 
     def test_parse_msd_type(self):
         xyz = parse_msd_type("xyz")
-        assert ["x", "y", "z"] == self.dims[xyz[0]:xyz[1]:xyz[2]]
+        assert ["x", "y", "z"] == self.dims[xyz[0] : xyz[1] : xyz[2]]
         xy = parse_msd_type("xy")
-        assert ["x", "y"] == self.dims[xy[0]:xy[1]:xy[2]]
+        assert ["x", "y"] == self.dims[xy[0] : xy[1] : xy[2]]
         yz = parse_msd_type("yz")
-        assert ["y", "z"] == self.dims[yz[0]:yz[1]:yz[2]]
+        assert ["y", "z"] == self.dims[yz[0] : yz[1] : yz[2]]
         xz = parse_msd_type("xz")
-        assert ["x", "z"] == self.dims[xz[0]:xz[1]:xz[2]]
+        assert ["x", "z"] == self.dims[xz[0] : xz[1] : xz[2]]
         x = parse_msd_type("x")
-        assert ["x"] == self.dims[x[0]:x[1]:x[2]]
+        assert ["x"] == self.dims[x[0] : x[1] : x[2]]
         y = parse_msd_type("y")
-        assert ["y"] == self.dims[y[0]:y[1]:y[2]]
+        assert ["y"] == self.dims[y[0] : y[1] : y[2]]
         z = parse_msd_type("z")
-        assert ["z"] == self.dims[z[0]:z[1]:z[2]]
+        assert ["z"] == self.dims[z[0] : z[1] : z[2]]
 
     def test_onsager_ii_self(self):
         onsager_ii_self_fft = onsager_ii_self(self.gen2, 0, 100, select="type 3")
@@ -155,9 +155,9 @@ class MyTestCase(unittest.TestCase):
         assert_allclose(total_builtin_cation[50], 32.14254152556588)
         assert_allclose(total_mda_cation[50], 32.338364098424634)
         with pytest.raises(
-                ValueError,
-                match="Warning! MDAnalysis does not support subtracting center "
-                "of mass. Calculating without subtracting...",
+            ValueError,
+            match="Warning! MDAnalysis does not support subtracting center "
+            "of mass. Calculating without subtracting...",
         ):
             total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=False, center_of_mass=True)
 
