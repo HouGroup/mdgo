@@ -154,7 +154,11 @@ class MyTestCase(unittest.TestCase):
         )
         assert_allclose(total_builtin_cation[50], 32.14254152556588)
         assert_allclose(total_mda_cation[50], 32.338364098424634)
-        with pytest.raises(ValueError, match="Packmol failed with"):
+        with pytest.raises(
+                ValueError,
+                match="Warning! MDAnalysis does not support subtracting center "
+                "of mass. Calculating without subtracting...",
+        ):
             total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=False, center_of_mass=True)
 
 

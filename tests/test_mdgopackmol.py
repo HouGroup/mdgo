@@ -126,7 +126,7 @@ class TestPackmolWrapper:
                 input_string = f.read()
                 assert "maxit 0" in input_string
                 assert "nloop 0" in input_string
-            with pytest.raises(ValueError, match="MDAnalysis"):
+            with pytest.raises(ValueError, match="Packmol failed with 1"):
                 pw.run_packmol()
 
     def test_timeout(self, water, ethanol):
