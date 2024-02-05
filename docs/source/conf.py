@@ -1,4 +1,4 @@
-# Configuration file for the Sphinx documentation builder.
+"""Configuration file for the Sphinx documentation builder."""
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
@@ -14,8 +14,6 @@ from __future__ import annotations
 
 import os
 import sys
-import sphinx_rtd_theme, sphinx_autodoc_typehints
-from typing import List
 
 sys.path.insert(0, os.path.abspath("../../mdgo"))
 
@@ -57,7 +55,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns: List[str] = []
+exclude_patterns: list[str] = []
 
 
 # -- Options for HTML output -------------------------------------------------
