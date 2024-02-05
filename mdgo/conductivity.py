@@ -1,18 +1,20 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module implements functions to calculate the ionic conductivity.
-"""
+"""This module implements functions to calculate the ionic conductivity."""
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from MDAnalysis import AtomGroup, Universe
 from scipy import stats
 from tqdm.auto import tqdm
 
 from mdgo.msd import msd_fft
+
+if TYPE_CHECKING:
+    from MDAnalysis import AtomGroup, Universe
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
@@ -51,7 +53,7 @@ def calc_cond_msd(
     anion_list = anions.split("residue")
     # compute sum over all charges and positions
     qr = []
-    for ts in tqdm(u.trajectory[run_start:]):
+    for _ts in tqdm(u.trajectory[run_start:]):
         qr_temp = np.zeros(3)
         for anion in anion_list:
             qr_temp += anion.center_of_mass() * anion_charge
