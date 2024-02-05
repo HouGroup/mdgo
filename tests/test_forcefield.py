@@ -9,10 +9,11 @@ from io import StringIO
 
 import numpy as np
 import pytest
+from numpy.testing import assert_equal
 from pymatgen.io.lammps.data import LammpsData
 
 from mdgo.forcefield.aqueous import Aqueous, Ion
-from mdgo.forcefield.crawler import FFcrawler
+from mdgo.forcefield.mdgoligpargen import FFcrawler, LigpargenRunner
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
@@ -36,33 +37,27 @@ class LigpargenRunnerTest(unittest.TestCase):
 
             lpg = LigpargenRunner(os.path.join(test_dir, "EC.pdb"), download_dir, xyz=True)
             lpg.run()
-            self.assertIn(
-                "Input format: .pdb\n" "LigParGen finished succesfully!\n" ".xyz file saved.",
-                out.getvalue(),
-            )
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EC.lmp")))
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EC.lmp.xyz")))
+            assert "Input format: .pdb\nLigParGen finished succesfully!\n.xyz file saved." in out.getvalue()
+            assert os.path.exists(os.path.join(download_dir, "EC.lmp"))
+            assert os.path.exists(os.path.join(download_dir, "EC.lmp.xyz"))
             with open(os.path.join(download_dir, "EC.lmp")) as f:
                 pdf_actual = f.readlines()
-                self.assertListEqual(pdf, pdf_actual)
+                assert_equal(pdf, pdf_actual)
             with open(os.path.join(download_dir, "EC.lmp.xyz")) as f:
                 xyz_actual = f.readlines()
-                self.assertListEqual(xyz, xyz_actual)
+                assert_equal(xyz, xyz_actual)
 
             lpg = LigpargenRunner("CCOC(=O)O", download_dir, xyz=True)
             lpg.run()
-            self.assertIn(
-                "Input format: SMILES\n" "LigParGen finished succesfully!\n" ".xyz file saved.",
-                out.getvalue(),
-            )
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp")))
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp.xyz")))
+            assert "Input format: SMILES\nLigParGen finished succesfully!\n.xyz file saved." in out.getvalue()
+            assert os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp"))
+            assert os.path.exists(os.path.join(download_dir, "CCOC(=O)O.lmp.xyz"))
             with open(os.path.join(download_dir, "CCOC(=O)O.lmp")) as f:
                 smiles_actual = f.readlines()
-                self.assertListEqual(smiles, smiles_actual)
+                assert_equal(smiles, smiles_actual)
             with open(os.path.join(download_dir, "CCOC(=O)O.lmp.xyz")) as f:
                 xyz_actual = f.readlines()
-                self.assertListEqual(xyz_smiles, xyz_actual)
+                assert_equal(xyz_smiles, xyz_actual)
 
         finally:
             sys.stdout = saved_stdout
