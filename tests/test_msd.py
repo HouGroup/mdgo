@@ -4,6 +4,7 @@ import os
 import unittest
 
 import MDAnalysis
+import numpy as np
 from numpy.testing import assert_allclose
 
 try:
