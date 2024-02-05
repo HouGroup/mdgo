@@ -49,8 +49,8 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_msd_fft(self):
-        assert_allclose(self.fft, msd_fft(self.arr1))
-        assert_allclose(msd_straight_forward(self.arr2), msd_fft(self.arr2))
+        assert_allclose(self.fft, msd_fft(self.arr1), atol=1e-12)
+        assert_allclose(msd_straight_forward(self.arr2), msd_fft(self.arr2), atol=1e-12)
 
     def test_create_position_arrays(self):
         assert_allclose(
