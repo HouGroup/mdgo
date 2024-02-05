@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -7,23 +6,21 @@ This module implements a core class PubChemRunner for accessing PubChem data tha
 can be used to retrieve compound structure and information.
 """
 
+from __future__ import annotations
+
 import os
 import time
-from typing import Optional, Final
+from typing import Final
 from urllib.parse import quote
 
 import pubchempy as pcp
 from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    TimeoutException,
-)
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from mdgo.util.reformat import sdf_to_pdb
-
 
 MAESTRO: Final[str] = "$SCHRODINGER/maestro -console -nosplash"
 FFLD: Final[str] = "$SCHRODINGER/utilities/ffld_server -imae {} -version 14 -print_parameters -out_file {}"
@@ -87,14 +84,11 @@ class PubChemRunner:
             print("PubChem server connected.")
 
     def quit(self):
-        """
-        Method for quiting ChromeDriver.
-
-        """
+        """Method for quiting ChromeDriver."""
         if not self.api:
             self.web.quit()
 
-    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> Optional[str]:
+    def obtain_entry(self, search_text: str, name: str, output_format: str = "sdf") -> str | None:
         """
         Search the PubChem database with a text entry and save the
         structure in desired format.
@@ -116,8 +110,6 @@ class PubChemRunner:
         Args:
             smiles: SMILES code.
 
-        Returns:
-
         """
         convertor_url = "https://cactus.nci.nih.gov/translate/"
         input_xpath = "/html/body/div/div[2]/div[1]/form/table[1]/tbody/tr[2]/td[1]/input[1]"
@@ -138,7 +130,7 @@ class PubChemRunner:
             print(".", end="")
         print("\nStructure file saved.")
 
-    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> Optional[str]:
+    def _obtain_entry_web(self, search_text: str, name: str, output_format: str) -> str | None:
         cid = None
 
         try:
@@ -147,7 +139,7 @@ class PubChemRunner:
             self.web.get(url)
             loaded_element_path = '//*[@id="main-results"]/div[1]/div/ul'
             self.wait.until(EC.presence_of_element_located((By.XPATH, loaded_element_path)))
-            best_xpath = '//*[@id="featured-results"]/div/div[2]' "/div/div[1]/div[2]/div[1]/a/span/span"
+            best_xpath = '//*[@id="featured-results"]/div/div[2]/div/div[1]/div[2]/div[1]/a/span/span'
             relevant_xpath = (
                 '//*[@id="collection-results-container"]'
                 "/div/div/div[2]/ul/li[1]/div/div/div[1]"
@@ -195,7 +187,7 @@ class PubChemRunner:
             self.quit()
         return cid
 
-    def _obtain_entry_api(self, search_text, name, output_format) -> Optional[str]:
+    def _obtain_entry_api(self, search_text, name, output_format) -> str | None:
         cid = None
         cids = pcp.get_cids(search_text, "name", record_type="3d")
         if len(cids) == 0:

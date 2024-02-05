@@ -1,22 +1,20 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-A class for retrieving water and ion force field parameters.
-"""
+"""A class for retrieving water and ion force field parameters."""
+
+from __future__ import annotations
 
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional, Union, Final, Literal
+from typing import Final, Literal
 
 from monty.json import MSONable
 from monty.serialization import loadfn
 from pymatgen.core import Lattice, Structure
 from pymatgen.core.ion import Ion
 from pymatgen.io.lammps.data import ForceField, LammpsData, Topology, lattice_2_lmpbox
-
 
 MODULE_DIR: Final[str] = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR: Final[str] = os.path.join(MODULE_DIR, "data")
@@ -125,6 +123,7 @@ class Aqueous:
             model: Water model to use. Valid choices are "spc", "spce", "opc3",
                 "tip3pew", "tip3pfb", "tip4p2005", "tip4pew", "tip4pfb", and "opc".
                 (Default: "spce")
+
         Returns:
             LammpsData: Force field parameters for the chosen water model.
                 If you specify an invalid water model, None is returned.
@@ -136,10 +135,10 @@ class Aqueous:
 
     @staticmethod
     def get_ion(
-        ion: Union[Ion, str],
+        ion: Ion | str,
         parameter_set: str = "auto",
         water_model: str = "auto",
-        mixing_rule: Optional[str] = None,
+        mixing_rule: str | None = None,
     ) -> LammpsData:
         """
         Retrieve force field parameters for an ion in water.
@@ -178,7 +177,7 @@ class Aqueous:
 
                     Sachini et al., Systematic Comparison of the Structural and Dynamic Properties of
                     Commonly Used Water Models for Molecular Dynamics Simulations. J. Chem. Inf. Model.
-                    2021, 61, 9, 4521–4536. https://doi.org/10.1021/acs.jcim.1c00794
+                    2021, 61, 9, 4521-4536. https://doi.org/10.1021/acs.jcim.1c00794
 
             mixing_rule: The mixing rule to use for the ion parameter. Default to None, which does not
                 change the original mixing rule of the parameter set. Available choices are 'LB'
@@ -226,10 +225,7 @@ class Aqueous:
         parameter_set = alias.get(parameter_set, parameter_set)
 
         # Make the Ion object to get mass and charge
-        if isinstance(ion, Ion):
-            ion_obj = ion
-        else:
-            ion_obj = Ion.from_formula(ion.capitalize())
+        ion_obj = ion if isinstance(ion, Ion) else Ion.from_formula(ion.capitalize())
 
         # load ion data as a list of IonLJData objects
         ion_data = loadfn(os.path.join(DATA_DIR, "ion_lj_params.json"))

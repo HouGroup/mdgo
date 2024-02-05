@@ -1,21 +1,22 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module calculates species correlation lifetime (residence time).
-"""
-import os
-from typing import List, Dict, Union, Tuple
+"""This module calculates species correlation lifetime (residence time)."""
 
-import numpy as np
+from __future__ import annotations
+
+import os
+from typing import TYPE_CHECKING
+
 import matplotlib.pyplot as plt
-from statsmodels.tsa.stattools import acovf
+import numpy as np
 from scipy.optimize import curve_fit
+from statsmodels.tsa.stattools import acovf
 from tqdm.auto import tqdm
 
-from MDAnalysis import Universe
-from MDAnalysis.core.groups import Atom
+if TYPE_CHECKING:
+    from MDAnalysis import Universe
+    from MDAnalysis.core.groups import Atom
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
@@ -28,11 +29,11 @@ def neighbors_one_atom(
     nvt_run: Universe,
     center_atom: Atom,
     species: str,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Create adjacency matrix for one center atom.
 
@@ -50,9 +51,8 @@ def neighbors_one_atom(
         A neighbor dict with neighbor atom id as keys and arrays of adjacent boolean (0/1) as values.
     """
     bool_values = {}
-    time_count = 0
-    for ts in nvt_run.trajectory[run_start:run_end:]:
-        if species in select_dict.keys():
+    for time_count, _ts in enumerate(nvt_run.trajectory[run_start:run_end:]):
+        if species in select_dict:
             selection = (
                 "("
                 + select_dict[species]
@@ -69,13 +69,12 @@ def neighbors_one_atom(
             if str(atom.id) not in bool_values:
                 bool_values[str(atom.id)] = np.zeros(int((run_end - run_start) / 1))
             bool_values[str(atom.id)][time_count] = 1
-        time_count += 1
     return bool_values
 
 
-def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
+def calc_acf(a_values: dict[str, np.ndarray]) -> list[np.ndarray]:
     """
-    Calculate auto-correlation function (ACF)
+    Calculate auto-correlation function (ACF).
 
     Args:
         a_values: A dict of adjacency matrix with neighbor atom id as keys and arrays
@@ -85,20 +84,20 @@ def calc_acf(a_values: Dict[str, np.ndarray]) -> List[np.ndarray]:
         A list of auto-correlation functions for each neighbor species.
     """
     acfs = []
-    for atom_id, neighbors in a_values.items():
-        #  atom_id_numeric = int(re.search(r"\d+", atom_id).group())
+    for neighbors in a_values.values():  # for _atom_id, neighbors in a_values.items():
+        #  atom_id_numeric = int(re.search(r"\d+", _atom_id).group())
         acfs.append(acovf(neighbors, demean=False, unbiased=True, fft=True))
     return acfs
 
 
 def exponential_func(
-    x: Union[float, np.floating, np.ndarray],
-    a: Union[float, np.floating, np.ndarray],
-    b: Union[float, np.floating, np.ndarray],
-    c: Union[float, np.floating, np.ndarray],
-) -> Union[np.floating, np.ndarray]:
+    x: float | np.floating | np.ndarray,
+    a: float | np.floating | np.ndarray,
+    b: float | np.floating | np.ndarray,
+    c: float | np.floating | np.ndarray,
+) -> np.floating | np.ndarray:
     """
-    An exponential decay function
+    An exponential decay function.
 
     Args:
         x: Independent variable.
@@ -114,21 +113,21 @@ def exponential_func(
 
 def calc_neigh_corr(
     nvt_run: Universe,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     time_step: float,
     run_start: int,
     run_end: int,
     center_atom: str = "cation",
-) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Calculates the neighbor auto-correlation function (ACF)
     of selected species around center atom.
 
     Args:
         nvt_run: An MDAnalysis ``Universe``.
-        distance_dict:
-        select_dict:
-        time_step:
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
+        select_dict: A dictionary of atom species selection.
+        time_step: Timestep between each frame, in ps.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
         center_atom: The center atom to calculate the ACF for. Default to "cation".
@@ -138,15 +137,13 @@ def calc_neigh_corr(
     """
     # Set up times array
     times = []
-    step = 0
     center_atoms = nvt_run.select_atoms(select_dict[center_atom])
-    for ts in nvt_run.trajectory[run_start:run_end]:
+    for step, _ts in enumerate(nvt_run.trajectory[run_start:run_end]):
         times.append(step * time_step)
-        step += 1
     times = np.array(times)
 
     acf_avg = {}
-    for kw in distance_dict.keys():
+    for kw in distance_dict:
         acf_all = []
         for atom in tqdm(center_atoms[::]):
             distance = distance_dict.get(kw)
@@ -161,22 +158,21 @@ def calc_neigh_corr(
                 run_end,
             )
             acfs = calc_acf(adjacency_matrix)
-            for acf in acfs:
-                acf_all.append(acf)
+            acf_all.extend(list(acfs))
         acf_avg[kw] = np.mean(acf_all, axis=0)
     return times, acf_avg
 
 
 def fit_residence_time(
     times: np.ndarray,
-    acf_avg_dict: Dict[str, np.ndarray],
+    acf_avg_dict: dict[str, np.ndarray],
     cutoff_time: int,
     time_step: float,
-    save_curve: Union[str, bool] = False,
-) -> Dict[str, np.floating]:
+    save_curve: str | bool = False,
+) -> dict[str, np.floating]:
     """
     Use the ACF to fit the residence time (Exponential decay constant).
-    TODO: allow defining the residence time according to a threshold value of the decay
+    TODO: allow defining the residence time according to a threshold value of the decay.
 
     Args:
         times: A time series.

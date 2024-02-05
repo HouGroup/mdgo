@@ -1,21 +1,21 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-Utilities for converting data file formats.
-"""
+"""Utilities for converting data file formats."""
 
-from io import StringIO
+from __future__ import annotations
+
 import re
-from typing import List, Dict, Any, Final
+from io import StringIO
+from typing import Any, Final
+
 import pandas as pd
 
 from mdgo.util.dict_utils import MM_of_Elements
+
 from . import __author__
 
-
-SECTION_SORTER: Final[Dict[str, Dict[str, Any]]] = {
+SECTION_SORTER: Final[dict[str, dict[str, Any]]] = {
     "atoms": {
         "in_kw": None,
         "in_header": ["atom", "charge", "sigma", "epsilon"],
@@ -68,9 +68,7 @@ SECTION_SORTER: Final[Dict[str, Dict[str, Any]]] = {
     },
 }
 
-BOX: Final[
-    str
-] = """{0:6f} {1:6f} xlo xhi
+BOX: Final[str] = """{0:6f} {1:6f} xlo xhi
 {0:6f} {1:6f} ylo yhi
 {0:6f} {1:6f} zlo zhi"""
 
@@ -87,12 +85,12 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
     Return:
         The output LAMMPS data string.
     """
-    with open(xyz_dir, "r") as f_xyz:
+    with open(xyz_dir) as f_xyz:
         molecule = pd.read_table(f_xyz, skiprows=2, delim_whitespace=True, names=["atom", "x", "y", "z"])
         coordinates = molecule[["x", "y", "z"]]
         lo = coordinates.min().min() - 0.5
         hi = coordinates.max().max() + 0.5
-    with open(ff_dir, "r") as f:
+    with open(ff_dir) as f:
         lines_org = f.read()
         lines = lines_org.split("\n\n")
         atoms = "\n".join(lines[4].split("\n", 4)[4].split("\n")[:-1])
@@ -118,7 +116,7 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
         counts = {}
         counts["atoms"] = len(dfs["atoms"].index)
         mass_list = []
-        for index, row in dfs["atoms"].iterrows():
+        for _index, row in dfs["atoms"].iterrows():
             mass_list.append(MM_of_Elements.get(re.split(r"(\d+)", row["atom"])[0]))
         mass_df = pd.DataFrame(mass_list)
         mass_df.index += 1
@@ -173,15 +171,14 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
         stats_template = "{:>" + str(max_stats) + "}  {}"
         count_lines = [stats_template.format(v, k) for k, v in counts.items()]
         type_lines = [stats_template.format(v, k[:-1] + " types") for k, v in counts.items()]
-        stats = "\n".join(count_lines + [""] + type_lines)
+        stats = "\n".join([*count_lines, "", *type_lines])
         header = [
             f"LAMMPS data file created by mdgo (by {__author__})\n"
             "# OPLS force field: harmonic, harmonic, opls, cvff",
             stats,
             BOX.format(lo, hi),
         ]
-        data_string = "\n\n".join(header + masses + ff + topo) + "\n"
-        return data_string
+        return "\n\n".join(header + masses + ff + topo) + "\n"
 
 
 def sdf_to_pdb(
@@ -203,16 +200,12 @@ def sdf_to_pdb(
         credit: Whether to credit line (remark 888) in the pdb file. Default to True.
         pubchem: Whether the sdf is downloaded from PubChem. Default to True.
     """
-
     # parse sdf file file
-    with open(sdf_file, "r") as inp:
+    with open(sdf_file) as inp:
         sdf_lines = inp.readlines()
         sdf = list(map(str.strip, sdf_lines))
-    if pubchem:
-        title = "cid_"
-    else:
-        title = ""
-    pdb_atoms: List[Dict[str, Any]] = []
+    title = "cid_" if pubchem else ""
+    pdb_atoms: list[dict[str, Any]] = []
     # create pdb list of dictionaries
     atoms = 0
     bonds = 0
@@ -243,12 +236,12 @@ def sdf_to_pdb(
                 "z": float(line_split[2]),
                 "occupancy": 1.00,
                 "tempFactor": 0.00,
-                "altLoc": str(""),
-                "chainID": str(""),
-                "iCode": str(""),
+                "altLoc": "",
+                "chainID": "",
+                "iCode": "",
                 "element": str(line_split[3]),
-                "charge": str(""),
-                "segment": str(""),
+                "charge": "",
+                "segment": "",
             }
             pdb_atoms.append(newline)
         elif i in list(range(4 + atoms, 4 + atoms + bonds)):
@@ -266,13 +259,13 @@ def sdf_to_pdb(
             pass
 
     # write pdb file
-    with open(pdb_file, "wt") as outp:
+    with open(pdb_file, "w") as outp:
         if write_title:
             outp.write(f"TITLE     {title:70s}\n")
         if version:
             outp.write("REMARK   4      COMPLIES WITH FORMAT V. 3.3, 21-NOV-2012\n")
         if credit:
-            outp.write("REMARK 888\n" "REMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
+            outp.write("REMARK 888\nREMARK 888 WRITTEN BY MDGO (CREATED BY TINGZHENG HOU)\n")
         for n in range(atoms):
             line_dict = pdb_atoms[n].copy()
             if len(line_dict["name"]) == 3:
@@ -308,7 +301,7 @@ def sdf_to_pdb(
             bond_lines[atom].append(atom2s[i])
         for i, atom in enumerate(atom2s):
             bond_lines[atom].append(atom1s[i])
-        for i, odr in enumerate(orders):
+        for _i, odr in enumerate(orders):
             for j, ln in enumerate(bond_lines):
                 if ln[0] == odr[0]:
                     bond_lines.insert(j + 1, odr)

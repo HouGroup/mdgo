@@ -1,16 +1,17 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
 """Setup.py for MDGO."""
 
+from __future__ import annotations
+
 import os
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 module_dir = os.path.dirname(os.path.abspath(__file__))
 
-with open(os.path.join(module_dir, "README.md"), "r") as f:
+with open(os.path.join(module_dir, "README.md")) as f:
     readme = f.read()
 
 INSTALL_REQUIRES = [
@@ -70,7 +71,7 @@ if __name__ == "__main__":
             "Topic :: Scientific/Engineering :: Physics",
             "Topic :: Scientific/Engineering :: Chemistry",
             "Topic :: Software Development :: Libraries :: Python Modules",
-            ],
+        ],
         packages=find_packages(),
         install_requires=INSTALL_REQUIRES,
         extras_require={

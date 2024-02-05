@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import os
-import sys
-import tempfile
-from io import StringIO
 import unittest
+
 import MDAnalysis
-from mdgo.conductivity import *
+import numpy as np
+
+from mdgo.conductivity import calc_cond_msd, get_beta
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
@@ -23,27 +25,15 @@ class ConductivityTest(unittest.TestCase):
         cls.time_array = np.array([i * 10 for i in range(cls.gen2.trajectory.n_frames - 100)])
 
     def test_calc_cond_msd(self):
-        self.assertEqual(-2.9103830456733704e-11, self.cond_array[0])
-        self.assertEqual(112.66080481783138, self.cond_array[1])
-        self.assertEqual(236007.76624833583, self.cond_array[-1])
+        assert self.cond_array[0] == -2.9103830456733704e-11
+        assert self.cond_array[1] == 112.66080481783138
+        assert self.cond_array[-1] == 236007.76624833583
 
     def test_get_beta(self):
-        self.assertEqual(
-            (0.8188201425517928, 0.2535110576154693),
-            get_beta(self.cond_array, self.time_array, 10, 100),
-        )
-        self.assertEqual(
-            (1.2525648107674503, 1.0120346984003845),
-            get_beta(self.cond_array, self.time_array, 1000, 2000),
-        )
-        self.assertEqual(
-            (1.4075552564189142, 1.3748981878979976),
-            get_beta(self.cond_array, self.time_array, 1500, 2500),
-        )
-        self.assertEqual(
-            (1.5021915651236932, 51.79451695748163),
-            get_beta(self.cond_array, self.time_array, 2000, 4000),
-        )
+        assert get_beta(self.cond_array, self.time_array, 10, 100) == (0.8188201425517928, 0.2535110576154693)
+        assert get_beta(self.cond_array, self.time_array, 1000, 2000) == (1.2525648107674503, 1.0120346984003845)
+        assert get_beta(self.cond_array, self.time_array, 1500, 2500) == (1.4075552564189142, 1.3748981878979976)
+        assert get_beta(self.cond_array, self.time_array, 2000, 4000) == (1.5021915651236932, 51.79451695748163)
 
 
 if __name__ == "__main__":

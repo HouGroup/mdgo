@@ -1,7 +1,11 @@
 """
 Pyinvoke tasks.py file for automating releases and admin stuff.
+
+To cut a new mdgo release, use `invoke update-changelog` followed by `invoke release`.
+
 Author: Tingzheng Hou
 """
+from __future__ import annotations
 
 import glob
 import json
@@ -109,35 +113,35 @@ def set_ver(ctx, version):
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/__init__.py", "wt") as f:
+    with open("mdgo/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/core/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/core/__init__.py", "wt") as f:
+    with open("mdgo/core/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/forcefield/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/forcefield/__init__.py", "wt") as f:
+    with open("mdgo/forcefield/__init__.py", "w") as f:
         f.write(contents)
 
     with open("mdgo/util/__init__.py") as f:
         contents = f.read()
         contents = re.sub(r"__version__ = .*\n", '__version__ = "%s"\n' % version, contents)
 
-    with open("mdgo/util/__init__.py", "wt") as f:
+    with open("mdgo/util/__init__.py", "w") as f:
         f.write(contents)
 
     with open("setup.py") as f:
         contents = f.read()
         contents = re.sub(r"version=([^,]+),", 'version="%s",' % version, contents)
 
-    with open("setup.py", "wt") as f:
+    with open("setup.py", "w") as f:
         f.write(contents)
 
 
@@ -178,8 +182,8 @@ def update_changelog(ctx, version, sim=False):
     output = subprocess.check_output(["git", "log", "--pretty=format:%s", "v%s..HEAD" % CURRENT_VER])
     lines = []
     misc = []
-    for l in output.decode("utf-8").strip().split("\n"):
-        m = re.match(r"Merge pull request \#(\d+) from (.*)", l)
+    for line in output.decode("utf-8").strip().split("\n"):
+        m = re.match(r"Merge pull request \#(\d+) from (.*)", line)
         if m:
             pr_number = m.group(1)
             contrib, pr_name = m.group(2).split("/", 1)
@@ -190,22 +194,22 @@ def update_changelog(ctx, version, sim=False):
                     ll = ll.strip()
                     if ll in ["", "## Summary"]:
                         continue
-                    elif ll.startswith("## Checklist") or ll.startswith("## TODO"):
+                    if ll.startswith(("## Checklist", "## TODO")):
                         break
                     lines.append(f"    {ll}")
-        misc.append(l)
+        misc.append(line)
     with open("CHANGES.rst") as f:
         contents = f.read()
-    l = "=========="
-    toks = contents.split(l)
+    line = "=========="
+    toks = contents.split(line)
     head = "\n\nv%s\n" % version + "-" * (len(version) + 1) + "\n"
     toks.insert(-1, head + "\n".join(lines))
     if not sim:
         with open("CHANGES.rst", "w") as f:
-            f.write(toks[0] + l + "".join(toks[1:]))
+            f.write(toks[0] + line + "".join(toks[1:]))
         ctx.run("open CHANGES.rst")
     else:
-        print(toks[0] + l + "".join(toks[1:]))
+        print(toks[0] + line + "".join(toks[1:]))
     print("The following commit messages were not included...")
     print("\n".join(misc))
 

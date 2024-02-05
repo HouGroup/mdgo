@@ -1,18 +1,20 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module implements functions to calculate the ionic conductivity.
-"""
-from typing import Union
+"""This module implements functions to calculate the ionic conductivity."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
-from tqdm.auto import tqdm
 from scipy import stats
-from MDAnalysis import Universe, AtomGroup
+from tqdm.auto import tqdm
 
 from mdgo.msd import msd_fft
+
+if TYPE_CHECKING:
+    from MDAnalysis import AtomGroup, Universe
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
@@ -26,10 +28,10 @@ def calc_cond_msd(
     anions: AtomGroup,
     cations: AtomGroup,
     run_start: int,
-    cation_charge: Union[int, float] = 1,
-    anion_charge: Union[int, float] = -1,
+    cation_charge: float = 1,
+    anion_charge: float = -1,
 ) -> np.ndarray:
-    """Calculates the conductivity "mean square displacement" over time
+    """Calculates the conductivity "mean square displacement" over time.
 
     Note:
        Coordinates must be unwrapped (in dcd file when creating MDAnalysis Universe)
@@ -51,15 +53,14 @@ def calc_cond_msd(
     anion_list = anions.split("residue")
     # compute sum over all charges and positions
     qr = []
-    for ts in tqdm(u.trajectory[run_start:]):
+    for _ts in tqdm(u.trajectory[run_start:]):
         qr_temp = np.zeros(3)
         for anion in anion_list:
             qr_temp += anion.center_of_mass() * anion_charge
         for cation in cation_list:
             qr_temp += cation.center_of_mass() * cation_charge
         qr.append(qr_temp)
-    msd = msd_fft(np.array(qr))
-    return msd
+    return msd_fft(np.array(qr))
 
 
 def get_beta(
@@ -127,14 +128,14 @@ def choose_msd_fitting_region(
 def conductivity_calculator(
     time_array: np.ndarray,
     cond_array: np.ndarray,
-    v: Union[int, float],
+    v: float,
     name: str,
     start: int,
     end: int,
-    T: Union[int, float],
+    T: float,
     units: str = "real",
 ) -> float:
-    """Calculates the overall conductivity of the system
+    """Calculates the overall conductivity of the system.
 
     Args:
         time_array: times at which position data was collected in the simulation

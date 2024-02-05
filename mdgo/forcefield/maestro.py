@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -17,12 +16,14 @@ For using the MaestroRunner class:
 
 """
 
+from __future__ import annotations
+
 import os
 import signal
 import subprocess
 import time
 from string import Template
-from typing import Optional, Final
+from typing import Final
 
 from mdgo.util.reformat import ff_parser
 
@@ -66,7 +67,6 @@ class MaestroRunner:
     $SCHRODINGER/mmshare-vversion/data/f14/
 
     Examples:
-
         >>> mr = MaestroRunner('/path/to/structure', '/path/to/working/dir')
         >>> mr.get_mae()
         >>> mr.get_ff()
@@ -81,7 +81,7 @@ class MaestroRunner:
         structure_dir: str,
         working_dir: str,
         out: str = "lmp",
-        cmd_template: Optional[str] = None,
+        cmd_template: str | None = None,
         assign_bond: bool = False,
     ):
         """Base constructor."""
@@ -99,11 +99,11 @@ class MaestroRunner:
             self.cmd_template = cmd_template
         else:
             if assign_bond:
-                with open(self.template_assignbond, "r") as f:
+                with open(self.template_assignbond) as f:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
             else:
-                with open(self.template_noassignbond, "r") as f:
+                with open(self.template_noassignbond) as f:
                     cmd_template = f.read()
                 self.cmd_template = cmd_template
 
@@ -124,7 +124,7 @@ class MaestroRunner:
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                preexec_fn=os.setsid,
+                start_new_session=True,
             )
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Maestro failed with errorcode {e.returncode}  and stderr: {e.stderr}") from e
@@ -146,8 +146,7 @@ class MaestroRunner:
                 FFLD.format(self.mae + ".mae", self.ff),
                 check=True,
                 shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Maestro failed with errorcode {e.returncode} and stderr: {e.stderr}") from e

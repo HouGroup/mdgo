@@ -1,10 +1,9 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-A class for writing, overwriting, scaling charges of a LammpsData object.
-"""
+"""A class for writing, overwriting, scaling charges of a LammpsData object."""
+
+from __future__ import annotations
 
 import numpy as np
 from pymatgen.io.lammps.data import LammpsData
@@ -15,7 +14,7 @@ class ChargeWriter:
     A class for write, overwrite, scale charges of a LammpsData object.
     TODO: Auto determine number of significant figures of charges
     TODO: write to obj or write separate charge file
-    TODO: Read LammpsData or path
+    TODO: Read LammpsData or path.
 
     Args:
         data: The provided LammpsData obj.
@@ -29,7 +28,7 @@ class ChargeWriter:
 
     def scale(self, factor: float) -> LammpsData:
         """
-        Scales the charge in of the in self.data and returns a new one. TODO: check if non-destructive
+        Scales the charge in of the in self.data and returns a new one. TODO: check if non-destructive.
 
         Args:
             factor: The charge scaling factor
