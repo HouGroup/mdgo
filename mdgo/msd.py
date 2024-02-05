@@ -57,7 +57,7 @@ def total_msd(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         fft: Whether to use FFT to accelerate the calculation. Default to True.
         built_in: Whether to use built in method to calculate msd or use function from mds. Default to True.
         center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
@@ -199,7 +199,7 @@ def onsager_ii_self(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
         fft: Whether to use FFT to accelerate the calculation. Default to True.
 
@@ -239,7 +239,7 @@ def mda_msd_wrapper(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         fft: Whether to use FFT to accelerate the calculation. Default to True.
 
     Warning:

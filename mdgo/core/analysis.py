@@ -730,7 +730,7 @@ class MdRun:
         Args:
             start: Start time step.
             end: End time step.
-            msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+            msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
             fft: Whether to use FFT to accelerate the calculation. Default to True.
             built_in: Whether to use built in method to calculate msd or use function from mds.
                 Default to True.

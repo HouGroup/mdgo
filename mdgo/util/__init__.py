@@ -11,7 +11,7 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Jul 19, 2021"
 
-from typing import Dict, Final
+from typing import Final
 
 MM_of_Elements: Final[dict[str, float]] = {
     "H": 1.00794,

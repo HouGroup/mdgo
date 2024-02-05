@@ -665,7 +665,7 @@ def molecular_volume(
 
 def concentration_matcher(
     concentration: float,
-    salt: float | int | str | Molecule,
+    salt: float | str | Molecule,
     solvents: list[str | dict[str, float]],
     solv_ratio: list[float],
     num_salt: int = 100,

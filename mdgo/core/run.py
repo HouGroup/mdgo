@@ -18,6 +18,7 @@ class MdJob:
         Constructor.
 
         Returns:
+            name: The name of the class
 
         """
         return cls("name")
@@ -28,6 +29,6 @@ class MdJob:
         Constructor.
 
         Returns:
-
+            name: The name of the class
         """
         return cls("name")

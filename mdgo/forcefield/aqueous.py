@@ -177,7 +177,7 @@ class Aqueous:
 
                     Sachini et al., Systematic Comparison of the Structural and Dynamic Properties of
                     Commonly Used Water Models for Molecular Dynamics Simulations. J. Chem. Inf. Model.
-                    2021, 61, 9, 4521–4536. https://doi.org/10.1021/acs.jcim.1c00794
+                    2021, 61, 9, 4521-4536. https://doi.org/10.1021/acs.jcim.1c00794
 
             mixing_rule: The mixing rule to use for the ion parameter. Default to None, which does not
                 change the original mixing rule of the parameter set. Available choices are 'LB'

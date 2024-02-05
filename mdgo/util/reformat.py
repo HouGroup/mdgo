@@ -303,7 +303,7 @@ def sdf_to_pdb(
             bond_lines[atom].append(atom2s[i])
         for i, atom in enumerate(atom2s):
             bond_lines[atom].append(atom1s[i])
-        for i, odr in enumerate(orders):
+        for _i, odr in enumerate(orders):
             for j, ln in enumerate(bond_lines):
                 if ln[0] == odr[0]:
                     bond_lines.insert(j + 1, odr)

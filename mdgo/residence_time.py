@@ -51,8 +51,7 @@ def neighbors_one_atom(
         A neighbor dict with neighbor atom id as keys and arrays of adjacent boolean (0/1) as values.
     """
     bool_values = {}
-    time_count = 0
-    for _ts in nvt_run.trajectory[run_start:run_end:]:
+    for time_count, _ts in enumerate(nvt_run.trajectory[run_start:run_end:]):
         if species in select_dict:
             selection = (
                 "("
@@ -70,7 +69,6 @@ def neighbors_one_atom(
             if str(atom.id) not in bool_values:
                 bool_values[str(atom.id)] = np.zeros(int((run_end - run_start) / 1))
             bool_values[str(atom.id)][time_count] = 1
-        time_count += 1
     return bool_values
 
 
@@ -86,8 +84,8 @@ def calc_acf(a_values: dict[str, np.ndarray]) -> list[np.ndarray]:
         A list of auto-correlation functions for each neighbor species.
     """
     acfs = []
-    for atom_id, neighbors in a_values.items():
-        #  atom_id_numeric = int(re.search(r"\d+", atom_id).group())
+    for _atom_id, neighbors in a_values.items():
+        #  atom_id_numeric = int(re.search(r"\d+", _atom_id).group())
         acfs.append(acovf(neighbors, demean=False, unbiased=True, fft=True))
     return acfs
 
@@ -139,11 +137,9 @@ def calc_neigh_corr(
     """
     # Set up times array
     times = []
-    step = 0
     center_atoms = nvt_run.select_atoms(select_dict[center_atom])
-    for _ts in nvt_run.trajectory[run_start:run_end]:
+    for step, _ts in enumerate(nvt_run.trajectory[run_start:run_end]):
         times.append(step * time_step)
-        step += 1
     times = np.array(times)
 
     acf_avg = {}
