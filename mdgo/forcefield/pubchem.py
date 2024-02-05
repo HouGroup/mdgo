@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Final, NoReturn
+from typing import Final
 from urllib.parse import quote
 
 import pubchempy as pcp
@@ -103,7 +103,7 @@ class PubChemRunner:
             return self._obtain_entry_api(search_text, name, output_format=output_format)
         return self._obtain_entry_web(search_text, name, output_format=output_format)
 
-    def smiles_to_pdb(self, smiles: str) -> NoReturn:
+    def smiles_to_pdb(self, smiles: str):
         """
         Obtain pdf file based on SMILES code.
 
