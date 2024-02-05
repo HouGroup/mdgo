@@ -1,5 +1,8 @@
 """
 Pyinvoke tasks.py file for automating releases and admin stuff.
+
+To cut a new mdgo release, use `invoke update-changelog` followed by `invoke release`.
+
 Author: Tingzheng Hou
 """
 from __future__ import annotations
@@ -179,8 +182,8 @@ def update_changelog(ctx, version, sim=False):
     output = subprocess.check_output(["git", "log", "--pretty=format:%s", "v%s..HEAD" % CURRENT_VER])
     lines = []
     misc = []
-    for l in output.decode("utf-8").strip().split("\n"):
-        m = re.match(r"Merge pull request \#(\d+) from (.*)", l)
+    for line in output.decode("utf-8").strip().split("\n"):
+        m = re.match(r"Merge pull request \#(\d+) from (.*)", line)
         if m:
             pr_number = m.group(1)
             contrib, pr_name = m.group(2).split("/", 1)
@@ -191,22 +194,22 @@ def update_changelog(ctx, version, sim=False):
                     ll = ll.strip()
                     if ll in ["", "## Summary"]:
                         continue
-                    elif ll.startswith(("## Checklist", "## TODO")):
+                    if ll.startswith(("## Checklist", "## TODO")):
                         break
                     lines.append(f"    {ll}")
-        misc.append(l)
+        misc.append(line)
     with open("CHANGES.rst") as f:
         contents = f.read()
-    l = "=========="
-    toks = contents.split(l)
+    line = "=========="
+    toks = contents.split(line)
     head = "\n\nv%s\n" % version + "-" * (len(version) + 1) + "\n"
     toks.insert(-1, head + "\n".join(lines))
     if not sim:
         with open("CHANGES.rst", "w") as f:
-            f.write(toks[0] + l + "".join(toks[1:]))
+            f.write(toks[0] + line + "".join(toks[1:]))
         ctx.run("open CHANGES.rst")
     else:
-        print(toks[0] + l + "".join(toks[1:]))
+        print(toks[0] + line + "".join(toks[1:]))
     print("The following commit messages were not included...")
     print("\n".join(misc))
 

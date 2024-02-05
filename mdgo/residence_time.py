@@ -125,9 +125,9 @@ def calc_neigh_corr(
 
     Args:
         nvt_run: An MDAnalysis ``Universe``.
-        distance_dict:
-        select_dict:
-        time_step:
+        distance_dict: A dict of coordination cutoff distance of the neighbor species.
+        select_dict: A dictionary of atom species selection.
+        time_step: Timestep between each frame, in ps.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
         center_atom: The center atom to calculate the ACF for. Default to "cation".
@@ -158,8 +158,7 @@ def calc_neigh_corr(
                 run_end,
             )
             acfs = calc_acf(adjacency_matrix)
-            for acf in acfs:
-                acf_all.append(acf)
+            acf_all.extend(list(acfs))
         acf_avg[kw] = np.mean(acf_all, axis=0)
     return times, acf_avg
 

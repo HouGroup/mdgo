@@ -1043,6 +1043,7 @@ def concat_coord_array(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        kwargs: Keyword arguments in the func.
 
     Returns:
         A diction containing the coordination number sequence of each specified neighbor species
