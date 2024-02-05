@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -13,27 +12,25 @@ For using the FFcrawler class:
     matches your Chrome version via https://chromedriver.chromium.org/downloads
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 import time
-from typing import Optional
-
 
 from pymatgen.io.lammps.data import LammpsData
 from selenium import webdriver
-from selenium.common.exceptions import (
-    TimeoutException,
-    WebDriverException,
-)
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+from mdgo.util.dict_utils import lmp_mass_to_name
 
 try:
     from ligpargen.ligpargen import LigParGen
 except ModuleNotFoundError:
     pass
-from mdgo.util.dict_utils import lmp_mass_to_name
 
 
 class LigpargenRunner:
@@ -50,8 +47,8 @@ class LigpargenRunner:
             as .xyz. Default to False. This is useful because the order and the
             name of the atoms could be different from the initial input.
 
-    Examples:
 
+    Examples:
         >>> lpg = LigpargenRunner('sturcture_file', 'path/to/write/output')
         >>> lpg.run()
     """
@@ -136,12 +133,11 @@ class FFcrawler:
         xyz: Whether to write the structure in the LigParGen
             generated data file as .xyz. Default to False. This is useful
             because the order and the name of the atoms could be
-            different from the initial input.
+            different from the initial input.)
         gromacs: Whether to save GROMACS format data files.
             Default to False.
 
     Examples:
-
         >>> lpg = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
         >>> lpg.data_from_pdb("/path/to/pdb")
     """
@@ -149,7 +145,7 @@ class FFcrawler:
     def __init__(
         self,
         write_dir: str,
-        chromedriver_dir: Optional[str] = None,
+        chromedriver_dir: str | None = None,
         headless: bool = True,
         xyz: bool = False,
         gromacs: bool = False,
@@ -187,10 +183,7 @@ class FFcrawler:
         print("LigParGen server connected.")
 
     def quit(self):
-        """
-        Method for quiting ChromeDriver.
-
-        """
+        """Method for quiting ChromeDriver."""
         self.web.quit()
 
     def data_from_pdb(self, pdb_dir: str):
