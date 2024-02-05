@@ -91,10 +91,7 @@ class FFcrawler:
         print("LigParGen server connected.")
 
     def quit(self):
-        """
-        Method for quiting ChromeDriver.
-
-        """
+        """Method for quiting ChromeDriver."""
         self.web.quit()
 
     def data_from_pdb(self, pdb_dir: str):

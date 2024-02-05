@@ -5,8 +5,12 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
-from MDAnalysis.core.groups import Atom
+
+if TYPE_CHECKING:
+    from MDAnalysis.core.groups import Atom
 
 
 def atom_vec(atom1: Atom, atom2: Atom, dimension: np.ndarray) -> np.ndarray:

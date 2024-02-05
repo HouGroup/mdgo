@@ -11,7 +11,7 @@ http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-u
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
@@ -23,9 +23,11 @@ except ImportError:
     td = None
 
 import numpy as np
-from MDAnalysis import AtomGroup, Universe
-from MDAnalysis.core.groups import Atom
 from tqdm.auto import trange
+
+if TYPE_CHECKING:
+    from MDAnalysis import AtomGroup, Universe
+    from MDAnalysis.core.groups import Atom
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -169,11 +171,11 @@ def create_position_arrays(
     atom_group = nvt_run.select_atoms(select)
     atom_positions = np.zeros((end - start, len(atom_group), 3))
     if center_of_mass:
-        for ts in nvt_run.trajectory[start:end]:
+        for _ts in nvt_run.trajectory[start:end]:
             atom_positions[time, :, :] = atom_group.positions - nvt_run.atoms.center_of_mass()
             time += 1
     else:
-        for ts in nvt_run.trajectory[start:end]:
+        for _ts in nvt_run.trajectory[start:end]:
             atom_positions[time, :, :] = atom_group.positions
             time += 1
     return atom_positions
@@ -223,8 +225,7 @@ def onsager_ii_self(
             r = atom_positions[:, atom_num, dim[0] : dim[1] : dim[2]]
             msd_temp = msd_straight_forward(np.array(r))  # [start:end]
             ii_self += msd_temp
-    msd = np.array(ii_self) / n_atoms
-    return msd
+    return np.array(ii_self) / n_atoms
 
 
 def mda_msd_wrapper(
@@ -311,8 +312,7 @@ def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "a
             current_coord = ts[li_atom.id - 1]
             coords.append(current_coord)
         all_list.append(np.array(coords))
-    total_array = msd_from_frags(all_list, run_end - run_start - 1)
-    return total_array
+    return msd_from_frags(all_list, run_end - run_start - 1)
 
 
 def msd_from_frags(coord_list: list[np.ndarray], largest: int) -> np.ndarray:
@@ -345,8 +345,7 @@ def msd_from_frags(coord_list: list[np.ndarray], largest: int) -> np.ndarray:
         assert msds is not None
         msds_by_state[kw] = msds.mean()
         timeseries.append(msds_by_state[kw])
-    timeseries = np.array(timeseries)
-    return timeseries
+    return np.array(timeseries)
 
 
 def states_coord_array(
@@ -361,7 +360,7 @@ def states_coord_array(
     """Cuts the trajectory of an atom into fragments. Each fragment contains consecutive timesteps of coordinates
     of the atom in either attached or free state. The Attached state is when the atom coordinates with the
     ``binding_site`` species (distance < ``distance``), and vice versa for the free state.
-    TODO: check if need wrapped trj
+    TODO: check if need wrapped trj.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.

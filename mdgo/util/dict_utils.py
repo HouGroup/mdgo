@@ -8,14 +8,17 @@ from __future__ import annotations
 import math
 import re
 import string
+from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
-from MDAnalysis import Universe
-from MDAnalysis.core.groups import AtomGroup, Residue
 from pymatgen.io.lammps.data import CombinedData
 
 from . import MM_of_Elements
+
+if TYPE_CHECKING:
+    import pandas as pd
+    from MDAnalysis import Universe
+    from MDAnalysis.core.groups import AtomGroup, Residue
 
 
 def mass_to_name(masses: np.ndarray) -> np.ndarray:
@@ -247,10 +250,7 @@ def extract_atom_from_ion(positive: bool, ion: Residue | AtomGroup, select_dict:
         number: The serial number of the ion.
     """
     if positive:
-        if number == 0:
-            cation_name = "cation"
-        else:
-            cation_name = "cation_" + str(number)
+        cation_name = "cation" if number == 0 else "cation_" + str(number)
         if len(ion.atoms.types) == 1:
             select_dict[cation_name] = "type " + ion.atoms.types[0]
         else:
@@ -265,10 +265,7 @@ def extract_atom_from_ion(positive: bool, ion: Residue | AtomGroup, select_dict:
                 select_dict[cation_name + "_" + pos_center.name + pos_center.type] = "type " + pos_center.type
                 select_dict[cation_name] = "type " + uni_center
     else:
-        if number == 0:
-            anion_name = "anion"
-        else:
-            anion_name = "anion_" + str(number)
+        anion_name = "anion" if number == 0 else "anion_" + str(number)
         if len(ion.atoms.types) == 1:
             select_dict[anion_name] = "type " + ion.atoms.types[0]
         else:
@@ -288,7 +285,7 @@ def extract_atom_from_molecule(
     resname: str, molecule: Residue | AtomGroup, select_dict: dict[str, str], number: int = 0
 ):
     """
-    Assign the most negatively charged atom in the molecule into select_dict
+    Assign the most negatively charged atom in the molecule into select_dict.
 
     Args:
         resname: The name of the molecule

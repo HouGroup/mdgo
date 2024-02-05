@@ -1,9 +1,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-Utilities for converting data file formats.
-"""
+"""Utilities for converting data file formats."""
 
 from __future__ import annotations
 
@@ -120,7 +118,7 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
         counts = {}
         counts["atoms"] = len(dfs["atoms"].index)
         mass_list = []
-        for index, row in dfs["atoms"].iterrows():
+        for _index, row in dfs["atoms"].iterrows():
             mass_list.append(MM_of_Elements.get(re.split(r"(\d+)", row["atom"])[0]))
         mass_df = pd.DataFrame(mass_list)
         mass_df.index += 1
@@ -175,15 +173,14 @@ def ff_parser(ff_dir: str, xyz_dir: str) -> str:
         stats_template = "{:>" + str(max_stats) + "}  {}"
         count_lines = [stats_template.format(v, k) for k, v in counts.items()]
         type_lines = [stats_template.format(v, k[:-1] + " types") for k, v in counts.items()]
-        stats = "\n".join(count_lines + [""] + type_lines)
+        stats = "\n".join([*count_lines, "", *type_lines])
         header = [
             f"LAMMPS data file created by mdgo (by {__author__})\n"
             "# OPLS force field: harmonic, harmonic, opls, cvff",
             stats,
             BOX.format(lo, hi),
         ]
-        data_string = "\n\n".join(header + masses + ff + topo) + "\n"
-        return data_string
+        return "\n\n".join(header + masses + ff + topo) + "\n"
 
 
 def sdf_to_pdb(
@@ -209,10 +206,7 @@ def sdf_to_pdb(
     with open(sdf_file) as inp:
         sdf_lines = inp.readlines()
         sdf = list(map(str.strip, sdf_lines))
-    if pubchem:
-        title = "cid_"
-    else:
-        title = ""
+    title = "cid_" if pubchem else ""
     pdb_atoms: list[dict[str, Any]] = []
     # create pdb list of dictionaries
     atoms = 0

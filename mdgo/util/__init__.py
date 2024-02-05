@@ -13,7 +13,7 @@ __date__ = "Jul 19, 2021"
 
 from typing import Dict, Final
 
-MM_of_Elements: Final[Dict[str, float]] = {
+MM_of_Elements: Final[dict[str, float]] = {
     "H": 1.00794,
     "He": 4.002602,
     "Li": 6.941,

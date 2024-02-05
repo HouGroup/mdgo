@@ -119,8 +119,7 @@ class PackmolWrapper:
                 check=True,
                 shell=True,
                 timeout=timeout,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             # this workaround is needed because packmol can fail to find
             # a solution but still return a zero exit code
@@ -150,11 +149,8 @@ class PackmolWrapper:
         else:
             # estimate the total volume of all molecules
             net_volume = 0.0
-            for idx, d in enumerate(self.molecules):
-                if not isinstance(d["coords"], Molecule):
-                    mol = Molecule.from_file(d["coords"])
-                else:
-                    mol = d["coords"]
+            for _idx, d in enumerate(self.molecules):
+                mol = Molecule.from_file(d["coords"]) if not isinstance(d["coords"], Molecule) else d["coords"]
                 # molecular volume in cubic Å
                 vol = molecular_volume(mol, radii_type="pymatgen", molar_volume=False)
                 # pad the calculated length by an amount related to the tolerance parameter
@@ -183,7 +179,7 @@ class PackmolWrapper:
             else:
                 out.write(f"output {self.output}\n\n")
 
-            for i, d in enumerate(self.molecules):
+            for _i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
                     if " " in d["coords"]:
                         out.write(f'structure "{d["coords"]}"\n')

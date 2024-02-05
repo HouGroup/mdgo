@@ -1,21 +1,22 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module calculates species correlation lifetime (residence time).
-"""
+"""This module calculates species correlation lifetime (residence time)."""
 
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
-from MDAnalysis import Universe
-from MDAnalysis.core.groups import Atom
 from scipy.optimize import curve_fit
 from statsmodels.tsa.stattools import acovf
 from tqdm.auto import tqdm
+
+if TYPE_CHECKING:
+    from MDAnalysis import Universe
+    from MDAnalysis.core.groups import Atom
 
 __author__ = "Kara Fong, Tingzheng Hou"
 __version__ = "0.3.0"
@@ -51,7 +52,7 @@ def neighbors_one_atom(
     """
     bool_values = {}
     time_count = 0
-    for ts in nvt_run.trajectory[run_start:run_end:]:
+    for _ts in nvt_run.trajectory[run_start:run_end:]:
         if species in select_dict:
             selection = (
                 "("
@@ -75,7 +76,7 @@ def neighbors_one_atom(
 
 def calc_acf(a_values: dict[str, np.ndarray]) -> list[np.ndarray]:
     """
-    Calculate auto-correlation function (ACF)
+    Calculate auto-correlation function (ACF).
 
     Args:
         a_values: A dict of adjacency matrix with neighbor atom id as keys and arrays
@@ -98,7 +99,7 @@ def exponential_func(
     c: float | np.floating | np.ndarray,
 ) -> np.floating | np.ndarray:
     """
-    An exponential decay function
+    An exponential decay function.
 
     Args:
         x: Independent variable.
@@ -140,7 +141,7 @@ def calc_neigh_corr(
     times = []
     step = 0
     center_atoms = nvt_run.select_atoms(select_dict[center_atom])
-    for ts in nvt_run.trajectory[run_start:run_end]:
+    for _ts in nvt_run.trajectory[run_start:run_end]:
         times.append(step * time_step)
         step += 1
     times = np.array(times)
@@ -176,7 +177,7 @@ def fit_residence_time(
 ) -> dict[str, np.floating]:
     """
     Use the ACF to fit the residence time (Exponential decay constant).
-    TODO: allow defining the residence time according to a threshold value of the decay
+    TODO: allow defining the residence time according to a threshold value of the decay.
 
     Args:
         times: A time series.

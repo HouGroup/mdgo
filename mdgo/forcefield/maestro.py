@@ -146,8 +146,7 @@ class MaestroRunner:
                 FFLD.format(self.mae + ".mae", self.ff),
                 check=True,
                 shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
         except subprocess.CalledProcessError as e:
             raise ValueError(f"Maestro failed with errorcode {e.returncode} and stderr: {e.stderr}") from e

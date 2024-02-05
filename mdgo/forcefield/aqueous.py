@@ -1,9 +1,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-A class for retrieving water and ion force field parameters.
-"""
+"""A class for retrieving water and ion force field parameters."""
 
 from __future__ import annotations
 
@@ -227,10 +225,7 @@ class Aqueous:
         parameter_set = alias.get(parameter_set, parameter_set)
 
         # Make the Ion object to get mass and charge
-        if isinstance(ion, Ion):
-            ion_obj = ion
-        else:
-            ion_obj = Ion.from_formula(ion.capitalize())
+        ion_obj = ion if isinstance(ion, Ion) else Ion.from_formula(ion.capitalize())
 
         # load ion data as a list of IonLJData objects
         ion_data = loadfn(os.path.join(DATA_DIR, "ion_lj_params.json"))

@@ -1,9 +1,7 @@
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This package contains core modules and classes molecular dynamics simulation setup and analysis.
-"""
+"""This package contains core modules and classes molecular dynamics simulation setup and analysis."""
 
 from __future__ import annotations
 

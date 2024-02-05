@@ -84,10 +84,7 @@ class PubChemRunner:
             print("PubChem server connected.")
 
     def quit(self):
-        """
-        Method for quiting ChromeDriver.
-
-        """
+        """Method for quiting ChromeDriver."""
         if not self.api:
             self.web.quit()
 

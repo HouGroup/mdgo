@@ -285,7 +285,7 @@ def parse_command_line():
 
 def get_max_dimensions(mol: Molecule) -> tuple[float, float, float, float, float, float]:
     """
-    Calculates the dimension of a Molecule
+    Calculates the dimension of a Molecule.
 
     Args:
         mol: A Molecule object.
@@ -373,7 +373,7 @@ def round_dimensions(
 
 def dsq(a1: float, a2: float, a3: float, b1: float, b2: float, b3: float) -> float:
     """
-    Squared distance between a and b
+    Squared distance between a and b.
 
     Args:
         a1: x coordinate of a
@@ -386,8 +386,7 @@ def dsq(a1: float, a2: float, a3: float, b1: float, b2: float, b3: float) -> flo
     Returns:
         squared distance
     """
-    d2 = (b1 - a1) ** 2 + (b2 - a2) ** 2 + (b3 - a3) ** 2
-    return d2
+    return (b1 - a1) ** 2 + (b2 - a2) ** 2 + (b3 - a3) ** 2
 
 
 def get_dimensions(
@@ -431,8 +430,7 @@ def make_matrix(x_num: int, y_num: int, z_num: int) -> np.ndarray:
     Returns:
         matrix
     """
-    matrix = np.array([[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)])
-    return matrix
+    return np.array([[[None for _ in range(z_num)] for _ in range(y_num)] for _ in range(x_num)])
 
 
 def get_radii(radii_type: str = "Bondi") -> dict[str, float]:
@@ -530,9 +528,8 @@ def fill_volume_matrix(
 
     for a in mol.sites:
         element = str(a.species.elements[0])
-        if exclude_h:
-            if element == "H":
-                continue
+        if exclude_h and element == "H":
+            continue
         radius = radii.get(element, DEFAULT_VDW)
         for i in range(xsteps):
             if abs(a.x - (x0 + 0.5 * res + i * res)) < radius:
@@ -615,7 +612,7 @@ def molecular_volume(
     z_size: float = 10.0,
 ) -> float:
     """
-    Estimate the molar volume in cm^3/mol or volume in Å^3
+    Estimate the molar volume in cm^3/mol or volume in Å^3.
 
     Args:
         mol: Molecule object or path to .xyz or other file that can be read
@@ -644,10 +641,7 @@ def molecular_volume(
     Returns:
         The molar volume in cm^3/mol or volume in Å^3.
     """
-    if isinstance(mol, str):
-        molecule = Molecule.from_file(mol)
-    else:
-        molecule = mol
+    molecule = Molecule.from_file(mol) if isinstance(mol, str) else mol
     if mode == "lig":
         print("Calculating occupied volume...")
         x_min, x_max, y_min, y_max, z_min, z_max = get_max_dimensions(molecule)
@@ -682,7 +676,7 @@ def concentration_matcher(
     Estimate the number of molecules of each species in a box,
     given the salt concentration, salt type, solvent molecular weight,
     solvent density, solvent ratio and total number of salt.
-    TODO: Auto box size according to Debye screening length
+    TODO: Auto box size according to Debye screening length.
 
     Args:
         concentration: Salt concentration in mol/L.
