@@ -152,8 +152,8 @@ class MyTestCase(unittest.TestCase):
         total_mda_cation = total_msd(
             self.gen2, 0, 100, select="type 3", fft=False, built_in=False, center_of_mass=False
         )
-        assert total_builtin_cation[50] == 32.14254152556588
-        assert total_mda_cation[50] == 32.338364098424634
+        assert_allclose(total_builtin_cation[50], 32.14254152556588)
+        assert_allclose(total_mda_cation[50], 32.338364098424634)
         with pytest.raises(ValueError):
             total_msd(self.gen2, 0, 100, select="type 3", fft=True, built_in=False, center_of_mass=True)
 
