@@ -1,21 +1,24 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module implements functions for coordination analysis.
-"""
+"""This module implements functions for coordination analysis."""
 
-from typing import Dict, List, Tuple, Union, Callable, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import numpy as np
-from tqdm.auto import tqdm
-from MDAnalysis import Universe, AtomGroup
-from MDAnalysis.core.groups import Atom
 from MDAnalysis.analysis.distances import distance_array
 from scipy.signal import savgol_filter
-from mdgo.util.coord import atom_vec, angle
+from tqdm.auto import tqdm
 
+from mdgo.util.coord import angle, atom_vec
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from MDAnalysis import AtomGroup, Universe
+    from MDAnalysis.core.groups import Atom
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -30,9 +33,9 @@ def neighbor_distance(
     run_start: int,
     run_end: int,
     species: str,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Calculates a dictionary of distances between the ``center_atom`` and neighbor atoms.
 
@@ -50,12 +53,11 @@ def neighbor_distance(
         A dictionary of distance of neighbor atoms to the ``center_atom``. The keys are atom indexes in string type .
     """
     dist_dict = {}
-    time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     species_selection = select_dict.get(species)
     if species_selection is None:
         raise ValueError("Invalid species selection")
-    for ts in trj_analysis:
+    for _ts in trj_analysis:
         selection = (
             "(" + species_selection + ") and (around " + str(distance) + " index " + str(center_atom.index) + ")"
         )
@@ -63,23 +65,20 @@ def neighbor_distance(
         for atom in shell.atoms:
             if str(atom.index) not in dist_dict:
                 dist_dict[str(atom.index)] = np.full(run_end - run_start, 100.0)
-        time_count += 1
-    time_count = 0
-    for ts in trj_analysis:
+    for time_count, ts in enumerate(trj_analysis):
         for atom_index, val in dist_dict.items():
             dist = distance_array(ts[center_atom.index], ts[int(atom_index)], ts.dimensions)
             val[time_count] = dist
-        time_count += 1
     return dist_dict
 
 
 def find_nearest(
-    trj: Dict[str, np.ndarray],
+    trj: dict[str, np.ndarray],
     time_step: float,
     binding_cutoff: float,
     hopping_cutoff: float,
     smooth: int = 51,
-) -> Tuple[List[int], Union[float, np.floating], List[int]]:
+) -> tuple[list[int], float | np.floating, list[int]]:
     """Using the dictionary of neighbor distance ``trj``, finds the nearest neighbor ``sites`` that the center atom
     binds to, and calculates the ``frequency`` of hopping between each neighbor, and ``steps`` when each binding site
     exhibits the closest distance to the center atom.
@@ -96,12 +95,12 @@ def find_nearest(
         the ``frequency`` of hopping between sites, and ``steps`` when each binding site
         exhibits the closest distance to the center atom.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
-    sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
+    sites: list[int | np.integer] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
     kw_start = trj.get(start_site)
     assert kw_start is not None
@@ -133,7 +132,7 @@ def find_nearest(
     sites = [int(i) for i in sites]
     sites_and_distance_array = np.array([[sites[i], site_distance[i]] for i in range(len(sites))])
     steps = []
-    closest_step: Optional[int] = 0
+    closest_step: int | None = 0
     previous_site = sites_and_distance_array[0][0]
     if previous_site == 0:
         closest_step = None
@@ -162,12 +161,12 @@ def find_nearest(
 
 
 def find_nearest_free_only(
-    trj: Dict[str, np.ndarray],
+    trj: dict[str, np.ndarray],
     time_step: float,
     binding_cutoff: float,
     hopping_cutoff: float,
     smooth: int = 51,
-) -> Tuple[List[int], Union[float, np.floating], List[int]]:
+) -> tuple[list[int], float | np.floating, list[int]]:
     """Using the dictionary of neighbor distance ``trj``, finds the nearest neighbor ``sites`` that the ``center_atom``
     binds to, and calculates the ``frequency`` of hopping between each neighbor, and ``steps`` when each binding site
     exhibits the closest distance to the center atom.
@@ -185,12 +184,12 @@ def find_nearest_free_only(
         the ``frequency`` of hopping between sites, and ``steps`` when each binding site
         exhibits the closest distance to the center atom.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
     site_distance = [100 for _ in range(time_span)]
-    sites: List[Union[int, np.integer]] = [0 for _ in range(time_span)]
+    sites: list[int | np.integer] = [0 for _ in range(time_span)]
     start_site = min(trj, key=lambda k: trj[k][0])
     kw_start = trj.get(start_site)
     assert kw_start is not None
@@ -222,7 +221,7 @@ def find_nearest_free_only(
     sites = [int(i) for i in sites]
     sites_and_distance_array = np.array([[sites[i], site_distance[i]] for i in range(len(sites))])
     steps = []
-    closest_step: Optional[int] = 0
+    closest_step: int | None = 0
     previous_site = sites_and_distance_array[0][0]
     previous_zero = False
     if previous_site == 0:
@@ -257,8 +256,8 @@ def find_nearest_free_only(
 
 
 def find_in_n_out(
-    trj: Dict[str, np.ndarray], binding_cutoff: float, hopping_cutoff: float, smooth: int = 51, cool: int = 20
-) -> Tuple[List[int], List[int]]:
+    trj: dict[str, np.ndarray], binding_cutoff: float, hopping_cutoff: float, smooth: int = 51, cool: int = 20
+) -> tuple[list[int], list[int]]:
     """Finds the frames when the center atom binds with the neighbor (binding) or hopping out (hopping)
     according to the dictionary of neighbor distance.
 
@@ -272,7 +271,7 @@ def find_in_n_out(
     Returns:
         Two arrays of numberings of frames with hopping in and hopping out event, respectively.
     """
-    time_span = len(list(trj.values())[0])
+    time_span = len(next(iter(trj.values())))
     if smooth > 0:
         for kw in list(trj):
             trj[kw] = savgol_filter(trj.get(kw), smooth, 2)
@@ -309,8 +308,8 @@ def find_in_n_out(
     sites = [int(i) for i in sites]
 
     last = sites[0]
-    steps_in: List[int] = []
-    steps_out: List[int] = []
+    steps_in: list[int] = []
+    steps_out: list[int] = []
     in_cool = cool
     out_cool = cool
     for i, s in enumerate(sites):
@@ -339,13 +338,13 @@ def find_in_n_out(
 def check_contiguous_steps(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
     checkpoints: np.ndarray,
     lag: int = 20,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Calculates the distance between the center atom and the neighbor atom
     in the checkpoint +/- lag time range.
 
@@ -364,12 +363,10 @@ def check_contiguous_steps(
         An array of distance between the center atom and the neighbor atoms
         in the checkpoint +/- lag time range.
     """
-    coord_num: Dict[str, Union[List[List[int]], np.ndarray]] = {
-        x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict
-    }
+    coord_num: dict[str, list[list[int]] | np.ndarray] = {x: [[] for _ in range(lag * 2 + 1)] for x in distance_dict}
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     has = False
-    for i, ts in enumerate(trj_analysis):
+    for i, _ts in enumerate(trj_analysis):
         log = False
         checkpoint = -1
         for j in checkpoints:
@@ -393,8 +390,8 @@ def check_contiguous_steps(
 def heat_map(
     nvt_run: Universe,
     floating_atom: Atom,
-    cluster_center_sites: List[int],
-    cluster_terminal: Union[str, List[str]],
+    cluster_center_sites: list[int],
+    cluster_terminal: str | list[str],
     cartesian_by_ref: np.ndarray,
     run_start: int,
     run_end: int,
@@ -441,7 +438,7 @@ def heat_map(
                     for species in cluster_terminal
                 ]
                 bind_atoms_xyz = [nvt_run.select_atoms(sel, periodic=True) for sel in selections]
-                vertex_atoms: List[Atom] = []
+                vertex_atoms: list[Atom] = []
                 for atoms in bind_atoms_xyz:
                     if len(atoms) == 1:
                         vertex_atoms.append(atoms[0])
@@ -451,8 +448,8 @@ def heat_map(
                         vertex_atoms.append(atoms[idx[0]])
                     else:
                         raise ValueError(
-                            f"There should be at least 1 cluster_terminal atom in the {str(dim[i])} dimension."
-                            f"Try broadening the selection at index {str(i + 1)} of the cluster_terminal "
+                            f"There should be at least 1 cluster_terminal atom in the {dim[i]!s} dimension."
+                            f"Try broadening the selection at index {i + 1!s} of the cluster_terminal "
                         )
             else:
                 assert isinstance(cluster_terminal, str)
@@ -501,10 +498,10 @@ def heat_map(
 
 def process_evol(
     nvt_run: Universe,
-    select_dict: Dict[str, str],
-    in_list: Dict[str, List[np.ndarray]],
-    out_list: Dict[str, List[np.ndarray]],
-    distance_dict: Dict[str, float],
+    select_dict: dict[str, str],
+    in_list: dict[str, list[np.ndarray]],
+    out_list: dict[str, list[np.ndarray]],
+    distance_dict: dict[str, float],
     run_start: int,
     run_end: int,
     lag: int,
@@ -572,10 +569,10 @@ def process_evol(
 
 def get_full_coords(
     coords: np.ndarray,
-    reflection: Optional[List[np.ndarray]] = None,
-    rotation: Optional[List[np.ndarray]] = None,
-    inversion: Optional[List[np.ndarray]] = None,
-    sample: Optional[int] = None,
+    reflection: list[np.ndarray] | None = None,
+    rotation: list[np.ndarray] | None = None,
+    inversion: list[np.ndarray] | None = None,
+    sample: int | None = None,
     dim: str = "xyz",
 ) -> np.ndarray:
     """
@@ -640,12 +637,12 @@ def get_full_coords(
 
 def cluster_coordinates(  # TODO: rewrite the method
     nvt_run: Universe,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
-    species: List[str],
+    species: list[str],
     distance: float,
-    basis_vectors: Optional[Union[List[np.ndarray], np.ndarray]] = None,
+    basis_vectors: list[np.ndarray] | np.ndarray | None = None,
     cluster_center: str = "center",
 ) -> np.ndarray:
     """Calculates the average position of a cluster.
@@ -679,7 +676,7 @@ def cluster_coordinates(  # TODO: rewrite the method
     cluster = []
     for atom in shell:
         coord_list = []
-        for ts in trj_analysis:
+        for _ts in trj_analysis:
             coord_list.append(atom.position)
         cluster.append(np.mean(np.array(coord_list), axis=0))
     cluster_array = np.array(cluster)
@@ -700,23 +697,22 @@ def cluster_coordinates(  # TODO: rewrite the method
         vec3 = vec3 / np.linalg.norm(vec3)
         basis_xyz = np.transpose([vec1, vec2, vec3])
         cluster_norm = np.linalg.solve(basis_xyz, cluster_array.T).T
-        cluster_norm = cluster_norm - np.mean(cluster_norm, axis=0)
-        return cluster_norm
+        return cluster_norm - np.mean(cluster_norm, axis=0)
     return cluster_array
 
 
 def num_of_neighbor(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start,
     run_end,
     write=False,
     structure_code=None,
     write_freq=0,
     write_path=None,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Calculates the coordination number of each specified neighbor species and the total coordination number
     in the specified frame range.
 
@@ -738,14 +734,13 @@ def num_of_neighbor(
         A diction containing the coordination number sequence of each specified neighbor species
         and the total coordination number sequence in the specified frame range .
     """
-    time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = {}
     species = list(distance_dict.keys())
     for kw in species:
         cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
-    for ts in trj_analysis:
+    for time_count, ts in enumerate(trj_analysis):
         digit_of_species = len(species) - 1
         for kw in species:
             selection = select_shell(select_dict, distance_dict, center_atom, kw)
@@ -771,18 +766,17 @@ def num_of_neighbor(
                 center_name = center_atom.name
                 path = write_path + str(center_atom.id) + "_" + str(int(ts.time)) + "_" + str(structure_code) + ".xyz"
                 write_out(center_pos, center_name, structure, path)
-        time_count += 1
     return cn_values
 
 
 def num_of_neighbor_simple(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """Calculates solvation structure type (1 for SSIP, 2 for CIP and 3 for AGG) with respect to the ``enter_atom``
     in the specified frame range.
 
@@ -799,14 +793,12 @@ def num_of_neighbor_simple(
         A dict with "total" as the key and an array of the solvation structure type in the specified frame range
         as the value.
     """
-
-    time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     center_selection = "same type as index " + str(center_atom.index)
     assert len(distance_dict) == 1, "Please only specify the counter-ion species in the distance_dict"
-    species = list(distance_dict.keys())[0]
+    species = next(iter(distance_dict.keys()))
     cn_values = np.zeros(int(len(trj_analysis)))
-    for ts in trj_analysis:
+    for time_count, _ts in enumerate(trj_analysis):
         selection = select_shell(select_dict, distance_dict, center_atom, species)
         shell = nvt_run.select_atoms(selection, periodic=True)
         shell_len = len(shell)
@@ -822,20 +814,18 @@ def num_of_neighbor_simple(
                 cn_values[time_count] = 3
         else:
             cn_values[time_count] = 3
-        time_count += 1
-    cn_values = {"total": cn_values}
-    return cn_values
+    return {"total": cn_values}
 
 
 def angular_dist_of_neighbor(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
     cip: bool = True,
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Calculates the angle of a-c-b of center atom c in the specified frames.
 
@@ -860,7 +850,7 @@ def angular_dist_of_neighbor(
     neighbor_a, neighbor_b, center_c = tuple(names)
     acb_angle = []
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
-    for ts in trj_analysis:
+    for _ts in trj_analysis:
         a_selection = select_shell(select_dict, distance_dict, center_atom, neighbor_a)
         a_group = nvt_run.select_atoms(a_selection, periodic=True)
         a_num = len(a_group)
@@ -870,10 +860,7 @@ def angular_dist_of_neighbor(
             c_selection = select_shell(select_dict, distance_dict, a_group.atoms[0], center_c)
             c_atoms = nvt_run.select_atoms(c_selection, periodic=True)
             shell_species_len = len(c_atoms) - 1
-            if shell_species_len == 0:
-                shell_type = "cip"
-            else:
-                shell_type = "agg"
+            shell_type = "cip" if shell_species_len == 0 else "agg"
         else:
             shell_type = "agg"
         if shell_type == "agg" and cip:
@@ -893,12 +880,12 @@ def angular_dist_of_neighbor(
 def num_of_neighbor_specific(
     nvt_run: Universe,
     center_atom: Atom,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
     counter_atom: str = "anion",
-) -> Dict[str, np.ndarray]:
+) -> dict[str, np.ndarray]:
     """
     Calculates the coordination number of each specific solvation structure type (SSIP, CIP, AGG).
 
@@ -916,7 +903,6 @@ def num_of_neighbor_specific(
         A tuple containing three dictionary of the coordination number of each neighbor species
         and total coordination number for the three solvation structure type, respectively.
     """
-    time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cip_step = []
     ssip_step = []
@@ -925,7 +911,7 @@ def num_of_neighbor_specific(
     for kw in distance_dict:
         cn_values[kw] = np.zeros(int(len(trj_analysis)))
     cn_values["total"] = np.zeros(int(len(trj_analysis)))
-    for ts in trj_analysis:
+    for time_count, _ts in enumerate(trj_analysis):
         for kw in distance_dict:
             kw_selection = select_shell(select_dict, distance_dict, center_atom, kw)
             kw_shell = nvt_run.select_atoms(kw_selection, periodic=True)
@@ -948,7 +934,6 @@ def num_of_neighbor_specific(
                 agg_step.append(time_count)
         else:
             agg_step.append(time_count)
-        time_count += 1
     cn_dict = {}
     for kw in distance_dict:
         cn_dict["ssip_" + kw] = cn_values[kw][ssip_step]
@@ -962,7 +947,7 @@ def full_solvation_structure(  # TODO: rewrite the method
     center_atom: Atom,
     center_species: str,
     counter_species: str,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
@@ -989,7 +974,8 @@ def full_solvation_structure(  # TODO: rewrite the method
     """
     center_selection = select_dict.get(center_species)
     counter_selection = select_dict.get(counter_species)
-    assert (center_selection is not None) and (counter_selection is not None)
+    assert center_selection is not None
+    assert counter_selection is not None
 
     def select_counter_ion(selection, dist, atom):
         return "(" + selection + " and around " + str(dist) + " same fragment as index " + str(atom.index) + ")"
@@ -1021,9 +1007,9 @@ def full_solvation_structure(  # TODO: rewrite the method
     time_count = 0
     trj_analysis = nvt_run.trajectory[run_start:run_end:]
     cn_values = np.zeros((int(len(trj_analysis)), depth))
-    for ts in trj_analysis:
-        center_ion_list: List[np.int_] = [center_atom.id]
-        counter_ion_list: List[np.int_] = []
+    for _ts in trj_analysis:
+        center_ion_list: list[np.int_] = [center_atom.id]
+        counter_ion_list: list[np.int_] = []
         first_shell = nvt_run.select_atoms(
             select_counter_ion(counter_selection, distance, center_atom),
             periodic=True,
@@ -1036,12 +1022,12 @@ def concat_coord_array(
     nvt_run: Universe,
     func: Callable,
     center_atoms: AtomGroup,
-    distance_dict: Dict[str, float],
-    select_dict: Dict[str, str],
+    distance_dict: dict[str, float],
+    select_dict: dict[str, str],
     run_start: int,
     run_end: int,
-    **kwargs: Union[bool, str],
-) -> Dict[str, np.ndarray]:
+    **kwargs: bool | str,
+) -> dict[str, np.ndarray]:
     """
     A helper function to analyze the coordination number/structure of every atoms in an ``AtomGroup`` using the
     specified function.
@@ -1055,6 +1041,7 @@ def concat_coord_array(
             and the corresponding values are the selection language.
         run_start: Start frame of analysis.
         run_end: End frame of analysis.
+        kwargs: Keyword arguments in the func.
 
     Returns:
         A diction containing the coordination number sequence of each specified neighbor species
@@ -1103,9 +1090,7 @@ def write_out(center_pos: np.ndarray, center_name: str, neighbors: AtomGroup, pa
         xyz_file.write("\n".join(lines))
 
 
-def select_shell(
-    select: Union[Dict[str, str], str], distance: Union[Dict[str, float], str], center_atom: Atom, kw: str
-) -> str:
+def select_shell(select: dict[str, str] | str, distance: dict[str, float] | str, center_atom: Atom, kw: str) -> str:
     """
     Select a group of atoms that is within a distance of an ``center_atom``.
 
@@ -1132,5 +1117,4 @@ def select_shell(
         distance_str = str(distance_value)
     else:
         distance_str = distance
-    selection = "(" + species_selection + ") and (around " + distance_str + " index " + str(center_atom.index) + ")"
-    return selection
+    return "(" + species_selection + ") and (around " + distance_str + " index " + str(center_atom.index) + ")"

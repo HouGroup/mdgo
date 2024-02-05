@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -8,39 +7,40 @@ The MdRun class currently only supports LAMMPS simulations.
 """
 
 from __future__ import annotations
-from typing import Union, Dict, Tuple, List, Optional
+
+import matplotlib.pyplot as plt
 import MDAnalysis
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from MDAnalysis import Universe
 from MDAnalysis.analysis.distances import distance_array
 from MDAnalysis.lib.distances import capped_distance
 from tqdm.auto import tqdm
-from mdgo.util.dict_utils import (
-    mass_to_name,
-    assign_name,
-    assign_resname,
-    res_dict_from_select_dict,
-    res_dict_from_datafile,
-    select_dict_from_resname,
-)
-from mdgo.conductivity import calc_cond_msd, conductivity_calculator, choose_msd_fitting_region, get_beta
+
+from mdgo.conductivity import calc_cond_msd, choose_msd_fitting_region, conductivity_calculator, get_beta
 from mdgo.coordination import (
+    angular_dist_of_neighbor,
     concat_coord_array,
+    find_nearest,
+    find_nearest_free_only,
+    get_full_coords,
+    heat_map,
+    neighbor_distance,
     num_of_neighbor,
     num_of_neighbor_simple,
     num_of_neighbor_specific,
-    angular_dist_of_neighbor,
-    neighbor_distance,
-    find_nearest,
-    find_nearest_free_only,
     process_evol,
-    heat_map,
-    get_full_coords,
 )
-from mdgo.msd import total_msd, partial_msd, DIM
+from mdgo.msd import DIM, partial_msd, total_msd
 from mdgo.residence_time import calc_neigh_corr, fit_residence_time
+from mdgo.util.dict_utils import (
+    assign_name,
+    assign_resname,
+    mass_to_name,
+    res_dict_from_datafile,
+    res_dict_from_select_dict,
+    select_dict_from_resname,
+)
 
 
 class MdRun:
@@ -75,8 +75,8 @@ class MdRun:
         nvt_start: int,
         time_step: float,
         name: str,
-        select_dict: Optional[Dict[str, str]] = None,
-        res_dict: Optional[Dict[str, str]] = None,
+        select_dict: dict[str, str] | None = None,
+        res_dict: dict[str, str] | None = None,
         cation_name: str = "cation",
         anion_name: str = "anion",
         cation_charge: float = 1,
@@ -90,7 +90,6 @@ class MdRun:
          parsed data (``Universe``) or other bridging objects (``CombinedData``). Not
         recommended to use directly.
         """
-
         self.wrapped_run = wrapped_run
         self.unwrapped_run = unwrapped_run
         self.nvt_start = nvt_start
@@ -149,8 +148,8 @@ class MdRun:
         nvt_start: int,
         time_step: float,
         name: str,
-        select_dict: Optional[Dict[str, str]] = None,
-        res_dict: Optional[Dict[str, str]] = None,
+        select_dict: dict[str, str] | None = None,
+        res_dict: dict[str, str] | None = None,
         cation_name: str = "cation",
         anion_name: str = "anion",
         cation_charge: float = 1,
@@ -202,9 +201,7 @@ class MdRun:
         )
 
     def get_init_dimension(self) -> np.ndarray:
-        """
-        Returns the initial box dimension.
-        """
+        """Returns the initial box dimension."""
         return self.wrapped_run.trajectory[0].dimensions
 
     def get_equilibrium_dimension(self, npt_range: int, period: int = 200) -> np.ndarray:
@@ -235,9 +232,7 @@ class MdRun:
         return np.mean(np.array(d), axis=0)
 
     def get_nvt_dimension(self) -> np.ndarray:
-        """
-        Returns the box dimension at the last frame.
-        """
+        """Returns the box dimension at the last frame."""
         return self.wrapped_run.trajectory[-1].dimensions
 
     def get_cond_array(self) -> np.ndarray:
@@ -250,7 +245,7 @@ class MdRun:
         nvt_run = self.unwrapped_run
         cations = nvt_run.select_atoms(self.select_dict.get("cation"))
         anions = nvt_run.select_atoms(self.select_dict.get("anion"))
-        cond_array = calc_cond_msd(
+        return calc_cond_msd(
             nvt_run,
             anions,
             cations,
@@ -258,7 +253,6 @@ class MdRun:
             self.cation_charge,
             self.anion_charge,
         )
-        return cond_array
 
     def choose_cond_fit_region(self) -> tuple:
         """
@@ -359,10 +353,9 @@ class MdRun:
         print(f"Start of linear fitting regime: {start} ({self.time_array[start]} {time_units})")
         print(f"End of linear fitting regime: {end} ({self.time_array[end]} {time_units})")
         print(f"Beta value (fit to MSD = t^\u03B2): {beta} (\u03B2 = 1 in the diffusive regime)")
-        cond = conductivity_calculator(
+        return conductivity_calculator(
             self.time_array, self.cond_array, self.nvt_v, self.name, start, end, self.temp, self.units
         )
-        return cond
 
     def coord_num_array_single_species(
         self,
@@ -387,7 +380,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         distance_dict = {species: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = concat_coord_array(
+        return concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -396,15 +389,14 @@ class MdRun:
             run_start,
             run_end,
         )["total"]
-        return num_array
 
     def coord_num_array_multi_species(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Calculates the coordination number array of multiple species around the interested ``center_atom``.
 
         Args:
@@ -419,7 +411,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array_dict = concat_coord_array(
+        return concat_coord_array(
             nvt_run,
             num_of_neighbor,
             center_atoms,
@@ -428,16 +420,15 @@ class MdRun:
             run_start,
             run_end,
         )
-        return num_array_dict
 
     def coord_num_array_specific(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
         counter_atom: str = "anion",
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """Calculates the coordination number array of multiple species of specific
         coordination types (SSIP, CIP, AGG).
 
@@ -454,7 +445,7 @@ class MdRun:
         """
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array_dict = concat_coord_array(
+        return concat_coord_array(
             nvt_run,
             num_of_neighbor_specific,
             center_atoms,
@@ -464,11 +455,10 @@ class MdRun:
             run_end,
             counter_atom=counter_atom,
         )
-        return num_array_dict
 
     def write_solvation_structure(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         structure_code: int,
@@ -476,7 +466,7 @@ class MdRun:
         write_path: str,
         center_atom: str = "cation",
     ):
-        """Writes out a series of desired solvation structures as ``*.xyz`` files
+        """Writes out a series of desired solvation structures as ``*.xyz`` files.
 
         Args:
             distance_dict: A dict of coordination cutoff distance of the neighbor species.
@@ -529,7 +519,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         distance_dict = {counter_atom: distance}
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
-        num_array = concat_coord_array(
+        return concat_coord_array(
             nvt_run,
             num_of_neighbor_simple,
             center_atoms,
@@ -538,11 +528,10 @@ class MdRun:
             run_start,
             run_end,
         )["total"]
-        return num_array
 
     def angle_array(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -568,8 +557,8 @@ class MdRun:
         nvt_run = self.wrapped_run
         center_atoms = nvt_run.select_atoms(self.select_dict.get(center_atom))
         assert len(distance_dict) == 2, "Only distance a->c, b->c shoud be specified in the distance_dict."
-        distance_dict[center_atom] = list(distance_dict.values())[0]
-        ang_array = concat_coord_array(
+        distance_dict[center_atom] = next(iter(distance_dict.values()))
+        return concat_coord_array(
             nvt_run,
             angular_dist_of_neighbor,
             center_atoms,
@@ -579,7 +568,6 @@ class MdRun:
             run_end,
             cip=cip,
         )["total"]
-        return ang_array
 
     def coordination(
         self,
@@ -613,12 +601,11 @@ class MdRun:
             item_list.append(str(int(combined[i, 0])))
             percent_list.append(f"{(combined[i, 1] / combined[:, 1].sum() * 100):.4f}%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
-        df = pd.DataFrame(df_dict)
-        return df
+        return pd.DataFrame(df_dict)
 
     def rdf_integral(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
@@ -645,8 +632,7 @@ class MdRun:
                 item_list.append(kw)
                 cn_list.append(cn)
         df_dict = {item_name: item_list, "CN": cn_list}
-        df = pd.DataFrame(df_dict)
-        return df
+        return pd.DataFrame(df_dict)
 
     def coordination_type(
         self,
@@ -656,7 +642,7 @@ class MdRun:
         center_atom: str = "cation",
         counter_atom: str = "anion",
     ) -> pd.DataFrame:
-        """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG)
+        """Tabulates the percentage of each solvation structures (CIP/SSIP/AGG).
 
         Args:
             distance: The coordination cutoff distance.
@@ -684,19 +670,18 @@ class MdRun:
             item_list.append(item_dict.get(item))
             percent_list.append(f"{(combined[i, 1] / combined[:, 1].sum() * 100):.4f}%")
         df_dict = {item_name: item_list, "Percentage": percent_list}
-        df = pd.DataFrame(df_dict)
-        return df
+        return pd.DataFrame(df_dict)
 
     def coordination_specific(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
         counter_atom: str = "anion",
     ) -> pd.DataFrame:
         """Calculates the integral of the coordiantion number of selected species
-        in each type of solvation structures (CIP/SSIP/AGG)
+        in each type of solvation structures (CIP/SSIP/AGG).
 
         Args:
             distance_dict: A dict of coordination cutoff distance of the neighbor species.
@@ -728,8 +713,7 @@ class MdRun:
                 else:
                     agg_list.append(cn)
         df_dict = {item_name: item_list, "CN in SSIP": ssip_list, "CN in CIP": cip_list, "CN in AGG": agg_list}
-        df = pd.DataFrame(df_dict)
-        return df
+        return pd.DataFrame(df_dict)
 
     def get_msd_all(
         self,
@@ -746,7 +730,7 @@ class MdRun:
         Args:
             start: Start time step.
             end: End time step.
-            msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+            msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
             fft: Whether to use FFT to accelerate the calculation. Default to True.
             built_in: Whether to use built in method to calculate msd or use function from mds.
                 Default to True.
@@ -759,7 +743,7 @@ class MdRun:
         """
         selection = self.select_dict.get(species)
         assert selection is not None
-        msd_array = total_msd(
+        return total_msd(
             self.unwrapped_run,
             start=start,
             end=end,
@@ -769,7 +753,6 @@ class MdRun:
             built_in=built_in,
             center_of_mass=center_of_mass,
         )
-        return msd_array
 
     def get_msd_partial(
         self,
@@ -779,7 +762,7 @@ class MdRun:
         largest: int = 1000,
         center_atom: str = "cation",
         binding_site: str = "anion",
-    ) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
+    ) -> tuple[list[np.ndarray] | None, list[np.ndarray] | None]:
         """
         Calculates the mean square displacement (MSD) of the ``center_atom`` according to coordination states.
         The returned ``free_array`` include the MSD when ``center_atom`` is not coordinated to ``binding_site``.
@@ -832,11 +815,11 @@ class MdRun:
 
     def get_neighbor_corr(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         center_atom: str = "cation",
-    ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """Calculates the neighbor auto-correlation function (ACF)
         of selected species around center_atom.
 
@@ -860,9 +843,9 @@ class MdRun:
         )
 
     def get_residence_time(
-        self, times: np.ndarray, acf_avg_dict: Dict[str, np.ndarray], cutoff_time: int
-    ) -> Dict[str, np.floating]:
-        """Calculates the residence time of selected species around cation
+        self, times: np.ndarray, acf_avg_dict: dict[str, np.ndarray], cutoff_time: int
+    ) -> dict[str, np.floating]:
+        """Calculates the residence time of selected species around cation.
 
         Args:
             times: The time series.
@@ -882,8 +865,8 @@ class MdRun:
         neighbor_cutoff: float,
         center_atom: str = "cation",
         index: int = 0,
-    ) -> Dict[str, np.ndarray]:
-        """Returns the distance between one center atom and neighbors as a function of time
+    ) -> dict[str, np.ndarray]:
+        """Returns the distance between one center atom and neighbors as a function of time.
 
         Args:
             run_start: Start frame of analysis.
@@ -917,7 +900,7 @@ class MdRun:
         floating_atom: str = "cation",
         smooth: int = 51,
         mode: str = "full",
-    ) -> Tuple[np.floating, np.floating]:
+    ) -> tuple[np.floating, np.floating]:
         """Calculates the cation hopping rate and hopping distance.
 
         Args:
@@ -967,7 +950,7 @@ class MdRun:
 
     def shell_evolution(
         self,
-        distance_dict: Dict[str, float],
+        distance_dict: dict[str, float],
         run_start: int,
         run_end: int,
         lag_step: int,
@@ -977,8 +960,8 @@ class MdRun:
         cool: int = 0,
         binding_site: str = "anion",
         center_atom: str = "cation",
-        duplicate_run: Optional[List[MdRun]] = None,
-    ) -> Dict[str, Dict[str, Union[int, np.ndarray]]]:
+        duplicate_run: list[MdRun] | None = None,
+    ) -> dict[str, dict[str, int | np.ndarray]]:
         """Calculates the coordination number evolution of species around ``center_atom`` as a function of time,
         the coordination numbers are averaged over all time steps around events when the center_atom
         hopping to and hopping out from the ``binding_site``. If ``duplicate_run`` is given, it is also averaged over
@@ -1001,8 +984,8 @@ class MdRun:
             A dictionary containing the number of trj logged, the averaged coordination number and standard deviation
             for each species, and the corresponding time sequence.
         """
-        in_list: Dict[str, List[np.ndarray]] = {}
-        out_list: Dict[str, List[np.ndarray]] = {}
+        in_list: dict[str, list[np.ndarray]] = {}
+        out_list: dict[str, list[np.ndarray]] = {}
         for k in list(distance_dict):
             in_list[k] = []
             out_list[k] = []
@@ -1059,17 +1042,17 @@ class MdRun:
         run_start: int,
         run_end: int,
         cluster_center: str,
-        cluster_terminal: Union[str, List[str]],
+        cluster_terminal: str | list[str],
         binding_cutoff: float,
         hopping_cutoff: float,
         floating_atom: str = "cation",
         cartesian_by_ref: np.ndarray = None,
-        sym_dict: Dict[str, List[np.ndarray]] = None,
-        sample: Optional[int] = None,
+        sym_dict: dict[str, list[np.ndarray]] | None = None,
+        sample: int | None = None,
         smooth: int = 51,
         dim: str = "xyz",
     ) -> np.ndarray:
-        """Calculates the heatmap matrix of floating ion around a cluster
+        """Calculates the heatmap matrix of floating ion around a cluster.
 
         Args:
             run_start: Start frame of analysis.
@@ -1095,7 +1078,7 @@ class MdRun:
         nvt_run = self.wrapped_run
         floating_atoms = nvt_run.select_atoms(self.select_dict.get(floating_atom))
         if isinstance(cluster_terminal, str):
-            terminal_atom_type: Union[str, List[str]] = self.select_dict.get(cluster_terminal, "Not defined")
+            terminal_atom_type: str | list[str] = self.select_dict.get(cluster_terminal, "Not defined")
             assert terminal_atom_type != "Not defined", f"{cluster_terminal} not defined in select_dict"
         else:
             terminal_atom_type = []
@@ -1124,7 +1107,7 @@ class MdRun:
                 run_start,
                 run_end,
             )
-            if not coords.size == 0:
+            if coords.size != 0:
                 coord_list = np.concatenate((coord_list, coords), axis=0)
         coord_list = coord_list[1:]
         if sym_dict:
@@ -1134,7 +1117,7 @@ class MdRun:
     def get_cluster_distance(
         self, run_start: int, run_end: int, neighbor_cutoff: float, cluster_center: str = "center"
     ) -> np.floating:
-        """Calculates the average distance of the center of clusters/molecules
+        """Calculates the average distance of the center of clusters/molecules.
 
         Args:
             run_start: Start frame of analysis.

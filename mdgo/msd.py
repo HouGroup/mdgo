@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -10,7 +9,9 @@ MSD FFT Algorithms in this section are adapted from DOI: 10.1051/sfn/201112010 a
 http://stackoverflow.com/questions/34222272/computing-mean-square-displacement-using-python-and-fft#34222273
 """
 
-from typing import List, Dict, Tuple, Union, Optional, Literal
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 try:
     import MDAnalysis.analysis.msd as mda_msd
@@ -24,8 +25,9 @@ except ImportError:
 import numpy as np
 from tqdm.auto import trange
 
-from MDAnalysis import Universe, AtomGroup
-from MDAnalysis.core.groups import Atom
+if TYPE_CHECKING:
+    from MDAnalysis import AtomGroup, Universe
+    from MDAnalysis.core.groups import Atom
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -55,7 +57,7 @@ def total_msd(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         fft: Whether to use FFT to accelerate the calculation. Default to True.
         built_in: Whether to use built in method to calculate msd or use function from mds. Default to True.
         center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
@@ -169,11 +171,11 @@ def create_position_arrays(
     atom_group = nvt_run.select_atoms(select)
     atom_positions = np.zeros((end - start, len(atom_group), 3))
     if center_of_mass:
-        for ts in nvt_run.trajectory[start:end]:
+        for _ts in nvt_run.trajectory[start:end]:
             atom_positions[time, :, :] = atom_group.positions - nvt_run.atoms.center_of_mass()
             time += 1
     else:
-        for ts in nvt_run.trajectory[start:end]:
+        for _ts in nvt_run.trajectory[start:end]:
             atom_positions[time, :, :] = atom_group.positions
             time += 1
     return atom_positions
@@ -197,7 +199,7 @@ def onsager_ii_self(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         center_of_mass: Whether to subtract center of mass at each step for atom coordinates. Default to True.
         fft: Whether to use FFT to accelerate the calculation. Default to True.
 
@@ -223,8 +225,7 @@ def onsager_ii_self(
             r = atom_positions[:, atom_num, dim[0] : dim[1] : dim[2]]
             msd_temp = msd_straight_forward(np.array(r))  # [start:end]
             ii_self += msd_temp
-    msd = np.array(ii_self) / n_atoms
-    return msd
+    return np.array(ii_self) / n_atoms
 
 
 def mda_msd_wrapper(
@@ -238,7 +239,7 @@ def mda_msd_wrapper(
         start: Start frame of analysis.
         end: End frame of analysis.
         select: A selection string. Defaults to “all” in which case all atoms are selected.
-        msd_type: Desired dimensions to be included in the MSD. Defaults to ‘xyz’.
+        msd_type: Desired dimensions to be included in the MSD. Defaults to "xyz".
         fft: Whether to use FFT to accelerate the calculation. Default to True.
 
     Warning:
@@ -259,7 +260,7 @@ def mda_msd_wrapper(
     return total_array
 
 
-def parse_msd_type(msd_type: DIM) -> List[int]:
+def parse_msd_type(msd_type: DIM) -> list[int]:
     """
     Sets up the desired dimensionality of the MSD.
 
@@ -283,9 +284,7 @@ def parse_msd_type(msd_type: DIM) -> List[int]:
     try:
         dim = keys[msd_type_str]
     except KeyError:
-        raise ValueError(
-            f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, " "xy, xz, yz, x, y, z"
-        )
+        raise ValueError(f"invalid msd_type: {msd_type_str} specified, please specify one of xyz, xy, xz, yz, x, y, z")
     return dim
 
 
@@ -311,11 +310,10 @@ def _total_msd(nvt_run: Universe, run_start: int, run_end: int, select: str = "a
             current_coord = ts[li_atom.id - 1]
             coords.append(current_coord)
         all_list.append(np.array(coords))
-    total_array = msd_from_frags(all_list, run_end - run_start - 1)
-    return total_array
+    return msd_from_frags(all_list, run_end - run_start - 1)
 
 
-def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
+def msd_from_frags(coord_list: list[np.ndarray], largest: int) -> np.ndarray:
     """
     Calculates the MSD using a list of fragments of trajectory with the conventional algorithm.
 
@@ -326,14 +324,14 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
     Returns:
         The MSD series.
     """
-    msd_dict: Dict[Union[int, np.integer], np.ndarray] = {}
+    msd_dict: dict[int | np.integer, np.ndarray] = {}
     for state in coord_list:
         n_frames = state.shape[0]
         lag_times = np.arange(1, min(n_frames, largest))
         for lag in lag_times:
             disp = state[:-lag, :] - state[lag:, :]
             sqdist = np.square(disp).sum(axis=-1)
-            if lag in msd_dict.keys():
+            if lag in msd_dict:
                 msd_dict[lag] = np.concatenate((msd_dict[lag], sqdist), axis=0)
             else:
                 msd_dict[lag] = sqdist
@@ -345,23 +343,22 @@ def msd_from_frags(coord_list: List[np.ndarray], largest: int) -> np.ndarray:
         assert msds is not None
         msds_by_state[kw] = msds.mean()
         timeseries.append(msds_by_state[kw])
-    timeseries = np.array(timeseries)
-    return timeseries
+    return np.array(timeseries)
 
 
 def states_coord_array(
     nvt_run: Universe,
     atom: Atom,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
     binding_site: str = "anion",
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """Cuts the trajectory of an atom into fragments. Each fragment contains consecutive timesteps of coordinates
     of the atom in either attached or free state. The Attached state is when the atom coordinates with the
     ``binding_site`` species (distance < ``distance``), and vice versa for the free state.
-    TODO: check if need wrapped trj
+    TODO: check if need wrapped trj.
 
     Args:
         nvt_run: An MDAnalysis ``Universe`` containing unwrapped trajectory.
@@ -426,12 +423,12 @@ def partial_msd(
     nvt_run: Universe,
     atoms: AtomGroup,
     largest: int,
-    select_dict: Dict[str, str],
+    select_dict: dict[str, str],
     distance: float,
     run_start: int,
     run_end: int,
     binding_site: str = "anion",
-) -> Tuple[Optional[List[np.ndarray]], Optional[List[np.ndarray]]]:
+) -> tuple[list[np.ndarray] | None, list[np.ndarray] | None]:
     """Calculates the mean square displacement (MSD) of the ``atoms`` according to coordination states.
     The returned ``free_data`` include the MSD when ``atoms`` are not coordinated to ``binding_site``.
     The ``attach_data`` includes the MSD of ``atoms`` are not coordinated to ``binding_site``.

@@ -1,8 +1,9 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
 """The util package implements various utilities that are commonly used by various packages."""
+
+from __future__ import annotations
 
 __author__ = "Tingzheng Hou"
 __version__ = "0.3.0"
@@ -10,9 +11,9 @@ __maintainer__ = "Tingzheng Hou"
 __email__ = "tingzheng_hou@berkeley.edu"
 __date__ = "Jul 19, 2021"
 
-from typing import Final, Dict
+from typing import Final
 
-MM_of_Elements: Final[Dict[str, float]] = {
+MM_of_Elements: Final[dict[str, float]] = {
     "H": 1.00794,
     "He": 4.002602,
     "Li": 6.941,

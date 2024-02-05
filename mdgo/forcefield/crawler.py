@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -13,18 +12,15 @@ For using the FFcrawler class:
     matches your Chrome version via https://chromedriver.chromium.org/downloads
 """
 
+from __future__ import annotations
+
 import os
 import shutil
 import time
-from typing import Optional
-
 
 from pymatgen.io.lammps.data import LammpsData
 from selenium import webdriver
-from selenium.common.exceptions import (
-    TimeoutException,
-    WebDriverException,
-)
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -50,7 +46,6 @@ class FFcrawler:
             Default to False.
 
     Examples:
-
         >>> lpg = FFcrawler('/path/to/work/dir', '/path/to/chromedriver')
         >>> lpg.data_from_pdb("/path/to/pdb")
     """
@@ -58,7 +53,7 @@ class FFcrawler:
     def __init__(
         self,
         write_dir: str,
-        chromedriver_dir: Optional[str] = None,
+        chromedriver_dir: str | None = None,
         headless: bool = True,
         xyz: bool = False,
         gromacs: bool = False,
@@ -96,10 +91,7 @@ class FFcrawler:
         print("LigParGen server connected.")
 
     def quit(self):
-        """
-        Method for quiting ChromeDriver.
-
-        """
+        """Method for quiting ChromeDriver."""
         self.web.quit()
 
     def data_from_pdb(self, pdb_dir: str):

@@ -1,21 +1,15 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
-"""
-This module implements a core class MdRun for molecular dynamics job setup.
-"""
+"""This module implements a core class MdRun for molecular dynamics job setup."""
+from __future__ import annotations
 
 
 class MdJob:
-    """
-    A core class for MD results analysis.
-    """
+    """A core class for MD results analysis."""
 
     def __init__(self, name):
-        """
-        Base constructor
-        """
+        """Base constructor."""
         self.name = name
 
     @classmethod
@@ -24,6 +18,7 @@ class MdJob:
         Constructor.
 
         Returns:
+            name: The name of the class
 
         """
         return cls("name")
@@ -34,6 +29,6 @@ class MdJob:
         Constructor.
 
         Returns:
-
+            name: The name of the class
         """
         return cls("name")

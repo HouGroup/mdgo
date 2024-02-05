@@ -1,4 +1,7 @@
-import io
+from __future__ import annotations
+
+import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -6,9 +9,10 @@ from io import StringIO
 
 import numpy as np
 import pytest
+from pymatgen.io.lammps.data import LammpsData
 
-from mdgo.forcefield.crawler import *
-from mdgo.forcefield.aqueous import *
+from mdgo.forcefield.aqueous import Aqueous, Ion
+from mdgo.forcefield.crawler import FFcrawler
 
 test_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_files")
 
@@ -34,43 +38,34 @@ class FFcrawlerTest(unittest.TestCase):
 
             lpg = FFcrawler(download_dir, xyz=True, gromacs=True)
             lpg.data_from_pdb(os.path.join(test_dir, "EMC.pdb"))
-            self.assertIn(
-                "LigParGen server connected.\n"
-                "Structure info uploaded. Rendering force field...\n",
-                out.getvalue(),
-            )
-            self.assertIn(
-                "Force field file downloaded.\n"
-                ".xyz file saved.\n"
-                "Force field file saved.\n",
-                out.getvalue(),
-            )
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.lmp")))
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.lmp.xyz")))
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.gro")))
-            self.assertTrue(os.path.exists(os.path.join(download_dir, "EMC.itp")))
+            assert "LigParGen server connected.\nStructure info uploaded. Rendering force field...\n" in out.getvalue()
+            assert "Force field file downloaded.\n.xyz file saved.\nForce field file saved.\n" in out.getvalue()
+            assert os.path.exists(os.path.join(download_dir, "EMC.lmp"))
+            assert os.path.exists(os.path.join(download_dir, "EMC.lmp.xyz"))
+            assert os.path.exists(os.path.join(download_dir, "EMC.gro"))
+            assert os.path.exists(os.path.join(download_dir, "EMC.itp"))
             with open(os.path.join(download_dir, "EMC.lmp")) as f:
                 pdf_actual = f.readlines()
-                self.assertListEqual(pdf, pdf_actual)
+                assert pdf == pdf_actual
             with open(os.path.join(download_dir, "EMC.lmp.xyz")) as f:
                 xyz_actual = f.readlines()
-                self.assertListEqual(xyz, xyz_actual)
+                assert xyz == xyz_actual
             with open(os.path.join(download_dir, "EMC.gro")) as f:
                 gro_actual = f.readlines()
-                self.assertListEqual(gro, gro_actual)
+                assert gro == gro_actual
             with open(os.path.join(download_dir, "EMC.itp")) as f:
                 itp_actual = f.readlines()
-                self.assertListEqual(itp, itp_actual)
+                assert itp == itp_actual
             lpg = FFcrawler(download_dir)
             lpg.data_from_smiles("CCOC(=O)OC")
             with open(os.path.join(download_dir, "CCOC(=O)OC.lmp")) as f:
                 smiles_actual = f.readlines()
-                self.assertListEqual(smiles[:13], smiles_actual[:13])
-                self.assertListEqual(smiles[18:131], smiles_actual[18:131])
-                self.assertEqual("     1      1      1 -0.28", smiles_actual[131][:26])
-                self.assertEqual("     2      1      2 0.01", smiles_actual[132][:25])
-                self.assertEqual("    15      1     15 0.10", smiles_actual[145][:25])
-                self.assertListEqual(smiles_actual[146:], smiles[146:])
+                assert smiles_actual[:13] == smiles[:13]
+                assert smiles_actual[18:131] == smiles[18:131]
+                assert smiles_actual[131][:26] == "     1      1      1 -0.28"
+                assert smiles_actual[132][:25] == "     2      1      2 0.01"
+                assert smiles_actual[145][:25] == "    15      1     15 0.10"
+                assert smiles_actual[146:] == smiles[146:]
         finally:
             sys.stdout = saved_stdout
             shutil.rmtree(download_dir)

@@ -1,4 +1,3 @@
-# coding: utf-8
 # Copyright (c) Tingzheng Hou.
 # Distributed under the terms of the MIT License.
 
@@ -13,15 +12,16 @@ for download and setup instructions. You may need to manually
 set the folder of the packmol executable to the PATH environment variable.
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 from shutil import which
+
 from pymatgen.core import Molecule
 
 # from pymatgen.io.core import InputFile, InputSet, InputGenerator
-
 from mdgo.util.volume import molecular_volume
 
 __author__ = "Tingzheng Hou, Ryan Kingsbury"
@@ -39,7 +39,6 @@ class PackmolWrapper:
     molecules into a one single unit.
 
     Examples:
-
         >>> molecules = [{"name": "EMC",
                     "number": 2,
                   "coords": "/Users/th/Downloads/test_selenium/EMC.lmp.xyz"}]
@@ -54,13 +53,13 @@ class PackmolWrapper:
     def __init__(
         self,
         path: str,
-        molecules: List[Dict],
-        box: Optional[List[float]] = None,
+        molecules: list[dict],
+        box: list[float] | None = None,
         tolerance: float = 2.0,
         seed: int = 1,
-        control_params: Optional[Dict] = None,
-        inputfile: Union[str, Path] = "packmol.inp",
-        outputfile: Union[str, Path] = "packmol_out.xyz",
+        control_params: dict | None = None,
+        inputfile: str | Path = "packmol.inp",
+        outputfile: str | Path = "packmol_out.xyz",
     ):
         """
         Args:
@@ -72,16 +71,17 @@ class PackmolWrapper:
                     2. "number" - the number of that molecule to pack into the box
                     3. "coords" - Coordinates in the form of either a Molecule object or
                         a path to a file.
-                Example:
-                    {"name": "water",
-                     "number": 500,
-                     "coords": "/path/to/input/file.xyz"}
+                For Example,
+                            {"name": "water",
+                             "number": 500,
+                             "coords": "/path/to/input/file.xyz"}
             box: A list of box dimensions xlo, ylo, zlo, xhi, yhi, zhi, in Å. If set to None
                 (default), mdgo will estimate the required box size based on the volumes of
                 the provided molecules using mdgo.volume.molecular_volume()
             tolerance: Tolerance for packmol, in Å.
             seed: Random seed for packmol. Use a value of 1 (default) for deterministic
                 output, or -1 to generate a new random seed from the current time.
+            control_params: Specify custom control parapeters, e,g, "maxit" and "nloop", in a dict
             inputfile: Path to the input file. Default to 'packmol.inp'.
             outputfile: Path to the output file. Default to 'output.xyz'.
         """
@@ -97,8 +97,10 @@ class PackmolWrapper:
 
     def run_packmol(self, timeout=30):
         """Run packmol and write out the packed structure.
+
         Args:
             timeout: Timeout in seconds.
+
         Raises:
             ValueError if packmol does not succeed in packing the box.
             TimeoutExpiredError if packmold does not finish within the timeout.
@@ -117,8 +119,7 @@ class PackmolWrapper:
                 check=True,
                 shell=True,
                 timeout=timeout,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
             )
             # this workaround is needed because packmol can fail to find
             # a solution but still return a zero exit code
@@ -143,17 +144,13 @@ class PackmolWrapper:
     # InputSet
     def make_packmol_input(self):
         """Make a Packmol usable input file."""
-
         if self.box:
             box_list = " ".join(str(i) for i in self.box)
         else:
             # estimate the total volume of all molecules
             net_volume = 0.0
-            for idx, d in enumerate(self.molecules):
-                if not isinstance(d["coords"], Molecule):
-                    mol = Molecule.from_file(d["coords"])
-                else:
-                    mol = d["coords"]
+            for _idx, d in enumerate(self.molecules):
+                mol = Molecule.from_file(d["coords"]) if not isinstance(d["coords"], Molecule) else d["coords"]
                 # molecular volume in cubic Å
                 vol = molecular_volume(mol, radii_type="pymatgen", molar_volume=False)
                 # pad the calculated length by an amount related to the tolerance parameter
@@ -172,7 +169,7 @@ class PackmolWrapper:
                 if isinstance(v, list):
                     out.write(f'{k} {" ".join(str(x) for x in v)}\n')
                 else:
-                    out.write(f"{k} {str(v)}\n")
+                    out.write(f"{k} {v!s}\n")
             out.write(f"seed {self.seed}\n")
             out.write(f"tolerance {self.tolerance}\n\n")
 
@@ -182,7 +179,7 @@ class PackmolWrapper:
             else:
                 out.write(f"output {self.output}\n\n")
 
-            for i, d in enumerate(self.molecules):
+            for _i, d in enumerate(self.molecules):
                 if isinstance(d["coords"], str):
                     if " " in d["coords"]:
                         out.write(f'structure "{d["coords"]}"\n')
@@ -190,9 +187,9 @@ class PackmolWrapper:
                         out.write(f'structure {d["coords"]}\n')
                 elif isinstance(d["coords"], Path):
                     if " " in str(d["coords"]):
-                        out.write(f'structure "{str(d["coords"])}"\n')
+                        out.write(f'structure "{d["coords"]!s}"\n')
                     else:
-                        out.write(f'structure {str(d["coords"])}\n')
+                        out.write(f'structure {d["coords"]!s}\n')
                 elif isinstance(d["coords"], Molecule):
                     fname = os.path.join(self.path, f'packmol_{d["name"]}.xyz')
                     d["coords"].to(filename=fname)
@@ -200,7 +197,7 @@ class PackmolWrapper:
                         out.write(f'structure "{fname}"\n')
                     else:
                         out.write(f"structure {fname}\n")
-                out.write(f'  number {str(d["number"])}\n')
+                out.write(f'  number {d["number"]!s}\n')
                 out.write(f"  inside box {box_list}\n")
                 out.write("end structure\n\n")
 
